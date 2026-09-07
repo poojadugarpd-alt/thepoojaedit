@@ -28,13 +28,25 @@ Small implementation decisions (with date + reason) and any approved architectur
 | D-11 | Working records created as separate files under `docs/`: `build-progress.md`, `decisions.md`, `acceptance-evidence.md`, `integration-setup.md`, `operations-runbook.md`, plus Phase 0 deliverables `compatibility-plan.md`, `module-map.md`, `deferred-scope.md`. | 2026-09-07 | Playbook §1 required working records + Phase 0 deliverables. |
 | D-12 | Exact runtime-critical package versions are pinned (non-caret) in Phase 1 and the resolved values written back into `compatibility-plan.md`. Phase 0 records the plan only; no `package.json` created yet. | 2026-09-07 | Playbook Phase 0: "Do not scaffold or replace the app until this checkpoint is complete." |
 
+## Phase 2 implementation decisions
+
+| ID | Decision | Date | Reason |
+| --- | --- | --- | --- |
+| D-17 | **Local dev/test database = `embedded-postgres`** (real PostgreSQL 17, `npm run db:dev`, data in `.pgdata/`). Pinned `embedded-postgres@17.10.0-beta.17` (this package only ever publishes `-beta.N` tags — it is the maintainer's release channel over real `zonkyio` PostgreSQL binaries). Production is unchanged (Supabase). CI uses a `postgres:17` service container instead. | 2026-09-07 | This machine has no Docker, no Homebrew, no local Postgres, and Supabase CLI needs Docker. `embedded-postgres` is the only no-account/no-admin way to get a *real* Postgres, which the playbook mandates for transaction/lock/concurrency tests. Resolves D-open-3 for Phase 2. |
+| D-18 | **Prisma 7 config shape.** Schema `datasource` block has `provider` only — Prisma 7 removed `url` and `directUrl` from the schema. CLI URL lives in `prisma.config.ts` (`datasource.url = DIRECT_URL ?? DATABASE_URL`, env loaded explicitly via `dotenv`). Runtime client is built with `@prisma/adapter-pg` in `src/lib/db.ts`. Generator = `prisma-client-js` with custom `output = ../src/generated/prisma` (well-understood, adapter-compatible; the new `prisma-client` generator is an additive change if wanted later). | 2026-09-07 | Forced by Prisma 7's API (`prisma validate` rejects `url` in schema). Matches master §3 intent. |
+| D-19 | **Companion SQL migration `manual_constraints`** carries every guard Prisma can't express: non-negative money/stock + `reservedQty ≤ onHandQty` CHECKs; positive line/movement quantities; the **order totals identity** as a CHECK; **two partial unique indexes** for Category shared-slug uniqueness (`WHERE catalog IS NOT NULL` / `WHERE catalog IS NULL`) — an `enum::text` COALESCE index expression is not IMMUTABLE and was rejected; a `BEFORE INSERT/UPDATE` trigger for the **thrift one-of-one** on-hand ≤ 1 limit. Later migrations extend, never rewrite. | 2026-09-07 | Master §5 "Required constraints" + "Enforce thrift physical-piece limits in database-backed operations, including admin edits". |
+| D-20 | **`dotenv`** added as a devDependency solely so `prisma.config.ts` can load `.env.local` then `.env` for the CLI (Prisma 7 no longer auto-loads). | 2026-09-07 | Master §3: "Explicitly load environment variables for the Prisma CLI." |
+| D-21 | **`overrides` extended** with `deepmerge-ts` 8.0.2 and `mysql2` 3.24.3. | 2026-09-07 | The `prisma` CLI's own dep tree pulled `deepmerge-ts <8` (via `@prisma/config`) and `mysql2 <=3.23.0` — both high-severity, both dead code for us (no MySQL, no untrusted config merge). `npm audit`'s "fix" was a downgrade to Prisma 6 (forbidden). Overrides force the patched releases; `npm audit --audit-level=high` → 0. `prisma` CLI verified working (validate/migrate/generate/studio). Also moved `prisma` to `devDependencies`; added a root `prepare` script running `prisma generate`. |
+| D-22 | Schema conventions: UUIDv7 ids (`@default(uuid(7)) @db.Uuid`), all money `Int` paise, all rates `Int` basis points, all timestamps `@db.Timestamptz(6)`. Financial-history relations use `onDelete: Restrict`; products are archived not deleted. `@@id`/`@@unique`/`@@index` per master §5 "Index at least". | 2026-09-07 | Master §5 "behavioral schema contract". |
+
 ## Open items / proposals (not yet decided)
 
 | ID | Item | Status |
 | --- | --- | --- |
 | D-open-1 | **Next.js 16 vs 15.** Master mandates 15; Next 16 is now Active LTS while 15.5.x is Maintenance LTS (still security-patched). Launching on 15.5.x is acceptable. If the Maintenance window threatens the launch/support horizon, raise an **architecture gate** proposal (compatibility, migration effort, affected ACs) before moving. | Watch — no action now |
 | D-open-2 | ~~pnpm vs npm~~ — resolved as npm (D-8). | Closed 2026-09-07 |
-| D-open-3 | Dev database choice: local Postgres (Docker) vs local Supabase CLI vs hosted Supabase dev project. Decide at start of Phase 2. | Deferred to Phase 2 |
+| D-open-3 | Dev database choice. **Phase 2: resolved → `embedded-postgres` (D-17).** Phase 3 revisits for Auth/Storage — local Supabase CLI needs Docker (absent here), so a free hosted Supabase dev project is the likely path. | Phase 2 closed; Phase 3 reopens for Supabase specifically |
+| D-open-4 | Supavisor transaction-pooler + Prisma 7 adapter concurrency proof (master §3) — cannot run without a Supabase project. | Blocked until Phase 3 Supabase project exists |
 
 ## Architectural change procedure (reference)
 

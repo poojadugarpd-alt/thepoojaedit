@@ -4,29 +4,36 @@ Mobile-first Indian fashion e-commerce site for one brand with two catalogs: **T
 
 ## Repository state
 
-**Phases 0–1 passed.** Application foundation is in place: Next.js 15.5 App Router, typed env validation, server-only boundaries, structured logging, money primitive, health endpoint, Vitest + Playwright harness, CI. No commerce logic yet — the database and business schema are Phase 2.
+**Phases 0–2 passed.** Foundation (Next.js 15.5, typed env, logging, money primitive, health, test harness, CI) plus the full commerce database: Prisma 7 schema (42 models, master §5), `init` + `manual_constraints` migrations, `@prisma/adapter-pg` client, idempotent seed, 18 real-PostgreSQL integration tests. No domain services yet — Auth/Storage is Phase 3, catalog/storefront Phase 4.
 
 ## Development
 
 ```bash
-nvm use            # Node 22 (see .nvmrc)
+nvm use                  # Node 22 (see .nvmrc)
 npm install
-cp .env.example .env.local   # fill in as phases require; dev needs almost nothing yet
-npm run dev                  # http://localhost:3000
+cp .env.example .env.local
 
-npm run check      # lint + typecheck + test + build (the CI gate)
-npm run test:e2e   # Playwright shell smoke (run `npx playwright install` once)
+# database — real PostgreSQL, no Docker / no account (embedded-postgres)
+npm run db:dev           # terminal 1: PG on :5433, prints the .env.local URLs
+npm run db:migrate       # terminal 2: apply migrations to the dev DB
+npm run db:seed          # load fixtures (idempotent)
+
+npm run dev              # http://localhost:3000
+
+npm run check            # prisma generate → lint → typecheck → unit test → build (CI gate)
+npm run test:integration # 18 real-PostgreSQL tests (needs `npm run db:dev` running)
+npm run test:e2e         # Playwright shell smoke (run `npx playwright install` once)
 ```
 
-| Script                    | Does                            |
-| ------------------------- | ------------------------------- |
-| `dev` / `build` / `start` | Next.js                         |
-| `lint`                    | ESLint (flat config)            |
-| `typecheck`               | `tsc --noEmit`, strict          |
-| `test` / `test:watch`     | Vitest unit tests               |
-| `test:e2e`                | Playwright                      |
-| `format` / `format:check` | Prettier                        |
-| `check`                   | lint → typecheck → test → build |
+| Script                                          | Does                                                |
+| ----------------------------------------------- | --------------------------------------------------- |
+| `dev` / `build` / `start`                       | Next.js                                             |
+| `lint` · `typecheck` · `format`                 | ESLint · `tsc --noEmit` · Prettier                  |
+| `test` / `test:integration` / `test:e2e`        | Vitest unit · Vitest real-PostgreSQL · Playwright   |
+| `check`                                         | `prisma generate` → lint → typecheck → test → build |
+| `db:dev`                                        | Start local embedded PostgreSQL (:5433)             |
+| `db:migrate` / `db:migrate:deploy` / `db:reset` | Prisma Migrate                                      |
+| `db:seed` · `db:studio` · `db:generate`         | Seed · Studio · generate client                     |
 
 ## Documents
 

@@ -18,6 +18,10 @@
 # ── Generated ─────────────────────────────────────────────────────────────
 /src/generated/
 
+# ── Local embedded PostgreSQL data (dev only) ─────────────────────────────
+/.pgdata/
+/.pgdata-*/
+
 # ── Testing ───────────────────────────────────────────────────────────────
 /coverage
 /test-results

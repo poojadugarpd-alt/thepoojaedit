@@ -4,7 +4,9 @@ Derived from master specification §2 (suggested boundaries) and §5/§8 (domain
 
 ## Existing modules to preserve / reuse
 
-**None.** Greenfield repository. No prior app, no reusable modules, no migration history.
+Greenfield at Phase 0. **Built so far** (preserve / extend, do not rewrite):
+- Phase 1: `src/lib/{app-env,env,public-env,logger,money}.ts`, the accessible shell, `/api/health`, middleware, instrumentation, test harness.
+- Phase 2: `prisma/schema.prisma` (42 models), `prisma/migrations/` (`init` + `manual_constraints` — extend via additive migrations only), `prisma.config.ts`, `src/lib/db.ts` (the one Prisma client), `prisma/seed.ts`, `scripts/{pg,db-dev}.ts`, `tests/integration/**`.
 
 ## Target directory layout
 
@@ -46,13 +48,15 @@ Business logic lives here and is reused by route handlers, Server Actions, admin
 
 ## `src/lib/*`
 
-| Module | Responsibility |
-| --- | --- |
-| `db` | Single reusable Prisma 7 client per process, built with `@prisma/adapter-pg` + `pg` + `DATABASE_URL`; conservative pool config |
-| `supabase` | `@supabase/ssr` server/client factories; server-side identity verification helpers |
-| `env` | Zod-validated server env and public env, parsed separately; fails fast with a useful message on missing required config |
-| `money` | Integer-paise arithmetic, documented rounding rule; no binary floating point for currency |
-| `logger` | Pino structured logging with secret/PII redaction |
+| Module | Responsibility | Status |
+| --- | --- | --- |
+| `db` | Single reusable Prisma 7 client per process, `@prisma/adapter-pg` + `pg` pool + `DATABASE_URL`; conservative pool config | ✅ Phase 2 |
+| `env` | Zod-validated server env, fails fast, production gate, live-credential guard | ✅ Phase 1 |
+| `public-env` | Separate `NEXT_PUBLIC_*` schema, statically accessed | ✅ Phase 1 |
+| `app-env` | `APP_ENV` (deployment identity) from `VERCEL_ENV`; dependency-free | ✅ Phase 1 |
+| `money` | Integer-paise arithmetic, half-up rounding, basis-point helper; no float currency | ✅ Phase 1 |
+| `logger` | Pino structured logging with secret/PII redaction | ✅ Phase 1 |
+| `supabase` | `@supabase/ssr` server/client factories; server-side identity verification helpers | Phase 3 |
 
 ## Runtime boundaries
 

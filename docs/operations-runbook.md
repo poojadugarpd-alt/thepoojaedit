@@ -12,12 +12,22 @@ Deploy/migrate procedures, schedules, replay, reconciliation, backup/restore, an
 
 Environment identity is shown visibly in the admin UI (master §3). Preview must not resolve live credentials by fallback.
 
-## 2. Deploy & migrate _(filled from Phase 1 / Phase 2; release flow finalized Phase 13)_
+## 2. Deploy & migrate _(release flow finalized Phase 13)_
 
-- Build/deploy: Vercel, Node 22 runtime, frozen-lockfile install.
+**Local dev**
+- `npm run db:dev` — start embedded PostgreSQL 17 (`.pgdata/`, port 5433), creates `poojaedit_dev` + `poojaedit_shadow`, prints the `.env.local` URLs. Keep running in its own terminal.
+- `npm run db:migrate` — `prisma migrate dev` (dev DB only).
+- `npm run db:seed` — idempotent fixtures.
+- `npm run db:studio` — Prisma Studio.
+- `npm run db:reset` — drop + re-migrate + re-seed the dev DB.
+
+**CI** — `integration` job runs a `postgres:17` service; `INTEGRATION_DATABASE_URL` points the suite at it; `tests/integration/global-setup.ts` drops/creates a fresh DB and runs `prisma migrate deploy` before the suite.
+
+**Production (from Phase 13)**
+- Build/deploy: Vercel, Node 22 runtime, frozen-lockfile install (`npm ci` → `prepare` runs `prisma generate`).
 - Migrations: `prisma migrate deploy` through the release workflow only. **Never** `migrate reset` / `db push` / edit an applied migration against a shared or prod database.
-- `prisma migrate dev` only against isolated dev databases; disposable shadow DB when needed.
-- Migration policy for production changes: expand → backfill → validate → switch → later contract.
+- Migration policy for production changes: expand → backfill → validate → switch → later contract. Additive only over the approved Phase 2 schema (`init` + `manual_constraints`).
+- The `manual_constraints` migration holds CHECKs, partial unique indexes and the thrift one-of-one trigger — later migrations extend these, never drop-and-recreate.
 
 ## 3. Scheduled / recurring jobs _(filled from Phase 6)_
 

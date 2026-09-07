@@ -23,7 +23,8 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 
 | Provider | Needed by phase | Test/sandbox mode | Status | Setup notes |
 | --- | --- | --- | --- | --- |
-| Supabase (dev project) | 2 | N/A (own project or local) | ☐ | Create dev project or run local Supabase. Record project ref, region. Verify Free-tier allowances, pause behavior, backup entitlement **against the live account** — do not assume. |
+| Local PostgreSQL (dev/test) | 2 | N/A | ☑ | `embedded-postgres` (`npm run db:dev`) — real PG 17, no Docker/account (D-17). Covers Phase 2 fully. |
+| Supabase (dev project) | 3 | N/A (hosted; local CLI needs Docker) | ☐ | First needed Phase 3 (Auth + Storage) and for the deferred Supavisor+Prisma concurrency proof (D-open-4). Record project ref, region. Verify Free-tier allowances, pause behavior, backup entitlement **against the live account** — do not assume. |
 | Supabase (prod project) | 13 | N/A | ☐ | Separate project. Auth redirect URLs, active owner, Data API restrictions, Storage policies verified at launch. |
 | Razorpay | 7 | Test mode (keys prefixed for test) | ☐ | Create account, enable Test mode, generate test key id/secret, configure webhook endpoint + secret. UPI + COD flows. |
 | Shiprocket | 8 | ⚠️ **Unconfirmed** — must verify from official/account info whether a sandbox exists | ⛔ | If only live ops are available, prepare a controlled authorized test. AC-13 stays blocked until resolved. |

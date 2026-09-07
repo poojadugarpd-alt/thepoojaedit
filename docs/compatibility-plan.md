@@ -111,9 +111,14 @@ Installed via `npm install` on Node 24.18.0 / npm 11.16.0. `package-lock.json` c
 | `vitest` | ^3.2.4 | + `vite-tsconfig-paths` for `@/*`. |
 | `@playwright/test` | ^1.56.0 | browsers installed on demand / in CI. |
 | `prettier` | ^3.6.2 | — |
-| **override** `postcss` | **8.5.28** | see `decisions.md` D-13. |
+| `prisma` (dev) / `@prisma/client` / `@prisma/adapter-pg` | **7.10.0** (exact) | Phase 2. `prisma@latest` is `8.0.0-rc` — always pin 7. `prisma` is a devDependency; a root `prepare` script runs `prisma generate`. |
+| `pg` / `@types/pg` | **8.23.0 / 8.23.1** | driver for `@prisma/adapter-pg`. |
+| `embedded-postgres` (dev) | **17.10.0-beta.17** | local real PostgreSQL 17, no Docker (D-17). |
+| `dotenv` (dev) | **17.2.3** | `prisma.config.ts` env loading (D-20). |
+| `tsx` (dev) | **4.23.13** | runs `prisma/seed.ts` and `scripts/*.ts`. |
+| **override** `postcss` / `deepmerge-ts` / `mysql2` | **8.5.28 / 8.0.2 / 3.24.3** | see `decisions.md` D-13, D-21. `npm audit --audit-level=high` → 0. |
 
-**Not yet installed (their phases):** `prisma` / `@prisma/client` / `@prisma/adapter-pg` / `pg` (Phase 2), `@supabase/ssr` / `@supabase/supabase-js` (Phase 3), `inngest` (Phase 6), `razorpay` (Phase 7), `resend` / `@react-email/*` (Phase 10), `@sentry/nextjs` (monitoring wiring). Pins for these remain as planned above; **`prisma@latest` is v8-rc — always install `prisma@7` explicitly.**
+**Not yet installed (their phases):** `@supabase/ssr` / `@supabase/supabase-js` (Phase 3), `inngest` (Phase 6), `razorpay` (Phase 7), `resend` / `@react-email/*` (Phase 10), `@sentry/nextjs` (monitoring wiring). Pins for these remain as planned above.
 
 ## Lockfile strategy
 

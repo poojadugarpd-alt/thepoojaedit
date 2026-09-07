@@ -5,7 +5,9 @@ build
 coverage
 playwright-report
 test-results
+.pgdata
 src/generated
+prisma/migrations
 package-lock.json
 
 # Working records + specs are hand-maintained Markdown; Prettier reflows tables.
