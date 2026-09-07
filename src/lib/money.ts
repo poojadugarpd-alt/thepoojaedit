@@ -97,3 +97,20 @@ const inrFormatter = new Intl.NumberFormat("en-IN", {
 export function formatINR(amount: Paise): string {
   return inrFormatter.format(paiseToRupees(amount));
 }
+
+const inrWholeFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+/**
+ * Display helper for a plain integer-paise value (no branding required).
+ * Drops the decimals when the amount is a whole rupee — storefront style.
+ */
+export function formatPaiseINR(amountPaise: number): string {
+  assertSafeInteger(amountPaise, "amount");
+  return amountPaise % 100 === 0
+    ? inrWholeFormatter.format(amountPaise / 100)
+    : inrFormatter.format(amountPaise / 100);
+}

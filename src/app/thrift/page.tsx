@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Thrift Store" };
+import { CatalogListing } from "@/features/catalog/catalog-listing";
+import type { ProductSort } from "@/server/catalog";
 
-// Placeholder. The real thrift catalogue (one-of-one pieces with condition,
-// measurements, flaws and SOLD-state URLs) is built in Phase 4.
-export default function ThriftPage() {
+export const metadata: Metadata = {
+  title: "Thrift Store",
+  description:
+    "Pre-loved, one-of-one fashion. Each piece listed as-is with its own measurements.",
+  alternates: { canonical: "/thrift" },
+  openGraph: { title: "Thrift Store", url: "/thrift" },
+};
+
+const SORTS = new Set<ProductSort>(["newest", "price_asc", "price_desc"]);
+
+export default async function ThriftPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  const { sort } = await searchParams;
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Thrift Store</h1>
-      <p className="mt-3 text-black/70 dark:text-white/70">
-        Pre-loved pieces are being measured and listed. Check back soon.
-      </p>
-    </div>
+    <CatalogListing
+      catalog="THRIFT"
+      sort={SORTS.has(sort as ProductSort) ? (sort as ProductSort) : "newest"}
+    />
   );
 }

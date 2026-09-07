@@ -22,6 +22,11 @@
 /.pgdata/
 /.pgdata-*/
 
+# ── Legacy-content migration workspace (extracted drafts + downloaded assets;
+#    not application code — review artifacts only). Un-ignore if you want it
+#    tracked for review.
+/migration/
+
 # ── Testing ───────────────────────────────────────────────────────────────
 /coverage
 /test-results

@@ -1,16 +1,28 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "The Pooja Edit" };
+import { CatalogListing } from "@/features/catalog/catalog-listing";
+import type { ProductSort } from "@/server/catalog";
 
-// Placeholder. The real catalogue listing (products from the database, filters,
-// pagination, PDPs) is built in Phase 4.
-export default function ThePoojaEditPage() {
+export const metadata: Metadata = {
+  title: "The Pooja Edit",
+  description:
+    "Original, slow-made apparel from The Pooja Edit — kurtis, co-ord sets and linen.",
+  alternates: { canonical: "/the-pooja-edit" },
+  openGraph: { title: "The Pooja Edit", url: "/the-pooja-edit" },
+};
+
+const SORTS = new Set<ProductSort>(["newest", "price_asc", "price_desc"]);
+
+export default async function ThePoojaEditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  const { sort } = await searchParams;
   return (
-    <div className="mx-auto max-w-5xl px-4 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">The Pooja Edit</h1>
-      <p className="mt-3 text-black/70 dark:text-white/70">
-        New apparel is being photographed and catalogued. Check back soon.
-      </p>
-    </div>
+    <CatalogListing
+      catalog="THE_POOJA_EDIT"
+      sort={SORTS.has(sort as ProductSort) ? (sort as ProductSort) : "newest"}
+    />
   );
 }

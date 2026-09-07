@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CartLink } from "@/features/cart/cart-link";
+
 const CATALOG_LINKS = [
   { href: "/the-pooja-edit", label: "The Pooja Edit" },
   { href: "/thrift", label: "Thrift Store" },
@@ -7,7 +9,6 @@ const CATALOG_LINKS = [
 
 const UTILITY_LINKS = [
   { href: "/search", label: "Search" },
-  { href: "/cart", label: "Cart" },
   { href: "/account", label: "Account" },
 ];
 
@@ -42,6 +43,9 @@ export function SiteHeader() {
               </Link>
             </li>
           ))}
+          <li>
+            <CartLink />
+          </li>
         </ul>
       </nav>
     </header>
