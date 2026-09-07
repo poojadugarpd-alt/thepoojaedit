@@ -3,11 +3,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import type { Order, PrismaClient } from "@/generated/prisma";
-import { emitDomainEvent } from "@/server/events/emit";
 import { allocateCodStock } from "@/server/inventory/cod";
 import { reserveAll } from "@/server/inventory/reservations";
 import { issueOrderAccessToken } from "@/server/orders/access-tokens";
 import { generateOrderNumber } from "@/server/orders/order-number";
+import { appendOrderTimeline } from "@/server/orders/timeline";
 import type { ShippingPort } from "@/server/shipping";
 
 import { computeQuote, QuoteError, type QuoteInput } from "./quote";
@@ -270,20 +270,15 @@ export async function placeOrder(
       });
 
       // Timeline + transactional outbox — same tx as the order (master §8).
-      const payload = {
+      await appendOrderTimeline(tx, {
         orderId: order.id,
-        orderNumber: order.orderNumber,
-        paymentMethod: input.paymentMethod,
-        totalPaise: order.totalPaise,
-      };
-      await tx.orderEvent.create({
-        data: { orderId: order.id, type: "order.placed", source: "system", payload },
-      });
-      await emitDomainEvent(tx, {
         type: "order.placed",
-        aggregateType: "Order",
-        aggregateId: order.id,
-        payload,
+        payload: {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          paymentMethod: input.paymentMethod,
+          totalPaise: order.totalPaise,
+        },
       });
 
       let guestAccessToken: string | undefined;

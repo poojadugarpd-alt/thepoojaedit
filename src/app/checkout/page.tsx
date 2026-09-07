@@ -1,24 +1,20 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+
+import { CheckoutClient } from "@/features/checkout/checkout-client";
+import { isPrepaidConfigured } from "@/server/payments";
 
 export const metadata: Metadata = {
   title: "Checkout",
   robots: { index: false },
 };
 
-// Placeholder. The authoritative checkout (quote, tax, atomic reservation,
-// payment) is built in Phase 5 — this page deliberately does NOT simulate it.
+/**
+ * Authoritative checkout (master §7). The cart lives in the browser, so the flow
+ * is client-driven, but every price, tax figure and reservation is computed and
+ * enforced on the server (`prepareCheckoutAction` / `placeCheckoutAction`).
+ * Prepaid uses Razorpay Checkout; COD is a distinct path that is never shown as
+ * paid.
+ */
 export default function CheckoutPage() {
-  return (
-    <div className="mx-auto max-w-lg px-4 py-20 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Checkout</h1>
-      <p className="mt-4 text-sm text-black/65 dark:text-white/65">
-        Checkout isn&rsquo;t open yet. Your cart is saved on this device — come back
-        once payments are live.
-      </p>
-      <Link href="/cart" className="mt-6 inline-block text-sm underline">
-        Back to cart
-      </Link>
-    </div>
-  );
+  return <CheckoutClient prepaidEnabled={isPrepaidConfigured()} />;
 }

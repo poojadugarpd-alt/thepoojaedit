@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { formatPaiseINR } from "@/lib/money";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
+import { ResumePayment } from "@/features/checkout/resume-payment";
 import { getCurrentCustomer } from "@/server/auth/current-customer";
 import { ResourceNotFoundError } from "@/server/auth/errors";
 import { getViewableOrderForCustomer, getViewableOrderForGuest } from "@/server/orders";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 
 type Params = {
   params: Promise<{ orderNumber: string }>;
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; placed?: string; review?: string }>;
 };
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -28,7 +29,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export default async function OrderPage({ params, searchParams }: Params) {
   const { orderNumber } = await params;
-  const { token } = await searchParams;
+  const { token, placed, review } = await searchParams;
 
   let order: Awaited<ReturnType<typeof getViewableOrderForGuest>> | null = null;
   try {
@@ -58,10 +59,51 @@ export default async function OrderPage({ params, searchParams }: Params) {
   }
 
   const shipping = order.addresses.find((a) => a.type === "SHIPPING");
+  const billing = order.addresses.find((a) => a.type === "BILLING");
+
+  const awaitingPrepaid =
+    order.paymentMethod === "PREPAID_RAZORPAY" &&
+    order.orderStatus === "PENDING_PAYMENT";
+
+  const banner = review
+    ? {
+        tone: "amber" as const,
+        text: "We've received your payment and are reviewing this order. We'll email you shortly — no action needed.",
+      }
+    : placed && order.paymentMethod === "COD"
+      ? {
+          tone: "green" as const,
+          text: "Order placed. It's pending confirmation — we'll message you to confirm your cash-on-delivery order.",
+        }
+      : placed && !awaitingPrepaid
+        ? { tone: "green" as const, text: "Payment received — your order is confirmed." }
+        : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
       <h1 className="text-xl font-semibold">Order {order.orderNumber}</h1>
+
+      {banner && (
+        <p
+          className={`mt-3 rounded border px-3 py-2 text-sm ${
+            banner.tone === "green"
+              ? "border-green-600/30 bg-green-600/5 text-green-800 dark:text-green-300"
+              : "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-200"
+          }`}
+        >
+          {banner.text}
+        </p>
+      )}
+
+      {awaitingPrepaid && (
+        <ResumePayment
+          orderNumber={order.orderNumber}
+          token={token ?? null}
+          name={billing?.name}
+          email={order.contactEmail}
+          phone={order.contactPhone}
+        />
+      )}
       <p className="mt-1 text-sm text-black/55 dark:text-white/55">
         Placed{" "}
         {order.placedAt ? new Date(order.placedAt).toLocaleDateString("en-IN") : "—"}

@@ -26,7 +26,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | Local PostgreSQL (dev/test) | 2 | N/A | ☑ | `embedded-postgres` (`npm run db:dev`) — real PG 17, no Docker/account (D-17). Covers Phase 2 fully. |
 | Supabase (dev project) | 3 | N/A (hosted; local CLI needs Docker) | ☐ | First needed Phase 3 (Auth + Storage) and for the deferred Supavisor+Prisma concurrency proof (D-open-4). Record project ref, region. Verify Free-tier allowances, pause behavior, backup entitlement **against the live account** — do not assume. |
 | Supabase (prod project) | 13 | N/A | ☐ | Separate project. Auth redirect URLs, active owner, Data API restrictions, Storage policies verified at launch. |
-| Razorpay | 7 | Test mode (keys prefixed for test) | ☐ | Create account, enable Test mode, generate test key id/secret, configure webhook endpoint + secret. UPI + COD flows. |
+| Razorpay | 7 | Test mode (keys prefixed for test) | ◐ | **Code slice done (Phase 7)** — adapter, checkout UI, webhook route, reconcile cron all built + tested against `FakeRazorpay`. **To go live in test mode:** create account → enable Test mode → generate test key id/secret → set `NEXT_PUBLIC_RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` + `RAZORPAY_WEBHOOK_SECRET` → register the webhook URL below with events `payment.authorized`, `payment.captured`, `payment.failed`, `refund.processed`, `refund.failed`. Then run a real test payment (UPI/card) + verify a real signed webhook. Budget alert on the account. |
 | Shiprocket | 8 | ⚠️ **Unconfirmed** — must verify from official/account info whether a sandbox exists | ⛔ | If only live ops are available, prepare a controlled authorized test. AC-13 stays blocked until resolved. |
 | Inngest (dev) | 6 | Dev server + dev environment keys | ☐ | Install Inngest dev server locally; create cloud dev environment for schedules. |
 | Meta WhatsApp Cloud API | 10 | Test number + test recipients | ☐ | App + system user + phone number id; submit templates for approval (lead time). |
@@ -39,7 +39,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | Purpose | Path (relative to `NEXT_PUBLIC_SITE_URL`) | Phase | Verification mechanism |
 | --- | --- | --- | --- |
 | Supabase auth callback | `/auth/callback` | 3 | Supabase session exchange. Add to the project's redirect allow-list (see `docs/supabase-setup.md`). |
-| Razorpay webhook | `/api/webhooks/razorpay` (final path TBD) | 7 | Raw-body HMAC signature + `RAZORPAY_WEBHOOK_SECRET` |
+| Razorpay webhook | `/api/webhooks/razorpay` | 7 | Raw-body HMAC-SHA256 of the request bytes vs `X-Razorpay-Signature` + `RAZORPAY_WEBHOOK_SECRET`. Event id from `X-Razorpay-Event-Id`. Built + tested (`payments.itest.ts`); path is final. |
 | Shiprocket callback | `/api/webhooks/shiprocket` (final path TBD) | 8 | Provider's **actual** documented mechanism; if weak/absent, verify critical state against authenticated API |
 | Inngest endpoint | `/api/inngest` | 6 | `INNGEST_SIGNING_KEY` |
 | WhatsApp status callback | `/api/webhooks/whatsapp` (final path TBD) | 10 | `META_APP_SECRET` signature + `WHATSAPP_VERIFY_TOKEN` handshake |

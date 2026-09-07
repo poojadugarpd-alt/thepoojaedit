@@ -254,12 +254,78 @@ crons are stubbed behind `ReconcilePort` / `runReconciliation` and get real bodi
 in Phases 7–8. `on-outbox-dispatched` currently just records the event — real
 consumers (email/WhatsApp, invoice) attach in Phases 9–10.
 
+## Phase 7 progress (2026-09-07) — PARTIAL pass (review gate)
+
+Razorpay test-mode checkout + end-to-end prepaid/COD. Built as a full slice and
+proven with a deterministic in-memory provider double; **live Razorpay test
+evidence is deferred** until a test account exists (blocker #2). This mirrors the
+Phase 3 pattern: the code path is real and exhaustively tested, the "claim live
+integration success" step waits for credentials.
+
+**New:**
+- `src/server/payments/` — `port.ts` (provider-neutral `PaymentProvider`
+  interface + normalised types + typed errors), `razorpay-crypto.ts` (pure HMAC
+  verify + payload normalisation, unit-tested), `razorpay.ts` (`RazorpayProvider`
+  — all network confined here), `cashfree.ts` (`CashfreeProvider` — every method
+  throws `ProviderDisabledError`, proves the port is neutral), `testing.ts`
+  (`FakeRazorpay extends RazorpayProvider`, overrides only the network methods so
+  the real crypto runs), `service.ts` (orchestration: `createPaymentAttempt`,
+  `verifyPrepaidCheckout`, `handleProviderWebhook`, `makePaymentReconcilePort`,
+  `createOrderRefund`), `index.ts` (provider selection + prisma-bound wrappers).
+- `src/app/api/webhooks/razorpay/route.ts` — raw-body sink, `runtime=nodejs`.
+- `src/schemas/checkout.ts` + `src/lib/in-states.ts` — address/quote validation.
+- `src/app/checkout/{page,actions}.tsx` + `src/features/checkout/{checkout-client,
+  resume-payment,razorpay}.tsx` — real checkout UI (server-computed quote, method
+  toggle, Razorpay Checkout handoff, COD path) replacing the Phase 4 placeholder.
+- `src/app/order/[orderNumber]/page.tsx` — success banner + pending-payment
+  recovery panel.
+- `src/inngest/functions.ts` — `reconcile-payments` cron (`*/5`), no-ops without keys.
+- `src/server/orders/timeline.ts` — shared `appendOrderTimeline` (place-order and
+  lifecycle refactored onto it).
+
+Decisions **D-51…D-58**.
+
+| Playbook §10 check | Result |
+| --- | --- |
+| legitimate provider test payment | ◐ `payments.itest.ts` via `FakeRazorpay` (real HMAC) → order CONFIRMED/PAID, reservation converted, `order.payment_settled` emitted. **Live Razorpay test-mode run deferred** (blocker #2). |
+| forged browser success | ✅ bad checkout signature → `PaymentVerificationError`, order stays PENDING_PAYMENT, reservation intact |
+| invalid signature (webhook) | ✅ tampered `x-razorpay-signature` → 401, `WebhookEvent` **never persisted** |
+| wrong order / amount / currency | ✅ valid signature + wrong amount or currency → `PaymentMismatchError`, order NEEDS_REVIEW, one `payment-review:<order>` task, no fulfilment |
+| authorized but not captured | ✅ `authorized` payment → attempt AUTHORIZED, order stays PENDING_PAYMENT/UNPAID, not fulfilled |
+| duplicate / stale events | ✅ duplicate `payment.captured` webhook (same event id) → one `WebhookEvent`, one settlement, stock reduced once; stale `payment.failed` after capture → order stays PAID/CONFIRMED (no downgrade) |
+| failure after provider creation | ✅ `createOrder` throws after row claimed → retry reuses the **same** `PaymentAttempt` (one local row, one provider order) |
+| payment captured after reservation expiry | ✅ webhook capture post-expiry with stock gone → NEEDS_REVIEW + PAID (never hidden as failed) + review task (Phase 5 late-capture logic through the webhook path) |
+| duplicate captured attempts | ✅ second `payment.captured` on a settled order → recorded as a distinct CAPTURED attempt + `payment.excess_capture` timeline + review task; order not re-confirmed, stock not re-reduced |
+| pending-payment UI / recovery | ✅ `/order/[orderNumber]` renders `ResumePayment` for a prepaid PENDING_PAYMENT order; `resumePaymentAction` (token-guarded) starts a fresh attempt. e2e covers the COD terminal state; prepaid modal needs keys. |
+| COD never shown as prepaid | ✅ `createPaymentAttempt` refuses a COD order (`PaymentError`); COD stays PENDING_CONFIRMATION / COD_PENDING; `e2e/checkout.spec.ts` asserts the order page shows "COD PENDING" and never "PAID" |
+| aggregate refund limit under concurrency | ✅ two concurrent `createOrderRefund` for the full amount → exactly one succeeds, the other `RefundLimitError` (order row `FOR UPDATE` serialises); a completed full refund → order REFUNDED |
+| provider-neutral interface | ✅ `CashfreeProvider` implements the port, every op throws `ProviderDisabledError` — labelled disabled, not a fake |
+| local deterministic fixtures | ✅ `razorpay-crypto.test.ts` (10) known-vector HMAC + normalisation; `payments.itest.ts` (17) end-to-end via `FakeRazorpay` |
+| reconciliation | ✅ `makePaymentReconcilePort` — a missed capture webhook is caught by polling `fetchOrderPayments` and settled; wired as the `reconcile-payments` cron |
+
+**Suite:** `npm run check` ✅ (lint · typecheck · **58** unit · build — `/api/webhooks/razorpay`, `/checkout`, `/order/[orderNumber]` in the route table). `npm run test:integration` ✅ **103/103** (11 files; `payments.itest.ts` **17** new). `npm run test:e2e` ✅ **22/22** (chromium + mobile; `checkout.spec.ts` **2** new).
+
+**Covers (advanced, not yet `passed`):** **AC-03** (guest prepaid + COD checkout without login), **AC-06** (browser tampering fails; only verified captured payments confirm), **AC-07** (duplicate/stale webhooks & double checkout → no duplicates — webhook inbox + `SideEffectExecution` + `runOnce settle:<order>`), **AC-08** (late capture / unknown outcome reconciled), **AC-09** (COD distinct from prepaid at every step).
+
+**Deferred to a live Razorpay test account (blocker #2):**
+- A real test-mode payment through Razorpay Checkout (UPI/card), real signature.
+- A real Razorpay webhook delivery with a genuine `X-Razorpay-Signature`.
+- The prepaid path in the browser (the Checkout modal needs `NEXT_PUBLIC_RAZORPAY_KEY_ID`).
+- AC-06/07/08/09 stay `in-progress` until this evidence exists; no live charge or
+  refund without explicit authorisation (playbook Phase 7 checkpoint).
+
+**Residual / carried forward:** admin refund WORKFLOW (authorisation UI, restock
+decision, credit notes) is Phase 9 — Phase 7 built only the `createOrderRefund`
+primitive + the aggregate-limit guard. Real GST rates/GSTIN still owner-confirmed
+before live checkout. Notifications on `order.placed` / `payment.captured` are
+Phase 10 (`on-outbox-dispatched` still only records).
+
 ## Blockers / information needed before later phases
 
 None blocked Phases 1–2 (local embedded PostgreSQL, no account). **Phase 3 is the first that wants a Supabase project** (Auth + Storage). Recorded so they are not rediscovered late:
 
 1. **Supabase project (dev)** — needed from Phase 3 for Auth + Storage, and to run the deferred Supavisor+Prisma concurrency proof. A local Supabase CLI stack (Docker) is an alternative but this machine has no Docker; a free hosted dev project is the likely path. Free-tier allowances / pause / backup entitlement verified against the live account when created. (D-open-3 resolved for Phase 2 = embedded Postgres; Phase 3 revisits.)
-2. **Razorpay test account** — needed from Phase 7.
+2. **Razorpay test account** — **now the active gate for Phase 7's full pass.** Code slice complete + tested; needs test key id/secret + webhook secret, then a real test-mode payment and a real signed webhook to move AC-06/07/08/09 to `passed`. Steps in `docs/integration-setup.md`. No live charge/refund without explicit authorisation.
 3. **Shiprocket account + confirmation of an available test/sandbox mode** — needed from Phase 8. AC-13 stays blocked until this is confirmed.
 4. **Meta WhatsApp Cloud API + approved templates**, **Resend verified sender** — needed from Phase 10.
 5. **Inngest account (dev)** — needed from Phase 6.

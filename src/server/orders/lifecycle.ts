@@ -1,7 +1,6 @@
 import "server-only";
 
 import type { Order, PrismaClient } from "@/generated/prisma";
-import { emitDomainEvent } from "@/server/events/emit";
 import { cancelCodAllocation } from "@/server/inventory/cod";
 import { InsufficientStockError } from "@/server/inventory/errors";
 import {
@@ -11,29 +10,16 @@ import {
 } from "@/server/inventory/reservations";
 
 import { assertTransition, ORDER_TRANSITIONS, type OrderStatus } from "./state";
+import { appendOrderTimeline } from "./timeline";
 
-async function timeline(
+function timeline(
   tx: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0],
   orderId: string,
   type: string,
   payload: Record<string, unknown>,
   actor?: string,
 ) {
-  await tx.orderEvent.create({
-    data: {
-      orderId,
-      type,
-      source: actor ? "admin" : "system",
-      actor: actor ?? null,
-      payload: payload as Record<string, never>,
-    },
-  });
-  await emitDomainEvent(tx, {
-    type,
-    aggregateType: "Order",
-    aggregateId: orderId,
-    payload,
-  });
+  return appendOrderTimeline(tx, { orderId, type, payload, actor });
 }
 
 /** COD acceptance → confirmed. Idempotent. Fulfillment becomes possible. */

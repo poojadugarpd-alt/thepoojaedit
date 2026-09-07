@@ -5,17 +5,23 @@ import { logger } from "@/lib/logger";
 import {
   dispatchPending,
   runOnce,
+  runReconciliation,
   runReservationSweep,
   runStaleOutboxAlert,
 } from "@/server/events";
+import {
+  getPaymentProvider,
+  isPrepaidConfigured,
+  makePaymentReconcilePort,
+} from "@/server/payments";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
 
 /**
  * Required recurring work (master §8): outbox dispatch/recovery, reservation
- * expiry, stale/failed operation alerts. Payment/shipment reconciliation
- * schedules are added in Phase 7/8 behind the ReconcilePort interface.
+ * expiry, stale/failed operation alerts, payment reconciliation. Shipment
+ * reconciliation is added in Phase 8 behind the same ReconcilePort interface.
  * Schedules are documented in docs/operations-runbook.md.
  */
 
@@ -46,6 +52,22 @@ export const outboxHealth = inngest.createFunction(
   { id: "outbox-health", concurrency: 1 },
   { cron: "*/10 * * * *" },
   async ({ step }) => step.run("check", () => runStaleOutboxAlert(prisma)),
+);
+
+/**
+ * Poll Razorpay for payment attempts stuck in a non-terminal state (missed or
+ * dropped webhooks — master §8 "Reconcile pending/ambiguous payments
+ * periodically"). No-ops when Razorpay keys are absent in this environment.
+ */
+export const reconcilePayments = inngest.createFunction(
+  { id: "reconcile-payments", concurrency: 1 },
+  { cron: "*/5 * * * *" },
+  async ({ step }) => {
+    if (!isPrepaidConfigured()) return { skipped: "razorpay not configured" };
+    return step.run("reconcile", () =>
+      runReconciliation([makePaymentReconcilePort(prisma, getPaymentProvider())]),
+    );
+  },
 );
 
 /**
@@ -81,5 +103,6 @@ export const functions = [
   dispatchOutbox,
   sweepReservations,
   outboxHealth,
+  reconcilePayments,
   onOutboxDispatched,
 ];
