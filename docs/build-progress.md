@@ -208,6 +208,52 @@ scheduled expiry sweep is a service (`expireReservations`) — the cron is Phase
 `SECOND_HAND_MARGIN` stays disabled; real GST rates/GSTIN owner-confirmed before
 live checkout.
 
+## Phase 6 progress (2026-09-07) — checkpoint ready
+
+Durable event delivery & scheduled recovery. Transactional outbox → leased
+dispatcher → idempotent consumers → operational tasks → authorised replay, plus
+the recurring recovery jobs as real Inngest schedules (not request-scoped timers).
+
+**New:** `src/server/events/{emit,dispatcher,side-effects,operational-tasks,scheduled}.ts`,
+`src/server/webhooks/inbox.ts`, `src/inngest/{client,transport,functions}.ts`,
+`src/app/api/inngest/route.ts`. `place-order.ts` + `orders/lifecycle.ts` refactored
+onto `emitDomainEvent(tx, …)`. `inngest@3.54.2` + `.npmrc legacy-peer-deps=true`
+(D-43). Decisions **D-43…D-50**.
+
+| Playbook §9 check | Result |
+| --- | --- |
+| committed domain event survives a dispatcher outage | ✅ `events.itest.ts` — `PENDING` outbox row persists; claimable later, correct type |
+| duplicate send does not duplicate local effects (crash after send, before mark → redelivery) | ✅ `events.itest.ts` — lease expires, event re-claimed, consumer re-run, `runOnce` dedups → effect counter stays 1, `SideEffectExecution` SUCCEEDED, outbox DISPATCHED |
+| crash during consumer execution | ✅ `events.itest.ts` "FAILED effect can be retried" — RUNNING→FAILED row is re-run on next delivery, ends SUCCEEDED, attempts=2 |
+| stale lease recovered; original owner cannot mark | ✅ `events.itest.ts` — fresh claim within lease gets nothing; after lease, worker B claims (attempts=2); `markDispatched` by A → false, by B → true |
+| successful steps not needlessly replayed | ✅ `events.itest.ts` — 2nd `runOnce` on a SUCCEEDED key → `{ran:false, reason:"already_succeeded"}`, `run` called once |
+| exhausted retries surface once | ✅ `events.itest.ts` — repeated failing dispatch (maxAttempts 2) → outbox `FAILED` + **exactly one** `OperationalTask` `outbox:<id>` |
+| replay is authorised & audited | ✅ `events.itest.ts` — `replayOutboxEvent` → PENDING/attempts 0 + `AdminActivityLog{action:"outbox.replay", entityId}` + `outbox:<id>` task RESOLVED. `replayOutboxAsOwner` gates on `requireOwner()` |
+| expired reservations released while storefront idle | ✅ `events.itest.ts` — `runReservationSweep` releases a TTL-expired reservation (reservedQty 2→0), `released: 1` |
+| remote-unknown outcome (adapter fixture) | ✅ `events.itest.ts` — `FakeTransport` `throw-after-accept`: send throws after the remote accepted; next delivery re-runs the consumer, `runOnce` dedups (effect once), `providerRef` preserved |
+| webhook inbox dedup + bad signature + persistence boundary | ✅ `events.itest.ts` — redelivered event → `isNew:false`, one row; `WebhookVerificationError` → nothing persisted (`count()===0`) |
+
+**Suite:** `npm run check` ✅ (lint · typecheck · **48** unit · build — `/api/inngest`
+in the route table). `npm run test:integration` ✅ **86/86** (10 files, `events.itest.ts`
+**11** new). `npm run test:e2e` ✅ **18/18** (chromium + mobile).
+
+**Covers:** **AC-07** (webhook/checkout dedup — outbox + webhook-inbox layer added on
+the Phase 5 `CheckoutRequest` foundation) and **AC-10** (side-effect failure never
+rolls back a committed order; leased recovery + audited replay). Both move to
+`in-progress` with Phase 6 evidence; they reach `passed` when Razorpay (Phase 7)
+and notifications (Phase 10) exercise the real consumers.
+
+**Checkpoint doc:** `operations-runbook.md` §3 (schedule owner, intervals, lease/
+retry/backoff, stale thresholds) and §4 (authorised replay + a symptom→action
+manual-recovery table) filled.
+
+**Residual (carried forward):** real Inngest project (dev) still to be created —
+the endpoint + crons are wired and unit-proven, but no live scheduled run has
+executed against a deployed project (blocker #5). Payment/shipment reconciliation
+crons are stubbed behind `ReconcilePort` / `runReconciliation` and get real bodies
+in Phases 7–8. `on-outbox-dispatched` currently just records the event — real
+consumers (email/WhatsApp, invoice) attach in Phases 9–10.
+
 ## Blockers / information needed before later phases
 
 None blocked Phases 1–2 (local embedded PostgreSQL, no account). **Phase 3 is the first that wants a Supabase project** (Auth + Storage). Recorded so they are not rediscovered late:

@@ -3,6 +3,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import type { Order, PrismaClient } from "@/generated/prisma";
+import { emitDomainEvent } from "@/server/events/emit";
 import { allocateCodStock } from "@/server/inventory/cod";
 import { reserveAll } from "@/server/inventory/reservations";
 import { issueOrderAccessToken } from "@/server/orders/access-tokens";
@@ -268,7 +269,7 @@ export async function placeOrder(
         data: { status: "COMPLETED", orderId: order.id, resultRef: order.orderNumber },
       });
 
-      // Timeline + transactional outbox (dispatcher wired in Phase 6).
+      // Timeline + transactional outbox — same tx as the order (master §8).
       const payload = {
         orderId: order.id,
         orderNumber: order.orderNumber,
@@ -276,27 +277,13 @@ export async function placeOrder(
         totalPaise: order.totalPaise,
       };
       await tx.orderEvent.create({
-        data: {
-          orderId: order.id,
-          type: "order.placed",
-          source: "system",
-          payload,
-        },
+        data: { orderId: order.id, type: "order.placed", source: "system", payload },
       });
-      const domainEvent = await tx.domainEvent.create({
-        data: {
-          type: "order.placed",
-          aggregateType: "Order",
-          aggregateId: order.id,
-          payload,
-        },
-      });
-      await tx.outboxEvent.create({
-        data: {
-          domainEventId: domainEvent.id,
-          aggregateType: "Order",
-          aggregateId: order.id,
-        },
+      await emitDomainEvent(tx, {
+        type: "order.placed",
+        aggregateType: "Order",
+        aggregateId: order.id,
+        payload,
       });
 
       let guestAccessToken: string | undefined;

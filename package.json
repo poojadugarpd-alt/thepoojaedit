@@ -34,6 +34,7 @@
     "@prisma/client": "7.10.0",
     "@supabase/ssr": "0.12.6",
     "@supabase/supabase-js": "2.115.0",
+    "inngest": "3.54.2",
     "next": "15.5.25",
     "pg": "8.23.0",
     "pino": "^9.6.0",

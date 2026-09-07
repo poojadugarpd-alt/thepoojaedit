@@ -1,10 +1,27 @@
+import "server-only";
+
 /**
- * events domain service.
- *
- * Business logic for the events domain lives here and is the ONLY place it lives.
- * Route handlers, Server Actions, admin screens and Inngest jobs import from
- * this module; they never re-implement its rules. See docs/module-map.md.
- *
- * Populated in a later phase; intentionally empty in Phase 1.
+ * Events domain service (master §8). Composition of the transactional outbox
+ * producer, the leased dispatcher, durable consumer dedup, operational tasks and
+ * the scheduled-recovery job bodies. Inngest wiring lives in `src/inngest`.
  */
-export {};
+import { prisma } from "@/lib/db";
+import { requireOwner } from "@/server/auth/require-admin";
+
+import { replayOutboxEvent } from "./dispatcher";
+
+export * from "./emit";
+export * from "./dispatcher";
+export * from "./side-effects";
+export * from "./operational-tasks";
+export * from "./scheduled";
+
+/** Owner-only, audited replay for a stuck/failed outbox event. */
+export async function replayOutboxAsOwner(outboxEventId: string, reason?: string) {
+  const owner = await requireOwner();
+  return replayOutboxEvent(prisma, {
+    outboxEventId,
+    adminUserId: owner.id,
+    reason,
+  });
+}

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Order, PrismaClient } from "@/generated/prisma";
+import { emitDomainEvent } from "@/server/events/emit";
 import { cancelCodAllocation } from "@/server/inventory/cod";
 import { InsufficientStockError } from "@/server/inventory/errors";
 import {
@@ -15,7 +16,7 @@ async function timeline(
   tx: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0],
   orderId: string,
   type: string,
-  payload: object,
+  payload: Record<string, unknown>,
   actor?: string,
 ) {
   await tx.orderEvent.create({
@@ -24,14 +25,14 @@ async function timeline(
       type,
       source: actor ? "admin" : "system",
       actor: actor ?? null,
-      payload,
+      payload: payload as Record<string, never>,
     },
   });
-  const de = await tx.domainEvent.create({
-    data: { type, aggregateType: "Order", aggregateId: orderId, payload },
-  });
-  await tx.outboxEvent.create({
-    data: { domainEventId: de.id, aggregateType: "Order", aggregateId: orderId },
+  await emitDomainEvent(tx, {
+    type,
+    aggregateType: "Order",
+    aggregateId: orderId,
+    payload,
   });
 }
 
