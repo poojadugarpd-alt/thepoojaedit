@@ -9,13 +9,13 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | Field | Value |
 | --- | --- |
 | Authorized phase range | Phases 0–4 |
-| Current phase | Phase 4 — Product administration and dual storefronts (**in progress**) |
+| Current phase | Phase 4 — Product administration and dual storefronts (**checkpoint ready**) |
 | Phase 0–2 status | `passed` (2026-09-07); Phase 2 schema sign-off still open |
 | Phase 3 status | `passed (partial)` — security review gate; live Supabase evidence deferred |
-| Phase 4 status | `in-progress` (2026-09-07) — read side done (storefronts, PDP, cart, catalog service, legacy dev data); admin CRUD / search / collections / sitemap / Playwright journeys remain |
-| Last commit | _git log — … / `feat: Phase 4 (part 1) — catalog read layer, dual storefronts, cart`_ |
-| Tests run | Phase 4p1: `npm run check` ✓ (lint/type/**unit 34**/build) · `npm run test:integration` ✓ **48/48** (real PostgreSQL, +10 catalog) · browser-verified listing/PDP/mixed-cart on legacy data · 360px no overflow |
-| Next task | Phase 4 part 2 — admin product/variant/category/collection/image CRUD + audit; `/search`; collection pages; `sitemap.ts`/`robots.ts`; Playwright storefront journeys |
+| Phase 4 status | `passed` (2026-09-07) — **storefront/admin review gate**: read + admin + search + collections + SEO + Playwright journeys done; residual polish + live-Supabase image upload noted |
+| Last commit | _git log — Phase 4 parts 1–2 + `test: Phase 4 — Playwright storefront journeys`_ |
+| Tests run | `npm run check` ✓ (lint/type/**unit 34**/build) · `npm run test:integration` ✓ **56/56** (real PostgreSQL, +10 catalog +8 admin) · `npm run test:e2e --project=chromium` ✓ **9/9** (5 shell + 4 storefront) · admin edit verified end-to-end (persist + audit row) |
+| Next task | Phase 4 storefront/admin checkpoint review, then authorize Phase 5 (pricing, tax, inventory, checkout core) |
 
 ## Phase ledger
 
@@ -25,7 +25,7 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 1 | Application foundation and environment isolation | `passed` | `chore: Phase 1 application foundation` | Next.js 15.5.25 app; `src/lib/{app-env,env,public-env,logger,money}.ts`; domain folders `src/server/*`, `src/features/*`; `/api/health`; middleware; instrumentation; Vitest (19) + Playwright (4) harness; `.github/workflows/ci.yml`; `.env.example`. See "Phase 1 checkpoint" below. |
 | 2 | Database, migrations, Prisma and business schema | `passed` (review gate) | `feat: Phase 2 database + Prisma 7 schema` | `prisma/schema.prisma` (42 models, master §5); `prisma/migrations/` (init + `manual_constraints`); `prisma.config.ts`; `src/lib/db.ts` (adapter-pg singleton); `prisma/seed.ts` (idempotent fixtures); `scripts/{pg,db-dev}.ts` (embedded PostgreSQL); `tests/integration/**` (18 real-PG tests). See "Phase 2 checkpoint" below. |
 | 3 | Authentication, authorization and asset storage | `passed (partial)` — security review gate; live Supabase evidence deferred | `feat: Phase 3 auth, guards, guest tokens, storage` | `src/lib/supabase/{config,server,client,middleware}.ts`; `src/server/auth/*`; `src/server/admin/{guards,bootstrap}.ts`; `src/server/customers/*`; `src/server/orders/access-tokens.ts`; `src/server/catalog/product-images.ts`; `src/lib/{storage,rate-limit}.ts`; `src/schemas/auth.ts`; `supabase/policies/*.sql`; `docs/supabase-setup.md`; +20 integration tests. |
-| 4 | Product administration and dual storefronts | `in-progress` (part 1 committed) | `feat: Phase 4 (part 1) …` | `src/server/catalog/{queries,public-shape,index}.ts`; `src/lib/catalog-routes.ts`; `src/features/catalog/*` (card/grid/price/gallery/detail/listing/add-to-cart); `src/features/cart/*` (Zustand store, view, badge); `/the-pooja-edit` + `/thrift` listings + `[slug]` PDPs; `/api/catalog/[segment]/products`; `/cart`; `/checkout` placeholder; `/legacy-media` dev route; `migration/scripts/import-to-dev-db.mjs`; `tests/integration/catalog.itest.ts` (10). See "Phase 4 progress" below. |
+| 4 | Product administration and dual storefronts | `passed` (review gate) | `feat: Phase 4 (part 1)` + `feat: Phase 4 (part 2)` + `test: Phase 4 Playwright` | **Reads:** `src/server/catalog/{queries,public-shape,admin}.ts`; `/the-pooja-edit` + `/thrift` listings, `[slug]` PDPs, `collections/[slug]`, `/search`; `/api/catalog/[segment]/products`; `sitemap.ts` + `robots.ts`. **Cart:** `src/features/cart/*` (Zustand persist, mixed, per-item return note). **Admin:** `/admin` + `/admin/products` (+ `[id]`, `/new`) with `src/server/catalog/admin.ts` (validation + audit) + `src/app/admin/products/actions.ts` + `src/features/admin/action-form.tsx`; `DEV_ADMIN_AUTH` dev bypass. **Dev data:** `migration/scripts/import-to-dev-db.mjs` (116 products) + `/legacy-media` route. **Tests:** `catalog.itest.ts` (10) + `catalog-admin.itest.ts` (8) + `e2e/storefront.spec.ts` (4). See "Phase 4 progress" below. |
 | 5 | Pricing, tax, inventory and checkout core | `not-started` | — | — |
 | 6 | Durable event delivery and scheduled recovery | `not-started` | — | — |
 | 7 | Razorpay and end-to-end prepaid/COD checkout | `not-started` | — | — |
@@ -128,7 +128,7 @@ Structured so the Supabase-auth dependency is one seam (`src/server/auth/identit
 | Live configuration blockers listed | Yes — see `integration-setup.md` and the "Blockers" section below |
 | Any mandated version that cannot safely deploy | None. Next.js 15.5.x is Maintenance LTS and still security-patched; all other pins are current. One watch item (Next.js 16 is now Active LTS) is recorded in `decisions.md` as a future proposal, not a Phase 0 blocker |
 
-## Phase 4 progress (2026-09-07) — in progress
+## Phase 4 progress (2026-09-07) — checkpoint ready
 
 **Done (part 1, committed `feat: Phase 4 (part 1) …`):**
 
@@ -144,16 +144,34 @@ Structured so the Supabase-auth dependency is one seam (`src/server/auth/identit
 | Responsive / keyboard / no 360px overflow | ✅ 360px verified no horizontal overflow; keyboard focus styles throughout; deeper a11y pass pending |
 | Legacy-content as the dev dataset | ✅ `migration/scripts/import-to-dev-db.mjs` → 116 products (27 THE_POOJA_EDIT + 89 THRIFT) in the dev DB as migration-draft; images via dev-only `/legacy-media` route |
 
-**Covers:** foundations of **AC-01** (catalog isolation + mixed cart), **AC-02**
-(thrift detail visible, SOLD URLs survive & unbuyable), part of **AC-16**
-(mobile 360, keyboard focus, SEO metadata).
+**Done (part 2, commits `feat: Phase 4 (part 2)` + `test: Phase 4 Playwright`):**
 
-**Remaining in Phase 4 (part 2):** admin product / variant / category /
-collection / image CRUD + publication validation + audited changes; `/search`
-page; `/…/collections/[slug]` pages; `sitemap.ts` + `robots.ts`; Playwright
-storefront journeys (guest browse, mixed cart survives reload, sold thrift,
-keyboard); accessible empty/error/retry/loading states pass; storefront/admin
-visual + functional checkpoint review.
+| Playbook §7 / §10 item | State |
+| --- | --- |
+| Admin product/variant/category/collection CRUD | ✅ `src/server/catalog/admin.ts` — create/update product, publish/status, upsert variant, thrift details, categories, collections. UI: `/admin/products` (filter/search/paginate), `/admin/products/[id]` (all sections), `/admin/products/new` |
+| Publication validation | ✅ `validateForPublication` — image + priced active variant; THRIFT also needs details + condition + ≥1 measurement; one-of-one on-hand ≤ 1. Shown as a checklist on the edit page; `publishProduct` refuses otherwise |
+| Audited changes | ✅ every mutation writes `AdminActivityLog` (before/after/reason); browser-verified |
+| Cross-catalogue collection membership rejected | ✅ `addProductToCollection` + integration test |
+| Admin auth | `requireAdmin()` gates the admin layout; **`DEV_ADMIN_AUTH=1`** dev bypass (development + Supabase-unconfigured only, logged) so the UI is reviewable now — swaps to real Supabase auth with no code change |
+| `/search` | ✅ title/brand/description, catalogue filter, `noindex` |
+| Collection pages | ✅ `/…/collections/[slug]` both catalogues, `notFound()` when missing/inactive |
+| `sitemap.ts` / `robots.ts` | ✅ published products + active collections + static; admin/account/cart/checkout/api/search/legacy-media disallowed |
+| Playwright journeys | ✅ `e2e/storefront.spec.ts` (4) + `e2e/shell.spec.ts` (5) — guest browse, 360px no overflow, **mixed cart survives reload (AC-01)**, **sold thrift no buyable control (AC-02)**, skip-link focus |
+
+**Covers:** **AC-01** (catalog isolation across queries + admin + mixed cart
+survives reload), **AC-02** (thrift details visible, SOLD URLs survive &
+unbuyable, `OutOfStock` JSON-LD), part of **AC-16** (mobile 360 no overflow,
+keyboard focus, per-page SEO metadata + structured data, public-only caching).
+
+**Residual (not blockers for the Phase 4 gate — carry into later phases):**
+- **Signed image upload** in admin needs Supabase Storage (Phase 3 deferred).
+  `src/server/catalog/product-images.ts` + a fake port are tested; the admin edit
+  page shows existing (legacy) images + set-primary/delete, upload lands with
+  the Supabase project.
+- Category/collection management UIs are thin (domain layer + membership done;
+  full CRUD screens can extend in Phase 11's dashboard).
+- Deeper a11y sweep (axe run) + full error/retry/loading-state matrix — Phase 12.
+- Price-sort keyset pagination (currently a bounded first page) — revisit at scale.
 
 ## Blockers / information needed before later phases
 
