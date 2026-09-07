@@ -14,15 +14,20 @@ import {
   isPrepaidConfigured,
   makePaymentReconcilePort,
 } from "@/server/payments";
+import {
+  ensureShipmentForConfirmedOrder,
+  getFulfilmentProvider,
+  isShippingConfigured,
+  makeShipmentReconcilePort,
+} from "@/server/shipping";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
 
 /**
  * Required recurring work (master §8): outbox dispatch/recovery, reservation
- * expiry, stale/failed operation alerts, payment reconciliation. Shipment
- * reconciliation is added in Phase 8 behind the same ReconcilePort interface.
- * Schedules are documented in docs/operations-runbook.md.
+ * expiry, stale/failed operation alerts, payment reconciliation, shipment
+ * reconciliation. Schedules are documented in docs/operations-runbook.md.
  */
 
 export const dispatchOutbox = inngest.createFunction(
@@ -71,10 +76,69 @@ export const reconcilePayments = inngest.createFunction(
 );
 
 /**
+ * Poll Shadowfax for shipments still moving through the network, to catch missed
+ * or dropped tracking callbacks (master §8, v1.1). No-op without credentials.
+ */
+export const reconcileShipments = inngest.createFunction(
+  { id: "reconcile-shipments", concurrency: 1 },
+  { cron: "*/10 * * * *" },
+  async ({ step }) => {
+    if (!isShippingConfigured()) return { skipped: "shadowfax not configured" };
+    return step.run("reconcile", () =>
+      runReconciliation([makeShipmentReconcilePort(prisma, getFulfilmentProvider())]),
+    );
+  },
+);
+
+/**
+ * When an order becomes CONFIRMED (prepaid captured or COD confirmed), create
+ * its Shadowfax shipment. Idempotent via the unique `merchantReference`; a
+ * separate consumer of the same `poojaedit/outbox.dispatched` event so it can be
+ * retried independently of the recorder below.
+ */
+export const createShipmentOnConfirm = inngest.createFunction(
+  { id: "create-shipment-on-confirm", retries: 4, concurrency: 4 },
+  { event: "poojaedit/outbox.dispatched" },
+  async ({ event, step }) => {
+    const { domainEventId, type, aggregateType, aggregateId } = event.data as {
+      domainEventId: string;
+      type: string;
+      aggregateType: string;
+      aggregateId: string;
+    };
+    const RELEVANT = new Set([
+      "order.payment_settled",
+      "order.cod_confirmed",
+      "order.confirmed",
+    ]);
+    if (aggregateType !== "Order" || !RELEVANT.has(type)) {
+      return { skipped: "not a confirmation event" };
+    }
+    if (!isShippingConfigured()) return { skipped: "shadowfax not configured" };
+
+    return step.run("ensure-shipment", () =>
+      runOnce(prisma, {
+        executionKey: `${domainEventId}:shipment`,
+        handlerName: "ensure-shipment",
+        eventId: domainEventId,
+        run: async () => {
+          const r = await ensureShipmentForConfirmedOrder(
+            prisma,
+            getFulfilmentProvider(),
+            { orderId: aggregateId },
+          );
+          return { result: r };
+        },
+      }),
+    );
+  },
+);
+
+/**
  * Consumer for every dispatched domain event. `step.run` gives durable retry;
  * `runOnce` adds cross-redelivery dedup keyed on the domain event. Real effects
- * (confirmation email / WhatsApp / invoice / shipment) attach in later phases as
- * additional consumers of the same event.
+ * (confirmation email / WhatsApp / invoice) attach in later phases as additional
+ * consumers of the same event.
  */
 export const onOutboxDispatched = inngest.createFunction(
   { id: "on-outbox-dispatched", retries: 4 },
@@ -104,5 +168,7 @@ export const functions = [
   sweepReservations,
   outboxHealth,
   reconcilePayments,
+  reconcileShipments,
+  createShipmentOnConfirm,
   onOutboxDispatched,
 ];

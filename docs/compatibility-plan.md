@@ -73,7 +73,7 @@ Prisma↔Supabase specifics to validate in Phase 2 (not assumed now):
 | Item | Plan | Phase |
 | --- | --- | --- |
 | Razorpay | Server SDK + raw-body webhook verification. Provider-neutral interface; Cashfree is an interface-only future adapter, labelled disabled. | 7 |
-| Shiprocket | Typed HTTP client, server-side credential refresh. Callback verification uses the provider's **actual** documented mechanism — no invented HMAC header. | 8 |
+| Shadowfax (master v1.1; single carrier) | Typed HTTP client. Callback auth is weak/absent by design — the service re-verifies every tracking transition against the authenticated tracking API; `ShipmentEvent.eventFingerprint` dedupes. No invented HMAC header. | 8 |
 | Inngest | `inngest` SDK + transactional outbox. Real deployed schedules; no in-process timers / Vercel request-lifetime reliance. | 6 |
 | WhatsApp | Meta WhatsApp Cloud API behind an abstraction; approved templates only. | 10 |
 | Email | `resend` + React Email (`@react-email/*`), versioned templates. | 10 |

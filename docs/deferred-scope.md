@@ -22,7 +22,7 @@ Explicitly **out** of the MVP (master specification §11). Recorded so they are 
 
 If any of these cannot be configured with real credentials + (where applicable) a supported test mode, the relevant AC is recorded `blocked` and full production readiness is **not** declared:
 
-- Shiprocket test/sandbox mode (AC-13) — currently unconfirmed.
+- Shadowfax merchant account + a provider-supported test arrangement (AC-13) — currently unconfirmed. (Provider changed from Shiprocket at the owner's direction, master v1.1 / D-59.)
 - Razorpay live configuration (AC-06/08/09).
 - WhatsApp approved templates + Resend verified sender (AC-14).
 - Owner-confirmed GST/legal/invoice configuration (AC-11, launch checklist).

@@ -139,6 +139,44 @@ export default async function OrderPage({ params, searchParams }: Params) {
         )}
       </div>
 
+      {order.shipments.length > 0 && (
+        <div className="mt-6 rounded border border-black/10 p-4 text-sm dark:border-white/15">
+          <p className="font-medium">Tracking</p>
+          {order.shipments.map((s) => (
+            <div key={s.id} className="mt-2">
+              <Row label="Carrier" value={s.courier ?? "Shadowfax"} />
+              {s.awb && <Row label="AWB" value={s.awb} />}
+              <Row
+                label="Status"
+                value={s.statusNormalized.replaceAll("_", " ")}
+              />
+              {s.trackingUrl && (
+                <a
+                  href={s.trackingUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="mt-1 inline-block text-xs underline"
+                >
+                  Track on the carrier site
+                </a>
+              )}
+              {s.events.length > 0 && (
+                <ol className="mt-2 space-y-0.5 text-[11px] text-black/55 dark:text-white/55">
+                  {s.events.slice(-6).map((e) => (
+                    <li key={e.id}>
+                      {(e.statusNormalized ?? e.statusRaw ?? "").replaceAll("_", " ")}
+                      {e.occurredAt
+                        ? ` — ${new Date(e.occurredAt).toLocaleDateString("en-IN")}`
+                        : ""}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <table className="mt-6 w-full text-sm">
         <thead>
           <tr className="border-b border-black/15 text-left dark:border-white/20">

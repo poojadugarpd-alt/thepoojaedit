@@ -28,9 +28,9 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 3 | Authentication, authorization and asset storage | `passed (partial)` — security review gate; live Supabase evidence deferred | `feat: Phase 3 auth, guards, guest tokens, storage` | `src/lib/supabase/{config,server,client,middleware}.ts`; `src/server/auth/*`; `src/server/admin/{guards,bootstrap}.ts`; `src/server/customers/*`; `src/server/orders/access-tokens.ts`; `src/server/catalog/product-images.ts`; `src/lib/{storage,rate-limit}.ts`; `src/schemas/auth.ts`; `supabase/policies/*.sql`; `docs/supabase-setup.md`; +20 integration tests. |
 | 4 | Product administration and dual storefronts | `passed` (review gate) | `feat: Phase 4 (part 1)` + `feat: Phase 4 (part 2)` + `test: Phase 4 Playwright` | **Reads:** `src/server/catalog/{queries,public-shape,admin}.ts`; `/the-pooja-edit` + `/thrift` listings, `[slug]` PDPs, `collections/[slug]`, `/search`; `/api/catalog/[segment]/products`; `sitemap.ts` + `robots.ts`. **Cart:** `src/features/cart/*` (Zustand persist, mixed, per-item return note). **Admin:** `/admin` + `/admin/products` (+ `[id]`, `/new`) with `src/server/catalog/admin.ts` (validation + audit) + `src/app/admin/products/actions.ts` + `src/features/admin/action-form.tsx`; `DEV_ADMIN_AUTH` dev bypass. **Dev data:** `migration/scripts/import-to-dev-db.mjs` (116 products) + `/legacy-media` route. **Tests:** `catalog.itest.ts` (10) + `catalog-admin.itest.ts` (8) + `e2e/storefront.spec.ts` (4). See "Phase 4 progress" below. |
 | 5 | Pricing, tax, inventory and checkout core | `passed` (review gate) | `feat: Phase 5 (part 1)` + `feat: Phase 5 (part 2)` | `src/server/tax/calculator.ts` (pure GST, integer paise, inclusive extraction); `src/server/inventory/{reservations,cod,errors}.ts` (atomic reserve-all, expire/release/convert, late-capture reacquire, COD alloc/cancel; ledger idempotency keys); `src/server/checkout/{quote,place-order}.ts` (server-authoritative quote + hash; idempotent checkout + snapshots + outbox in one tx); `src/server/orders/{state,lifecycle,order-number}.ts`; `src/server/shipping` (test adapter); `src/server/settings`; `/order/[orderNumber]` guest view. Tests: `calculator.test.ts`(8) + `state.test.ts`(6) unit; `inventory.itest.ts`(10) + `checkout.itest.ts`(9) integration. See "Phase 5 progress" below. |
-| 6 | Durable event delivery and scheduled recovery | `not-started` | — | — |
-| 7 | Razorpay and end-to-end prepaid/COD checkout | `not-started` | — | — |
-| 8 | Shiprocket and shipping operations | `not-started` | — | — |
+| 6 | Durable event delivery and scheduled recovery | `passed` (review gate) | `feat: Phase 6 — durable event delivery & scheduled recovery` | `src/server/events/*` (emit/dispatcher/side-effects/operational-tasks/scheduled); `src/server/webhooks/inbox.ts`; `src/inngest/*` + `/api/inngest`. See "Phase 6 progress" below. |
+| 7 | Razorpay and end-to-end prepaid/COD checkout | `passed (partial)` — live Razorpay test evidence deferred | `feat: Phase 7 (partial) — Razorpay checkout + prepaid/COD end-to-end` | `src/server/payments/*`; `/api/webhooks/razorpay`; `/checkout` + `src/features/checkout/*`; `reconcile-payments` cron. See "Phase 7 progress" below. |
+| 8 | Shadowfax and shipping operations _(provider changed from Shiprocket — master v1.1 / D-59)_ | `passed (partial)` — live Shadowfax test evidence deferred | `feat: Phase 8 (partial) — Shadowfax shipping operations` | `src/server/shipping/{port,status,shadowfax,testing,service}.ts`; `src/server/inventory/restock.ts`; `/api/webhooks/shadowfax`; `/admin/shipments/[id]/label`; `reconcile-shipments` + `create-shipment-on-confirm` Inngest fns; order-page tracking block. See "Phase 8 progress" below. |
 | 9 | Invoices, refunds and returns | `not-started` | — | — |
 | 10 | Notifications and delivery observability | `not-started` | — | — |
 | 11 | Complete the operator dashboard | `not-started` | — | — |
@@ -320,13 +320,86 @@ primitive + the aggregate-limit guard. Real GST rates/GSTIN still owner-confirme
 before live checkout. Notifications on `order.placed` / `payment.captured` are
 Phase 10 (`on-outbox-dispatched` still only records).
 
+## Phase 8 progress (2026-09-07) — PARTIAL pass (review gate)
+
+Shipping operations. **Provider changed Shiprocket → Shadowfax** at the owner's
+direction (architecture-gate, master bumped to **v1.1**, D-59). Built as a full
+slice, proven with a deterministic in-memory `FakeShadowfax`; **live Shadowfax
+test evidence is deferred** to a merchant account (blocker #3). Shadowfax is a
+single last-mile carrier — one AWB, no courier selection — and its callback auth
+is weak by design, so every tracking transition is re-verified against the
+authenticated tracking API.
+
+**New:**
+- `src/server/shipping/port.ts` — `ShippingProvider` (extends the Phase 5
+  quote-only `ShippingPort`): createShipment / fetchTracking / cancelShipment /
+  fetchLabel / fetchCodRemittance / parseWebhook (+ typed errors).
+- `status.ts` — `normalizeShadowfaxStatus` (unknown → null, not guessed),
+  `shouldApplyTransition` / `canAdvanceFulfillment` (legal step OR forward-rank
+  jump; never regress), `eventFingerprint`.
+- `shadowfax.ts` — `ShadowfaxProvider`, all `fetch` confined; endpoint
+  paths/fields follow the documented merchant API, flagged to confirm live.
+- `testing.ts` — `FakeShadowfax` (idempotent create, timeouts before/after,
+  out-of-order scans, NDR repeats, RTO, COD collected-vs-remitted).
+- `service.ts` — `createShipmentForOrder` (claim local row → probe/adopt →
+  create; `shipment-failure` task on error), `applyTrackingEvent` +
+  `reconcileShipment` (fingerprint dedup, stale-guard, order mirror),
+  `handleShadowfaxWebhook` (persist+dedupe → ignore body → API re-verify),
+  `inspectRtoReturn` (authorised, audited, restock exactly once),
+  `syncCodRemittance`, `getShipmentLabel`, `ensureShipmentForConfirmedOrder`.
+- `src/server/inventory/restock.ts` — `restockUnits` (pre-checks ledger keys; a
+  caught P2002 inside a Prisma interactive tx aborts the tx — D-64).
+- `/api/webhooks/shadowfax` (raw body), `/admin/shipments/[id]/label`
+  (`requireAdmin()`), order-page tracking block.
+- `src/inngest/functions.ts` — `reconcile-shipments` (`*/10`) +
+  `create-shipment-on-confirm` (consumes `order.payment_settled` /
+  `order.cod_confirmed`, `runOnce`-guarded).
+- Checkout quote now resolves its shipping provider via `getQuoteProvider()`
+  (Shadowfax if configured, else `TestShippingAdapter`).
+
+Decisions **D-59…D-66**. Master **v1.1** (§2, §3, §8, AC-13 + changelog);
+playbook Phase 8 heading/prompt updated. No schema migration.
+
+| Playbook §11 check | Result |
+| --- | --- |
+| non-serviceable postcode | ✅ `shipping.itest.ts` — `computeQuote` via `FakeShadowfax` for PIN `000000` → `QuoteError` |
+| COD disallowed | ✅ COD quote for PIN `560100` → `QuoteError` |
+| provider timeout BEFORE creation | ✅ claimed `Shipment` row (no `providerShipmentId`) + `shipment-failure` task; retry reuses the same row, one provider order, task resolved |
+| provider timeout AFTER creation | ✅ retry probes `fetchTracking(merchantReference)` and **adopts** the provider's shipment — one `Shipment`, one provider record |
+| repeated shipment request | ✅ second call → `{created:false}`, same row; one `Shipment`, one `ShipmentItem` set |
+| authenticated / invalid callback | ✅ configured static token: missing → 401, nothing persisted; present → 200; identical redelivery → deduped (one `WebhookEvent`); status advanced via **API re-read**, not the body |
+| out-of-order tracking | ✅ a late `IN_TRANSIT` scan after `OUT_FOR_DELIVERY` is recorded for audit but does not regress `statusNormalized` |
+| NDR repeated events | ✅ two NDR scans → **one** `ndr:<shipmentId>` task (reopened), reason `attempt 2`; both `ShipmentEvent` rows kept |
+| RTO-in-transit does not restock | ✅ `RTO_INITIATED` → shipment `RTO_IN_TRANSIT`, **zero** `RTO_RESTOCK` ledger rows, on-hand unchanged |
+| inspected RTO restocks once | ✅ `RTO_DELIVERED` → `RTO_RECEIVED` + `rto-inspection` task; `inspectRtoReturn(RESTOCK)` → on-hand +qty, one `RTO_RESTOCK` row, `AdminActivityLog` + timeline, task resolved; **repeat inspection restocks nothing** |
+| private label access | ✅ `/admin/shipments/[id]/label` calls `requireAdmin()` (401/403 mapped); `getShipmentLabel` returns bytes with an AWB, throws before one |
+| COD collection differs from remittance | ✅ delivery leaves `COD_PENDING`; `simulateCodCollected` + `syncCodRemittance` → `CodRemittance.COLLECTED` + order `COD_COLLECTED`; `simulateCodRemitted` → `REMITTED` + UTR, order still `COD_COLLECTED`; distinct `collectedAt` / `remittedAt`; short collection → `DISPUTED` + `cod-remittance` `PAYMENT_REVIEW` task |
+
+**Suite:** `npm run check` ✅ (lint · typecheck · **69** unit incl. `shipping/status.test.ts` (13) · build — `/api/webhooks/shadowfax`, `/admin/shipments/[id]/label` in the route table). `npm run test:integration` ✅ **118/118** (12 files; `shipping.itest.ts` **15** new). `npm run test:e2e` ✅ **22/22**.
+
+**Covers (advanced, not yet `passed`):** **AC-09** (COD allocation / confirmation / cancellation / collection / RTO / remittance all distinct + auditable) and **AC-13** (creation, tracking, NDR/RTO, retry handling) — via `FakeShadowfax`.
+
+**Deferred to a live Shadowfax merchant account (blocker #3):**
+- Real serviceability + rate lookups; a real shipment create with a real AWB.
+- The account's **actual** callback authentication mechanism + a real callback.
+- A real label PDF; real COD remittance report reconciliation.
+- Endpoint paths / payload field names in `shadowfax.ts` confirmed against the
+  live API. AC-13 stays `blocked` until a provider-supported test arrangement is
+  confirmed (playbook Phase 8 checkpoint — "do not assume a sandbox exists").
+
+**Residual / carried forward:** shipment admin UI beyond the label route is
+Phase 11; `Shipment.provider` DB default is still literally `"shiprocket"` (a
+harmless default — every write passes `"shadowfax"`); pickup address is a
+labelled `shipping.rules` fixture until the owner confirms it; single-shipment
+model (schema is split-ready).
+
 ## Blockers / information needed before later phases
 
 None blocked Phases 1–2 (local embedded PostgreSQL, no account). **Phase 3 is the first that wants a Supabase project** (Auth + Storage). Recorded so they are not rediscovered late:
 
 1. **Supabase project (dev)** — needed from Phase 3 for Auth + Storage, and to run the deferred Supavisor+Prisma concurrency proof. A local Supabase CLI stack (Docker) is an alternative but this machine has no Docker; a free hosted dev project is the likely path. Free-tier allowances / pause / backup entitlement verified against the live account when created. (D-open-3 resolved for Phase 2 = embedded Postgres; Phase 3 revisits.)
 2. **Razorpay test account** — **now the active gate for Phase 7's full pass.** Code slice complete + tested; needs test key id/secret + webhook secret, then a real test-mode payment and a real signed webhook to move AC-06/07/08/09 to `passed`. Steps in `docs/integration-setup.md`. No live charge/refund without explicit authorisation.
-3. **Shiprocket account + confirmation of an available test/sandbox mode** — needed from Phase 8. AC-13 stays blocked until this is confirmed.
+3. **Shadowfax merchant account + confirmation of a provider-supported test arrangement** — **now the active gate for Phase 8's full pass.** Code slice complete + tested against `FakeShadowfax`; needs `SHADOWFAX_API_TOKEN` / `SHADOWFAX_CLIENT_ID` (+ `SHADOWFAX_WEBHOOK_TOKEN` if the account supports one), the real endpoint paths/fields confirmed, and a real shipment + callback + label + COD-remittance exercised. AC-13 stays `blocked` until a sandbox or authorised controlled test is confirmed. _(Provider changed from Shiprocket at the owner's direction — master v1.1 / D-59.)_
 4. **Meta WhatsApp Cloud API + approved templates**, **Resend verified sender** — needed from Phase 10.
 5. **Inngest account (dev)** — needed from Phase 6.
 6. **Real business/tax configuration** — legal name, GSTIN, supplier state/address, HSN + rates, invoice series, contact details, policy text. Needed for live checkout/invoices (Phases 5, 9, 13). Development proceeds on clearly labelled fixtures until the owner confirms these.

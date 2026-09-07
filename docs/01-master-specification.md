@@ -1,7 +1,11 @@
 # The Pooja Edit + Thrift Store — Master Specification / AI Agent Prompt
 
-Version: 1.0 · Prepared: 7 September 2026  
+Version: 1.1 · Prepared: 7 September 2026  
 Companion: [Execution Playbook](02-execution-playbook.md)
+
+**Changelog**
+
+- **1.1 (2026-09-07)** — Shipping provider changed from Shiprocket to **Shadowfax** at the owner's direction (see `docs/decisions.md` D-59). Shadowfax is a single last-mile carrier, not a multi-courier aggregator, so "courier/AWB allocation" becomes "Shadowfax assigns an AWB" and there is no courier-selection step. The provider-neutral shipping boundary, normalized local records, stable merchant references, reconcile-before-retry, event fingerprinting and weak-callback→API-reverification requirements are unchanged. `SHIPROCKET_*` env is replaced by `SHADOWFAX_*`.
 
 ## 1. Agent mandate and document authority
 
@@ -23,7 +27,7 @@ The latest user-approved decisions override older referenced plans: use Supabase
 | Commerce data layer | Prisma ORM 7, PostgreSQL driver adapter |
 | Identity / files | Supabase Auth with `@supabase/ssr` and `@supabase/supabase-js`; Supabase Storage |
 | Payments | Razorpay first; provider boundary for Cashfree later; UPI and COD |
-| Shipping | Shiprocket through a typed HTTP client |
+| Shipping | Shadowfax (single last-mile carrier) through a typed HTTP client |
 | Background work | Inngest + PostgreSQL transactional outbox |
 | Notifications | Meta WhatsApp Cloud API behind an abstraction; Resend + React Email; admin in-app |
 | Operations | Sentry, Pino, structured logs with sensitive-data redaction |
@@ -82,7 +86,7 @@ Create `.env.example` with descriptions and empty secret values. Validate server
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, server-only `SUPABASE_SECRET_KEY` if needed |
 | Database | `DATABASE_URL`, `DIRECT_URL`, optional disposable `SHADOW_DATABASE_URL` |
 | Razorpay | `NEXT_PUBLIC_RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` |
-| Shiprocket | `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`, webhook verification configuration actually supported by the account/API |
+| Shadowfax | `SHADOWFAX_API_TOKEN`, `SHADOWFAX_CLIENT_ID`, optional `SHADOWFAX_API_BASE`, and `SHADOWFAX_WEBHOOK_TOKEN` (whatever shared-secret / token the account's callback configuration actually supports — weak or absent auth is expected and handled by API re-verification) |
 | WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `META_APP_SECRET` |
 | Email | `RESEND_API_KEY`, verified sender identity, webhook secret if callbacks are enabled |
 | Jobs | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` |
@@ -219,9 +223,9 @@ Expose provider-neutral create-order, verify-checkout, verify-webhook, fetch/rec
 
 Use raw webhook bytes for signature verification, then durably store/deduplicate the event before acknowledging it. If persistence fails, return a retriable failure. Process idempotently; unknown/mismatched orders go to review. Reconcile pending/ambiguous payments periodically. Enforce aggregate refund limits under concurrent requests, counting pending as well as completed refunds. Prevent duplicate captured attempts from causing duplicate fulfillment; flag excess captures for refund review. Razorpay documents [raw-body verification](https://razorpay.com/docs/webhooks/faqs/?preferred-country=US) and [asynchronous payment events](https://razorpay.com/docs/webhooks/).
 
-### Shiprocket
+### Shadowfax
 
-Support serviceability, server-priced shipping quotes, order/shipment creation, courier/AWB allocation, labels, pickup handling where available, tracking, NDR, RTO, cancellations, and COD reconciliation. Refresh credentials server-side. Normalize provider responses into local records. Use stable merchant references and reconcile uncertain creation results before retrying to avoid duplicate shipments.
+Support serviceability, server-priced shipping quotes, order/shipment creation, AWB assignment (Shadowfax is one carrier — no courier-selection step), labels, pickup handling where available, tracking, NDR, RTO, cancellations, and COD reconciliation. Refresh credentials server-side. Normalize provider responses into local records. Use stable merchant references and reconcile uncertain creation results before retrying to avoid duplicate shipments.
 
 Verify incoming callbacks using the provider's actual documented account mechanism; do not invent an HMAC header because another provider has one. For weak/unavailable callback authentication, verify critical state against the authenticated API before transition. Store event fingerprints where no stable event ID exists. Periodic reconciliation covers missed callbacks. Admin overrides require reason, authorization, timeline entry, and audit; they cannot fabricate captured payments or bypass inventory guards.
 
@@ -281,7 +285,7 @@ Needs Attention includes pending COD confirmation, payment review, inventory con
 
 ## 11. Launch scope, evidence, and non-negotiable acceptance criteria
 
-MVP includes the two storefronts, shared guest/account checkout, Razorpay prepaid, configurable COD, protected accounts/admin, inventory reservations, Shiprocket operations, standard-GST snapshots/invoices, refunds/returns, notifications, durable jobs, and monitoring. Cashfree implementation, SMS, wishlist, loyalty, reviews, advanced promotions, preorders, complex multiwarehouse routing, advanced roles and margin GST are deferred. If a provider cannot be configured, label it blocked and do not declare full production readiness.
+MVP includes the two storefronts, shared guest/account checkout, Razorpay prepaid, configurable COD, protected accounts/admin, inventory reservations, Shadowfax operations, standard-GST snapshots/invoices, refunds/returns, notifications, durable jobs, and monitoring. Cashfree implementation, SMS, wishlist, loyalty, reviews, advanced promotions, preorders, complex multiwarehouse routing, advanced roles and margin GST are deferred. If a provider cannot be configured, label it blocked and do not declare full production readiness.
 
 | ID | Acceptance requirement |
 | --- | --- |
@@ -297,7 +301,7 @@ MVP includes the two storefronts, shared guest/account checkout, Razorpay prepai
 | AC-10 | Missing/failed external side effects do not roll back paid orders; outbox recovery and audited replay work. |
 | AC-11 | Tax/total calculations reconcile in paise; historical snapshots and unique invoice numbers remain immutable. |
 | AC-12 | Every admin mutation and order/document read enforces authorization; Data API and Storage exposure tests pass. |
-| AC-13 | Shiprocket sandbox/test evidence or documented provider-approved testing verifies creation, tracking, NDR/RTO and retry handling. |
+| AC-13 | Shadowfax sandbox/test evidence or documented provider-approved testing verifies creation, tracking, NDR/RTO and retry handling. |
 | AC-14 | WhatsApp/email/in-app template and delivery paths work with test recipients; consent and missing channels are handled. |
 | AC-15 | Admin can operate a complete prepaid and COD order lifecycle and resolve operational failures. |
 | AC-16 | Mobile storefront, keyboard checkout, error states, SEO and no private caching pass browser review. |

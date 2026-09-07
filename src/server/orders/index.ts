@@ -20,6 +20,10 @@ const ORDER_VIEW_INCLUDE = {
   items: { orderBy: { createdAt: "asc" } },
   addresses: true,
   events: { orderBy: { createdAt: "asc" } },
+  shipments: {
+    orderBy: { createdAt: "asc" },
+    include: { events: { orderBy: { occurredAt: "asc" } } },
+  },
 } as const;
 
 /**

@@ -212,19 +212,22 @@ Keep Cashfree unimplemented behind the provider interface and label it disabled.
 
 **Checkpoint:** real Razorpay test-mode evidence required before marking the phase fully passed. No real customer charge or refund without authorization.
 
-## 11. Phase 8 — Shiprocket and shipping operations
+## 11. Phase 8 — Shadowfax and shipping operations
 
-**Dependencies:** phases 6–7; Shiprocket credentials and provider-supported testing arrangement, actual shipping configuration for live readiness.
+_(Provider changed Shiprocket → Shadowfax at the owner's direction, master v1.1 / D-59. Shadowfax is a single carrier: "courier/AWB allocation" is just AWB assignment, no courier-selection step.)_
 
-**Work:** serviceability and shipping quote adapter, replace dev checkout quote fixture, create/reconcile shipment, courier/AWB, label, tracking normalization, callback verification, polling reconciliation, NDR/RTO operational tasks, COD collection/remittance records and audited overrides. Keep one-shipment UI initially while preserving ShipmentItem schema.
+**Dependencies:** phases 6–7; Shadowfax credentials and provider-supported testing arrangement, actual shipping configuration for live readiness.
+
+**Work:** serviceability and shipping quote adapter, replace dev checkout quote fixture, create/reconcile shipment, AWB, label, tracking normalization, callback verification, polling reconciliation, NDR/RTO operational tasks, COD collection/remittance records and audited overrides. Keep one-shipment UI initially while preserving ShipmentItem schema.
 
 **Agent prompt:**
 
 ```text
-Execute phase 8. Connect Shiprocket through the existing fulfillment services and
+Execute phase 8. Connect Shadowfax through the existing fulfillment services and
 outbox. Validate checkout serviceability and shipping prices on the server. Make
 shipment creation safe across retries and unknown outcomes. Verify the provider's
-actual webhook security mechanism, normalize tracking without stale regressions,
+actual webhook security mechanism (weak/absent → re-verify state against the
+authenticated tracking API), normalize tracking without stale regressions,
 and handle NDR, inspected RTO restock and COD remittance separately.
 ```
 

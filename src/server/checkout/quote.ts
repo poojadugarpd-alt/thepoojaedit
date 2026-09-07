@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import type { CatalogType, PrismaClient } from "@/generated/prisma";
 import { getBusinessProfile, getCheckoutRules } from "@/server/settings";
 import { computeOrderTax, type PricingMode } from "@/server/tax/calculator";
-import { TestShippingAdapter, type ShippingPort } from "@/server/shipping";
+import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
 
 /**
  * Authoritative checkout quote (master §6, §7.1). Server prices only — any price
@@ -136,7 +136,7 @@ export async function computeQuote(
     Boolean(supplierStateCode) && supplierStateCode !== placeOfSupplyStateCode;
 
   const now = input.now ?? new Date();
-  const shipping = input.shipping ?? new TestShippingAdapter();
+  const shipping = input.shipping ?? getQuoteProvider();
 
   const variants = await db.productVariant.findMany({
     where: { id: { in: input.lines.map((l) => l.variantId) } },
