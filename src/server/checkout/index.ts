@@ -1,10 +1,21 @@
+import "server-only";
+
 /**
- * checkout domain service.
- *
- * Business logic for the checkout domain lives here and is the ONLY place it lives.
- * Route handlers, Server Actions, admin screens and Inngest jobs import from
- * this module; they never re-implement its rules. See docs/module-map.md.
- *
- * Populated in a later phase; intentionally empty in Phase 1.
+ * Checkout domain service. Logic lives in `./quote` and `./place-order`; this
+ * module binds the shared Prisma client for route/action callers.
  */
-export {};
+import { prisma } from "@/lib/db";
+
+import { computeQuote, type QuoteInput } from "./quote";
+import { placeOrder, type PlaceOrderInput } from "./place-order";
+
+export * from "./quote";
+export * from "./place-order";
+
+export function getQuote(input: QuoteInput) {
+  return computeQuote(prisma, input);
+}
+
+export function checkout(input: PlaceOrderInput) {
+  return placeOrder(prisma, input);
+}

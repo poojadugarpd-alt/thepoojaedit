@@ -2,8 +2,10 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 
-import type { AccessTokenScope, PrismaClient } from "@/generated/prisma";
+import type { AccessTokenScope, Prisma, PrismaClient } from "@/generated/prisma";
 import { ResourceNotFoundError } from "@/server/auth/errors";
+
+type Db = PrismaClient | Prisma.TransactionClient;
 
 /**
  * Guest access to an order / tracking / invoice (master spec §9).
@@ -22,7 +24,7 @@ export function hashOrderToken(token: string): string {
 }
 
 export async function issueOrderAccessToken(
-  db: PrismaClient,
+  db: Db,
   input: { orderId: string; scope: AccessTokenScope; ttlSeconds: number },
 ): Promise<{ id: string; token: string; expiresAt: Date }> {
   const token = randomBytes(TOKEN_BYTES).toString("base64url");
@@ -42,7 +44,7 @@ export async function issueOrderAccessToken(
 }
 
 export async function verifyOrderAccessToken(
-  db: PrismaClient,
+  db: Db,
   input: { token: string; scope: AccessTokenScope; orderId?: string },
 ): Promise<{ orderId: string }> {
   const row = await db.orderAccessToken.findUnique({
@@ -60,10 +62,7 @@ export async function verifyOrderAccessToken(
   return { orderId: row.orderId };
 }
 
-export async function revokeOrderAccessToken(
-  db: PrismaClient,
-  tokenId: string,
-): Promise<void> {
+export async function revokeOrderAccessToken(db: Db, tokenId: string): Promise<void> {
   await db.orderAccessToken.updateMany({
     where: { id: tokenId, revokedAt: null },
     data: { revokedAt: new Date() },
