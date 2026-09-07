@@ -50,6 +50,17 @@ Small implementation decisions (with date + reason) and any approved architectur
 | D-27 | **Data API lockdown SQL** (`supabase/policies/01_…`) revokes from `anon`, `authenticated` **and `public`** (PostgreSQL grants to `public` by default, so revoking from `anon` alone is a no-op — carried from a sibling project), then `ENABLE` (not `FORCE`) RLS with no policies. `FORCE` would apply RLS to the table owner and break every Prisma query. | 2026-09-07 | Master §9; verified-gotcha from prior Supabase work. |
 | D-28 | Supabase packages: `@supabase/ssr@0.12.6`, `@supabase/supabase-js@2.115.0` (exact). | 2026-09-07 | Master §2. |
 
+## Phase 4 implementation decisions
+
+| ID | Decision | Date | Reason |
+| --- | --- | --- | --- |
+| D-29 | **Legacy-content extraction (89 dm2buy + 27 thepoojaedit) is the Phase 4 dev dataset.** `migration/scripts/import-to-dev-db.mjs` loads `products.json` into the dev DB as migration-draft content (hidden `__legacy_import` collection per catalog), NOT production. Thrift products collapse to one physical variant (`onHandQty` 0/1 from the source), deterministic SKUs generated (no SKUs in either source), condition defaults to `GOOD` + a "needs review" note. | 2026-09-07 | Playbook Phase 4: "use clearly labelled fixtures until real assets are provided" — real extracted content is better than invented fixtures and exercises the storefront properly. |
+| D-30 | **`/legacy-media/[...key]` dev-only route** streams the downloaded image files from `migration/legacy-content/images/` (guarded `if (isProduction) 404`). The importer sets `ProductImage.publicUrl` to `/legacy-media/…` when a local file exists. | 2026-09-07 | Several legacy CDN objects 500 the Next image optimizer; copying ~500 MB into `public/` is worse. Production images come from Supabase Storage. `next.config.ts` still allows the three CDN hosts as a fallback. |
+| D-31 | **`src/lib/catalog-routes.ts`** holds the client-safe catalog↔segment mapping (no `server-only`, no DB); `src/server/catalog/index.ts` re-exports it. Storefront client components (`product-card`, `add-to-cart`, `cart-*`) import from there. | 2026-09-07 | `src/server/catalog` is `server-only`; client components needed the mapping. |
+| D-32 | **Public availability is derived, three-valued**: `IN_STOCK` / `OUT_OF_STOCK` / `SOLD`. `SOLD` only for a one-of-one THRIFT piece with nothing available (permanent); ordinary apparel with 0 stock is `OUT_OF_STOCK` (restockable). Publication status and availability are separate (master §4). | 2026-09-07 | Master §4 / AC-02. |
+| D-33 | **Cart = Zustand + `persist` (localStorage `pe-cart-v1`)**. Lines hold `{variantId, catalog, slug, title, variantLabel, unitPricePaise, quantity, imageUrl, returnPolicyNote}`. Prices/stock are advisory snapshots; the server revalidates at checkout; adding never reserves stock; one-of-one lines cap at qty 1. `groupByCatalog` is a plain helper (not a store selector) to avoid `useSyncExternalStore` re-render loops. | 2026-09-07 | Master §4. |
+| D-34 | **`/checkout` is an explicit "not open yet" placeholder** — deliberately no simulated checkout (playbook Phase 4: "do not simulate checkout"). Real checkout is Phase 5. | 2026-09-07 | Playbook. |
+
 ## Open items / proposals (not yet decided)
 
 | ID | Item | Status |
