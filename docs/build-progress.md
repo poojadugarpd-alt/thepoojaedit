@@ -8,14 +8,15 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 
 | Field | Value |
 | --- | --- |
-| Authorized phase range | Phases 0–4 |
-| Current phase | Phase 4 — Product administration and dual storefronts (**checkpoint ready**) |
+| Authorized phase range | Phases 0–5 |
+| Current phase | Phase 5 — Pricing, tax, inventory and checkout core (**checkpoint ready**) |
 | Phase 0–2 status | `passed` (2026-09-07); Phase 2 schema sign-off still open |
 | Phase 3 status | `passed (partial)` — security review gate; live Supabase evidence deferred |
-| Phase 4 status | `passed` (2026-09-07) — **storefront/admin review gate**: read + admin + search + collections + SEO + Playwright journeys done; residual polish + live-Supabase image upload noted |
-| Last commit | _git log — Phase 4 parts 1–2 + `test: Phase 4 — Playwright storefront journeys`_ |
-| Tests run | `npm run check` ✓ (lint/type/**unit 34**/build) · `npm run test:integration` ✓ **56/56** (real PostgreSQL, +10 catalog +8 admin) · `npm run test:e2e --project=chromium` ✓ **9/9** (5 shell + 4 storefront) · admin edit verified end-to-end (persist + audit row) |
-| Next task | Phase 4 storefront/admin checkpoint review, then authorize Phase 5 (pricing, tax, inventory, checkout core) |
+| Phase 4 status | `passed` (2026-09-07) — storefront/admin review gate |
+| Phase 5 status | `passed` (2026-09-07) — **financial/inventory review gate**: all mandatory concurrency/rounding/idempotency tests green; no payment UI yet (Phase 7) |
+| Last commit | _git log — `feat: Phase 5 (part 1)` + `feat: Phase 5 (part 2)`_ |
+| Tests run | `npm run check` ✓ (lint/type/**unit 48**/build) · `npm run test:integration` ✓ **75/75** (real PostgreSQL, +10 inventory +9 checkout) · `npm run test:e2e --project=chromium` ✓ **9/9** |
+| Next task | Phase 5 financial/inventory checkpoint review, then authorize Phase 6 (durable event delivery + scheduled recovery) |
 
 ## Phase ledger
 
@@ -26,7 +27,7 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 2 | Database, migrations, Prisma and business schema | `passed` (review gate) | `feat: Phase 2 database + Prisma 7 schema` | `prisma/schema.prisma` (42 models, master §5); `prisma/migrations/` (init + `manual_constraints`); `prisma.config.ts`; `src/lib/db.ts` (adapter-pg singleton); `prisma/seed.ts` (idempotent fixtures); `scripts/{pg,db-dev}.ts` (embedded PostgreSQL); `tests/integration/**` (18 real-PG tests). See "Phase 2 checkpoint" below. |
 | 3 | Authentication, authorization and asset storage | `passed (partial)` — security review gate; live Supabase evidence deferred | `feat: Phase 3 auth, guards, guest tokens, storage` | `src/lib/supabase/{config,server,client,middleware}.ts`; `src/server/auth/*`; `src/server/admin/{guards,bootstrap}.ts`; `src/server/customers/*`; `src/server/orders/access-tokens.ts`; `src/server/catalog/product-images.ts`; `src/lib/{storage,rate-limit}.ts`; `src/schemas/auth.ts`; `supabase/policies/*.sql`; `docs/supabase-setup.md`; +20 integration tests. |
 | 4 | Product administration and dual storefronts | `passed` (review gate) | `feat: Phase 4 (part 1)` + `feat: Phase 4 (part 2)` + `test: Phase 4 Playwright` | **Reads:** `src/server/catalog/{queries,public-shape,admin}.ts`; `/the-pooja-edit` + `/thrift` listings, `[slug]` PDPs, `collections/[slug]`, `/search`; `/api/catalog/[segment]/products`; `sitemap.ts` + `robots.ts`. **Cart:** `src/features/cart/*` (Zustand persist, mixed, per-item return note). **Admin:** `/admin` + `/admin/products` (+ `[id]`, `/new`) with `src/server/catalog/admin.ts` (validation + audit) + `src/app/admin/products/actions.ts` + `src/features/admin/action-form.tsx`; `DEV_ADMIN_AUTH` dev bypass. **Dev data:** `migration/scripts/import-to-dev-db.mjs` (116 products) + `/legacy-media` route. **Tests:** `catalog.itest.ts` (10) + `catalog-admin.itest.ts` (8) + `e2e/storefront.spec.ts` (4). See "Phase 4 progress" below. |
-| 5 | Pricing, tax, inventory and checkout core | `not-started` | — | — |
+| 5 | Pricing, tax, inventory and checkout core | `passed` (review gate) | `feat: Phase 5 (part 1)` + `feat: Phase 5 (part 2)` | `src/server/tax/calculator.ts` (pure GST, integer paise, inclusive extraction); `src/server/inventory/{reservations,cod,errors}.ts` (atomic reserve-all, expire/release/convert, late-capture reacquire, COD alloc/cancel; ledger idempotency keys); `src/server/checkout/{quote,place-order}.ts` (server-authoritative quote + hash; idempotent checkout + snapshots + outbox in one tx); `src/server/orders/{state,lifecycle,order-number}.ts`; `src/server/shipping` (test adapter); `src/server/settings`; `/order/[orderNumber]` guest view. Tests: `calculator.test.ts`(8) + `state.test.ts`(6) unit; `inventory.itest.ts`(10) + `checkout.itest.ts`(9) integration. See "Phase 5 progress" below. |
 | 6 | Durable event delivery and scheduled recovery | `not-started` | — | — |
 | 7 | Razorpay and end-to-end prepaid/COD checkout | `not-started` | — | — |
 | 8 | Shiprocket and shipping operations | `not-started` | — | — |
@@ -172,6 +173,40 @@ keyboard focus, per-page SEO metadata + structured data, public-only caching).
   full CRUD screens can extend in Phase 11's dashboard).
 - Deeper a11y sweep (axe run) + full error/retry/loading-state matrix — Phase 12.
 - Price-sort keyset pagination (currently a bounded first page) — revisit at scale.
+
+## Phase 5 progress (2026-09-07) — checkpoint ready
+
+Financial/inventory core. **No payment UI** — Razorpay is Phase 7; a typed test
+shipping adapter stands in until Phase 8 (`testAdapter: true` marker).
+
+| Playbook §8 mandatory test | Result |
+| --- | --- |
+| ≥2 connections contend for one item → exactly one succeeds | ✅ `inventory.itest.ts` |
+| failure on the final mixed-cart line rolls back all earlier allocations | ✅ `inventory.itest.ts` (0 reservations, 0 ledger rows after) |
+| duplicate checkout returns one order | ✅ `checkout.itest.ts` (`alreadyExisted`, one Order) |
+| mismatched idempotency payload rejected | ✅ `IdempotencyConflictError`, no 2nd order |
+| expiry vs conversion races | ✅ exactly one of {expire, convert} takes effect; stock consistent; never negative |
+| repeated release / cancel | ✅ second call is a no-op; COD cancel restores exactly once |
+| negative quantities | ✅ `InsufficientStockError` |
+| forged totals | ✅ `placeOrder` recomputes the quote server-side; a stale `clientQuoteHash` → `PriceChangedError` |
+| inclusive tax extraction + component rounding | ✅ `calculator.test.ts` — `taxable + tax = gross`, CGST+SGST = line tax exactly, order identity in paise |
+| price change | ✅ stale quote hash → reconfirm, no order |
+| COD cancellation restores once | ✅ ledger `cod-cancel:<order>:<variant>` idempotency key |
+| late capture after stock reallocated prevents fulfillment | ✅ `settleCapturedPayment` → `NEEDS_REVIEW` + `PAID` (payment never hidden as failed) |
+
+**Also:** order/payment/fulfilment state machines + `deriveAggregatePaymentStatus`
+(a failed later attempt never downgrades a captured payment); `OrderEvent` +
+`DomainEvent` + `OutboxEvent` written in the placement transaction (dispatcher is
+Phase 6); guest `/order/[orderNumber]?token=` view via the hashed access token.
+
+**Covers:** foundations of **AC-04, AC-05, AC-06, AC-07, AC-08, AC-09, AC-10,
+AC-11**.
+
+**Residual (carried forward):** checkout UI + `/checkout` page (Phase 5 built the
+engine; the reviewed-quote → place-order UI flow lands with payments in Phase 7);
+scheduled expiry sweep is a service (`expireReservations`) — the cron is Phase 6;
+`SECOND_HAND_MARGIN` stays disabled; real GST rates/GSTIN owner-confirmed before
+live checkout.
 
 ## Blockers / information needed before later phases
 
