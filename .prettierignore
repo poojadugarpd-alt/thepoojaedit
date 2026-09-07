@@ -8,6 +8,7 @@ test-results
 .pgdata
 src/generated
 prisma/migrations
+supabase
 package-lock.json
 
 # Working records + specs are hand-maintained Markdown; Prettier reflows tables.

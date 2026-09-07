@@ -8,14 +8,15 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 
 | Field | Value |
 | --- | --- |
-| Authorized phase range | Phases 0–2 |
-| Current phase | Phase 2 — Database, migrations, Prisma and business schema |
+| Authorized phase range | Phases 0–3 |
+| Current phase | Phase 3 — Authentication, authorization and asset storage |
 | Phase 0 status | `passed` (2026-09-07) |
 | Phase 1 status | `passed` (2026-09-07) |
-| Phase 2 status | `passed` (2026-09-07) — **schema review gate**: reported, awaiting schema sign-off + Phase 3 authorization |
-| Last commit | _see git log — Phase 0 / Phase 1 / `feat: Phase 2 database + Prisma 7 schema`_ |
-| Tests run | Phase 2: `npm run check` ✓ (lint/type/unit 19 + build) · `npm run test:integration` ✓ **18/18** (real PostgreSQL) · seed idempotent ✓ · `prisma studio` boots ✓ · `npm audit --audit-level=high` ✓ 0 |
-| Next task | User reviews the Phase 2 schema; then authorizes Phase 3 (Auth, authorization, asset storage) |
+| Phase 2 status | `passed` (2026-09-07) — schema review gate (still open for sign-off) |
+| Phase 3 status | `passed (partial)` (2026-09-07) — **security review gate**: local slice done + tested; live Supabase security evidence deferred until a dev project exists |
+| Last commit | _see git log — Phase 0 / 1 / 2 / `feat: Phase 3 auth, guards, guest tokens, storage`_ |
+| Tests run | Phase 3: `npm run check` ✓ (lint/type/**unit 34**/build) · `npm run test:integration` ✓ **38/38** (real PostgreSQL) · no secrets in client bundle ✓ |
+| Next task | Create a Supabase dev project (`docs/supabase-setup.md`) to unblock the deferred Phase 3 security checks; then authorize Phase 4 |
 
 ## Phase ledger
 
@@ -24,7 +25,7 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 0 | Inspect and freeze the implementation baseline | `passed` | `docs: Phase 0 baseline` | This file + `compatibility-plan.md`, `module-map.md`, `acceptance-evidence.md`, `integration-setup.md`, `operations-runbook.md`, `decisions.md`, `deferred-scope.md` |
 | 1 | Application foundation and environment isolation | `passed` | `chore: Phase 1 application foundation` | Next.js 15.5.25 app; `src/lib/{app-env,env,public-env,logger,money}.ts`; domain folders `src/server/*`, `src/features/*`; `/api/health`; middleware; instrumentation; Vitest (19) + Playwright (4) harness; `.github/workflows/ci.yml`; `.env.example`. See "Phase 1 checkpoint" below. |
 | 2 | Database, migrations, Prisma and business schema | `passed` (review gate) | `feat: Phase 2 database + Prisma 7 schema` | `prisma/schema.prisma` (42 models, master §5); `prisma/migrations/` (init + `manual_constraints`); `prisma.config.ts`; `src/lib/db.ts` (adapter-pg singleton); `prisma/seed.ts` (idempotent fixtures); `scripts/{pg,db-dev}.ts` (embedded PostgreSQL); `tests/integration/**` (18 real-PG tests). See "Phase 2 checkpoint" below. |
-| 3 | Authentication, authorization and asset storage | `not-started` | — | — |
+| 3 | Authentication, authorization and asset storage | `passed (partial)` — security review gate; live Supabase evidence deferred | `feat: Phase 3 auth, guards, guest tokens, storage` | `src/lib/supabase/{config,server,client,middleware}.ts`; `src/server/auth/{identity,require-admin,current-customer,errors}.ts`; `src/server/admin/{guards,bootstrap}.ts`; `src/server/customers/{lazy-upsert,normalize}.ts`; `src/server/orders/access-tokens.ts`; `src/server/catalog/product-images.ts`; `src/lib/{storage,rate-limit}.ts`; `src/schemas/auth.ts`; `supabase/policies/*.sql`; `docs/supabase-setup.md`; +20 integration tests. See "Phase 3 checkpoint" below. |
 | 4 | Product administration and dual storefronts | `not-started` | — | — |
 | 5 | Pricing, tax, inventory and checkout core | `not-started` | — | — |
 | 6 | Durable event delivery and scheduled recovery | `not-started` | — | — |
@@ -92,6 +93,30 @@ Local DB: **embedded PostgreSQL 17** via `embedded-postgres` (`npm run db:dev`) 
 - The **Supavisor transaction-pooler + Prisma 7 adapter under concurrency** proof (master §3) — needs the real hosted pooler; local embedded Postgres has no Supavisor. `src/lib/db.ts` is written for it (unnamed statements) but the proof itself is pending.
 - RLS / grants / Storage policy versioning that targets Supabase's `auth` / `storage` schemas.
 - N→N+1 additive migration over populated data (first real one in Phase 4).
+
+## Phase 3 checkpoint — evidence (2026-09-07)  ·  security review gate
+
+Structured so the Supabase-auth dependency is one seam (`src/server/auth/identity.ts` → `supabase.auth.getUser()`); everything downstream is pure DB logic tested against embedded PostgreSQL.
+
+| Playbook §6 item | Done now (tested) | Deferred to a Supabase project |
+| --- | --- | --- |
+| Server identity verification | `getVerifiedIdentity()` calls `getUser()` (re-validates JWT), never `getSession()`; no-op + null when unconfigured | real JWT round-trip; altered/forged cookie rejection |
+| Next.js 15 cookie refresh | `src/lib/supabase/middleware.ts` `updateSession()` wired into `src/middleware.ts`; no-op until configured | live cookie rotation |
+| Lazy customer creation by auth id | `lazyUpsertCustomer()` — creates once, reuses, refreshes email, distinct per authUserId — **4 integration tests** | — |
+| Active admin / role guards | `resolveAdmin` + `assertActiveAdmin` + `assertRole`; `requireAdmin()`/`requireOwner()` compose identity + guards; role from `AdminUser` only, never client metadata — **integration tests** for null/inactive/wrong-role/active | signed-in vs inactive-admin over real auth |
+| Owner bootstrap (no public escalation) | `bootstrapOwner()` — requires secret `ADMIN_BOOTSTRAP_TOKEN` **and** zero-active-admins; refuses once one exists — **integration tests** | route wiring (with admin UI, Phase 11) |
+| Account ownership checks | `assertOwnsOrder()` returns "not found" (not "forbidden") for another customer's or a guest order — **integration tests** | — |
+| Guest order access-token service | `issueOrderAccessToken` (plaintext once, SHA-256 hash stored), `verifyOrderAccessToken` (generic not-found on wrong token/scope/order/expired/revoked), `revoke` — **6 integration tests**; never links by contact match | — |
+| Signed admin uploads + metadata confirmation | `requestProductImageUpload` (active-admin gate, **server-derived** path per catalog) + `confirmProductImageUpload` (rejects mismatched path → no takeover; requires object present; re-validates type/size/dims) over a `StoragePort` — **5 integration tests** with a fake port | real Supabase Storage signed URL + object stat |
+| Public product bucket / private document bucket | `supabase/policies/02_storage_buckets.sql` (public `product-images` read + active-admin write; private `documents`) | apply + test in the project |
+| Lock down commerce Data API | `supabase/policies/01_lock_down_data_api.sql` — revoke from `anon`/`authenticated`/**`public`** (the `public` grant is the gotcha), `ENABLE` (not `FORCE`) RLS, no policies | apply + verify anon `select` denied |
+| Malicious file types/paths | `assertValidImageUpload` (webp/jpeg/png only, size ≤ 8 MB, dims 400–6000) + server-derived path — **unit + integration tests** | — |
+| Rate-limit abuse-prone endpoints | `InMemoryRateLimiter` (fixed window) — **unit tests**; distributed limiter is Phase 12 | — |
+| Token redaction in logs | `src/lib/logger.ts` already redacts `token`/`*.token` | — |
+
+**Covers:** foundations of **AC-03** (guest purchase without login; forged contact match can't claim orders — linking requires the token) and **AC-12** (authorization enforced in services, not routes; Storage/Data API lockdown SQL versioned).
+
+**Unlock path:** follow `docs/supabase-setup.md` (~5 min), set the env vars, then the deferred cells above become a config + re-run exercise (the tests already exist; the identity seam swaps from "null" to a real user).
 
 ## Phase 0 checkpoint — self-assessment against playbook §3
 

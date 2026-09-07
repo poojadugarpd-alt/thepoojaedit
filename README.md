@@ -4,7 +4,7 @@ Mobile-first Indian fashion e-commerce site for one brand with two catalogs: **T
 
 ## Repository state
 
-**Phases 0–2 passed.** Foundation (Next.js 15.5, typed env, logging, money primitive, health, test harness, CI) plus the full commerce database: Prisma 7 schema (42 models, master §5), `init` + `manual_constraints` migrations, `@prisma/adapter-pg` client, idempotent seed, 18 real-PostgreSQL integration tests. No domain services yet — Auth/Storage is Phase 3, catalog/storefront Phase 4.
+**Phases 0–3 passed** (Phase 3 partial — live Supabase security evidence pending a dev project; see `docs/supabase-setup.md`). Foundation + full commerce DB (Prisma 7, 42 models, 2 migrations, seed) + auth layer: Supabase SSR clients, `requireAdmin`/`requireOwner` + role/ownership guards, double-gated owner bootstrap, hashed guest order access tokens, server-derived signed image uploads, Data-API-lockdown & Storage RLS SQL. 34 unit + 38 real-PostgreSQL integration tests. Catalog/storefront is Phase 4.
 
 ## Development
 
@@ -46,6 +46,7 @@ npm run test:e2e         # Playwright shell smoke (run `npx playwright install` 
 | [`docs/acceptance-evidence.md`](docs/acceptance-evidence.md)         | AC-01…AC-18 → evidence.                                         |
 | [`docs/integration-setup.md`](docs/integration-setup.md)             | Accounts, env var names, callback URLs. No secrets.             |
 | [`docs/operations-runbook.md`](docs/operations-runbook.md)           | Deploy/migrate, schedules, backup/restore, rollback.            |
+| [`docs/supabase-setup.md`](docs/supabase-setup.md)                   | Create the dev Supabase project; apply lockdown SQL.            |
 | [`docs/compatibility-plan.md`](docs/compatibility-plan.md)           | Pinned stack + version/security guidance (Phase 0 deliverable). |
 | [`docs/module-map.md`](docs/module-map.md)                           | Target module boundaries (Phase 0 deliverable).                 |
 | [`docs/deferred-scope.md`](docs/deferred-scope.md)                   | Explicitly out of MVP (Phase 0 deliverable).                    |

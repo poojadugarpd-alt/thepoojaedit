@@ -1,21 +1,20 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
 
 import { APP_ENV } from "@/lib/app-env";
+import { updateSession } from "@/lib/supabase/middleware";
 
 /**
  * Coarse edge middleware (master spec §2, §9).
  *
- * Phase 1: attaches a request id and the environment identity, nothing more.
- * Phase 3 adds Supabase session-cookie refresh here using a Next.js 15-compatible
- * SSR client. Keep this file free of Node-only imports (no `env.ts`, no `pino`).
+ * - Refreshes the Supabase auth session cookie (no-op until Supabase is
+ *   configured).
+ * - Stamps a request id and the environment identity.
+ *
+ * Keep Node-only imports out of this file (no `env.ts`, no `pino`).
  */
-export function middleware(request: NextRequest) {
-  const requestId = crypto.randomUUID();
-
-  const response = NextResponse.next({
-    request: { headers: new Headers(request.headers) },
-  });
-  response.headers.set("x-request-id", requestId);
+export async function middleware(request: NextRequest) {
+  const response = await updateSession(request);
+  response.headers.set("x-request-id", crypto.randomUUID());
   response.headers.set("x-app-env", APP_ENV);
   return response;
 }

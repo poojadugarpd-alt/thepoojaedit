@@ -31,7 +31,8 @@ Business logic lives here and is reused by route handlers, Server Actions, admin
 | Service | Owns | First built in |
 | --- | --- | --- |
 | `catalog` | Products, variants, categories, collections, images; catalog-scoped queries (`CatalogType`); publication vs derived availability; thrift one-of-one rules | Phase 4 |
-| `customers` | Lazy upsert by verified Supabase auth ID; addresses; consent/preferences; contact normalization (contact is a candidate, never proof of ownership) | Phase 3 |
+| `customers` | Lazy upsert by verified Supabase auth ID (`lazy-upsert.ts` ✅); `normalize.ts` ✅; addresses / consent — Phase 4+ | Phase 3 (partial) |
+| `auth` | `identity.ts` (Supabase seam), `require-admin.ts`, `current-customer.ts`, `errors.ts` — ✅ Phase 3 | Phase 3 |
 | `inventory` | `available = onHand - reserved`; reservations (ACTIVE/CONVERTED/RELEASED/EXPIRED); immutable `InventoryTransaction` ledger; stock-bound constraints; restock only on authorized cancel / inspected return | Phase 5 |
 | `checkout` | Quote calculation + expiry; idempotency (`CheckoutRequest` key + request hash); the short reserve-all transaction; COD allocation | Phase 5 |
 | `orders` | Order/OrderItem/OrderAddress immutable snapshots; three independent status machines; order number allocation; `OrderEvent` timeline | Phase 5 |
@@ -56,7 +57,9 @@ Business logic lives here and is reused by route handlers, Server Actions, admin
 | `app-env` | `APP_ENV` (deployment identity) from `VERCEL_ENV`; dependency-free | ✅ Phase 1 |
 | `money` | Integer-paise arithmetic, half-up rounding, basis-point helper; no float currency | ✅ Phase 1 |
 | `logger` | Pino structured logging with secret/PII redaction | ✅ Phase 1 |
-| `supabase` | `@supabase/ssr` server/client factories; server-side identity verification helpers | Phase 3 |
+| `supabase/{config,server,client,middleware}` | `@supabase/ssr` factories + `updateSession`; degrade gracefully when unconfigured | ✅ Phase 3 |
+| `storage` | `StoragePort` interface + Supabase impl; server-derived paths | ✅ Phase 3 (live impl exercised Phase 4) |
+| `rate-limit` | In-memory fixed-window limiter (distributed version Phase 12) | ✅ Phase 3 |
 
 ## Runtime boundaries
 

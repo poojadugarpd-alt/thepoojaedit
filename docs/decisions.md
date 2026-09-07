@@ -39,6 +39,17 @@ Small implementation decisions (with date + reason) and any approved architectur
 | D-21 | **`overrides` extended** with `deepmerge-ts` 8.0.2 and `mysql2` 3.24.3. | 2026-09-07 | The `prisma` CLI's own dep tree pulled `deepmerge-ts <8` (via `@prisma/config`) and `mysql2 <=3.23.0` — both high-severity, both dead code for us (no MySQL, no untrusted config merge). `npm audit`'s "fix" was a downgrade to Prisma 6 (forbidden). Overrides force the patched releases; `npm audit --audit-level=high` → 0. `prisma` CLI verified working (validate/migrate/generate/studio). Also moved `prisma` to `devDependencies`; added a root `prepare` script running `prisma generate`. |
 | D-22 | Schema conventions: UUIDv7 ids (`@default(uuid(7)) @db.Uuid`), all money `Int` paise, all rates `Int` basis points, all timestamps `@db.Timestamptz(6)`. Financial-history relations use `onDelete: Restrict`; products are archived not deleted. `@@id`/`@@unique`/`@@index` per master §5 "Index at least". | 2026-09-07 | Master §5 "behavioral schema contract". |
 
+## Phase 3 implementation decisions
+
+| ID | Decision | Date | Reason |
+| --- | --- | --- | --- |
+| D-23 | **Phase 3 built as a local slice; live Supabase security evidence deferred.** One seam — `src/server/auth/identity.ts` `getVerifiedIdentity()` — calls `supabase.auth.getUser()`; everything else (customer upsert, admin/role/ownership guards, owner bootstrap, guest access tokens, image-upload validation) takes `db`/inputs as args and is tested against embedded PostgreSQL. When Supabase isn't configured, the seam returns `null` and the middleware/clients no-op. | 2026-09-07 | Playbook: "Missing provider keys do not prevent isolated domain work … but they do prevent claiming live integration success." Keeps momentum without faking the security checkpoint. |
+| D-24 | **Owner bootstrap is double-gated**: secret `ADMIN_BOOTSTRAP_TOKEN` **and** zero-active-admins; refuses once any active admin exists. | 2026-09-07 | Playbook Phase 3 checkpoint: "Development bootstrap must not create a public privilege-escalation route." |
+| D-25 | **Guest order access** = expiring high-entropy token, SHA-256 hash stored (never plaintext), generic `ResourceNotFoundError` on every failure mode (wrong token / scope / order / expired / revoked). Order number is never accepted in place of a token. Contact matches never link orders. | 2026-09-07 | Master §9. |
+| D-26 | **Storage behind a `StoragePort` interface** (`src/lib/storage.ts`); image paths are **server-derived** from `(catalog, productId, imageId)` and re-checked on confirm (mismatch → reject) to prevent path takeover. `createSupabaseStoragePort()` is the live impl; tests use a fake. | 2026-09-07 | Master §9 "Issue short-lived signed upload URLs for server-selected paths … Prevent path takeover". |
+| D-27 | **Data API lockdown SQL** (`supabase/policies/01_…`) revokes from `anon`, `authenticated` **and `public`** (PostgreSQL grants to `public` by default, so revoking from `anon` alone is a no-op — carried from a sibling project), then `ENABLE` (not `FORCE`) RLS with no policies. `FORCE` would apply RLS to the table owner and break every Prisma query. | 2026-09-07 | Master §9; verified-gotcha from prior Supabase work. |
+| D-28 | Supabase packages: `@supabase/ssr@0.12.6`, `@supabase/supabase-js@2.115.0` (exact). | 2026-09-07 | Master §2. |
+
 ## Open items / proposals (not yet decided)
 
 | ID | Item | Status |

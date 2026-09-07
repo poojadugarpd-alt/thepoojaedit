@@ -34,7 +34,12 @@ const ServerEnvSchema = z
 
     // ── Supabase server key — wired in Phase 3 ──────────────────────────────
     SUPABASE_SECRET_KEY: optionalNonEmpty.describe(
-      "Supabase secret (service) key. Server-only. Wired in Phase 3.",
+      "Supabase secret (service) key. Server-only. Only if a flow needs it.",
+    ),
+
+    // ── Admin owner bootstrap (Phase 3) ───────────────────────────────────
+    ADMIN_BOOTSTRAP_TOKEN: optionalNonEmpty.describe(
+      "Secret required to create the first OWNER admin. Rotate/remove after use.",
     ),
 
     // ── Razorpay — wired in Phase 7 ────────────────────────────────────────

@@ -38,7 +38,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 
 | Purpose | Path (relative to `NEXT_PUBLIC_SITE_URL`) | Phase | Verification mechanism |
 | --- | --- | --- | --- |
-| Supabase auth callback | `/auth/callback` | 3 | Supabase session exchange |
+| Supabase auth callback | `/auth/callback` | 3 | Supabase session exchange. Add to the project's redirect allow-list (see `docs/supabase-setup.md`). |
 | Razorpay webhook | `/api/webhooks/razorpay` (final path TBD) | 7 | Raw-body HMAC signature + `RAZORPAY_WEBHOOK_SECRET` |
 | Shiprocket callback | `/api/webhooks/shiprocket` (final path TBD) | 8 | Provider's **actual** documented mechanism; if weak/absent, verify critical state against authenticated API |
 | Inngest endpoint | `/api/inngest` | 6 | `INNGEST_SIGNING_KEY` |
