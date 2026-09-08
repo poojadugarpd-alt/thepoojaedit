@@ -75,6 +75,25 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: poojaedit_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/poojaedit_e2e
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/poojaedit_e2e
+      NEXT_PUBLIC_SITE_URL: http://localhost:3100
+      DEV_ADMIN_AUTH: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -88,10 +107,15 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Migrate + seed the e2e database
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+
       - name: Build
         run: npm run build
 
-      - name: E2E (shell smoke)
+      - name: E2E (full suite)
         run: npm run test:e2e -- --project=chromium
 
       - uses: actions/upload-artifact@v4

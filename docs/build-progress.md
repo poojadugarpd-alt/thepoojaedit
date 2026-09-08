@@ -34,7 +34,7 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 9 | Invoices, refunds and returns | `passed (partial)` — owner review of business/tax fields + invoice samples pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/lib/documents.ts`; `src/server/invoices/{numbering,snapshots,pdf,service}.ts` (+ `pdf-lib`); `src/server/refunds/service.ts`; `src/server/returns/service.ts`; `src/server/inventory/restock.ts` (Phase 8); `/order/[orderNumber]/invoice`; `generate-invoice` + `reconcile-refunds` Inngest fns. See "Phase 9 progress" below. |
 | 10 | Notifications and delivery observability | `passed (partial)` — template/wording review + test-recipient evidence pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/server/notifications/{templates,transports,service,testing}.ts`; `/api/webhooks/whatsapp` + `/api/webhooks/resend`; `send-notifications` Inngest fn; seed `NotificationTemplate` rows. See "Phase 10 progress" below. |
 | 11 | Complete the operator dashboard | `passed (review gate)` — operator walkthrough is the checkpoint | `feat: Phase 11 — operator dashboard` | `src/server/admin/{orders,tasks,customers,settings,activity,bulk}.ts`; `src/server/analytics/index.ts`; `src/server/inventory/adjust.ts`; 11 `/admin/*` pages + 8 action files; `src/features/admin/{format,poll,bulk-form}.tsx`. See "Phase 11 progress" below. |
-| 12 | Full-system verification and preview readiness | `not-started` | — | — |
+| 12 | Full-system verification and preview readiness | `passed (partial)` — RC produced; preview deploy + provider evidence gated on accounts | `feat: Phase 12 — full-system verification` | `prisma/migrations/…_phase12_hot_path_indexes`; `tests/integration/verification.itest.ts`; `e2e/{a11y,headers-seo,keyboard-checkout}.spec.ts` (+ `@axe-core/playwright`); `npm run verify`; `docs/release-candidate.md`; full `acceptance-evidence.md` pass. See "Phase 12 progress" below. |
 | 13 | Operational handover and authorized production launch | `not-started` | — | — |
 
 ## Repository baseline (as inspected 2026-09-07)
@@ -585,6 +585,69 @@ residual usability issues. Residual now: keyboard-nav / axe sweep of the admin
 screens is Phase 12; the walkthrough for provider-gated steps (real capture /
 real tracking callbacks) waits on those accounts — the dashboard drives them
 through the same services the tests exercise with fakes.
+
+## Phase 12 progress (2026-09-08) — PARTIAL pass (RC review gate)
+
+Full-system verification, hardening and the release candidate. No app behaviour
+changed beyond narrow a11y fixes; one additive migration.
+
+**New:**
+- `prisma/migrations/20260908041119_phase12_hot_path_indexes/` — additive
+  `CREATE INDEX` on `InventoryTransaction(type, createdAt)` +
+  `OperationalTask(status, type)` (hot Phase-11 admin paths). Applied over the
+  **seeded dev DB with data** via `prisma migrate dev` and on a fresh DB via
+  `migrate deploy`; `migrate status` clean → the **N→N+1 additive-migration-
+  over-data** rehearsal (AC-17).
+- `tests/integration/verification.itest.ts` (5) — **browser-return-before-webhook
+  AND webhook-before-browser-return** both settle exactly once; account isolation
+  (`getViewableOrder` by customerId / guest token); the `/order/[orderNumber]/invoice`
+  route handler denies without/with-wrong token (404) and serves the PDF
+  (`private, no-store`) with the `ORDER_VIEW` token.
+- `e2e/a11y.spec.ts` (+ `@axe-core/playwright`) — axe WCAG 2.1 A/AA clean on
+  home / both listings / a PDP / cart / checkout; no critical/serious on the four
+  core admin screens. Fixes: 3 targeted `color-contrast` token bumps
+  (`price.tsx`, `product-detail.tsx`) + `aria-label` on admin filter selects/inputs
+  (orders / returns / products). No redesign.
+- `e2e/keyboard-checkout.spec.ts` — the COD checkout form is fully Tab-operable.
+- `e2e/headers-seo.spec.ts` — catalog API shared-cacheable (`s-maxage`, no
+  `private`/`no-store`); `/cart` `/checkout` `/admin` `noindex`; `robots.txt`
+  gates admin/cart/checkout/account; `sitemap.xml` serves; PDP has canonical + OG
+  + `Product` JSON-LD.
+- `npm run verify` = `check && test:integration && test:e2e && npm audit`.
+- `docs/release-candidate.md` — RC evidence review, migration rehearsal, perf lab
+  notes (field targets recorded as intentions — no traffic yet), security review,
+  and the **ordered blocker list** (8 items: Supabase, Razorpay, Shadowfax,
+  Resend+Meta, owner GST/invoice config, Inngest project, Vercel preview, Phase 13
+  drills).
+
+Decisions **D-81…D-83**.
+
+| Playbook §15 check | Result |
+| --- | --- |
+| regression suite green | ✅ `npm run verify` — lint · type · **85** unit · build · **159** integration (real PG) · **54** e2e · audit 0 |
+| real PostgreSQL race tests | ✅ `inventory.itest.ts` / `concurrency.itest.ts` / `checkout.itest.ts` / `events.itest.ts` |
+| browser prepaid/COD/guest/admin journeys | ✅ `storefront` / `checkout` / `admin` / `keyboard-checkout` e2e |
+| provider test evidence | ◐ proven with deterministic fakes; **live runs deferred** (RC blockers 2–4) |
+| private caching / direct API authorization | ✅ `headers-seo.spec.ts` + `verification.itest.ts` (invoice route + account isolation) |
+| mobile usability / a11y | ✅ axe WCAG 2.1 A/AA + keyboard checkout + 360px no-overflow |
+| SEO | ✅ canonical / OG / JSON-LD / robots / sitemap |
+| outbox recovery / idle scheduler | ✅ `events.itest.ts` |
+| return-before-webhook & webhook-before-return | ✅ `verification.itest.ts` both orderings |
+| migration rehearsal (upgrade over data) | ✅ `phase12_hot_path_indexes` applied over seeded data |
+| dependency review | ✅ `npm audit` 0; `@axe-core/playwright` + `pdf-lib` are the only Phase 9–12 additions |
+| connection ceilings / capacity | ◐ pool `max:5`/process documented; a real load test needs a deploy (RC §3, blocker 7) |
+| isolated preview deploy | ❌ **blocked** — needs a Vercel project (blocker 7) |
+
+**Suite:** `npm run verify` ✅ end-to-end.
+
+**AC matrix** (`docs/acceptance-evidence.md`, full pass): `passed` — **AC-01, AC-02,
+AC-04, AC-05, AC-07, AC-10, AC-16**. `in-progress` (logic proven locally; live-
+provider / owner sign-off / preview deploy outstanding) — AC-03, AC-06, AC-08,
+AC-09, AC-11, AC-12, AC-14, AC-15, AC-17, AC-18. `blocked` — AC-13.
+
+**Checkpoint:** RC evidence reviewed; **no unresolved critical security, overselling,
+money, migration or data-loss defect** (RC §4). Not production-ready — 8 blockers in
+`docs/release-candidate.md`. AC-18 operational drills continue in Phase 13.
 
 ## Blockers / information needed before later phases
 

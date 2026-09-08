@@ -45,7 +45,7 @@ function Measurements({ value }: { value: unknown }) {
             );
           })}
         </ul>
-        <p className="mt-1 text-xs text-black/45 dark:text-white/45">
+        <p className="mt-1 text-xs text-black/60 dark:text-white/55">
           Units as recorded by the seller; confirm before ordering.
         </p>
       </dd>
@@ -208,7 +208,7 @@ export function ProductDetail({
             />
             <AvailabilityBadge availability={product.availability} />
             {product.isThrift && (
-              <span className="text-xs uppercase tracking-wide text-black/45 dark:text-white/45">
+              <span className="text-xs uppercase tracking-wide text-black/60 dark:text-white/55">
                 One of one
               </span>
             )}

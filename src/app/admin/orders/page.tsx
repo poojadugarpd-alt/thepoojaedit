@@ -52,11 +52,13 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
       <form className="flex flex-wrap items-center gap-2 text-xs">
         <input
           name="q"
+          aria-label="Search orders by number, phone or email"
           defaultValue={sp.q}
           placeholder="order # / phone / email"
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
         />
         <select
+          aria-label="Filter by order status"
           name="orderStatus"
           defaultValue={sp.orderStatus ?? ""}
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
@@ -69,6 +71,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
           ))}
         </select>
         <select
+          aria-label="Filter by payment method"
           name="paymentMethod"
           defaultValue={sp.paymentMethod ?? ""}
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"

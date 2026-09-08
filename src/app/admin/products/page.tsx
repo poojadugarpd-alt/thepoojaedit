@@ -66,6 +66,7 @@ export default async function AdminProducts({
 
       <form method="get" className="mt-4 flex flex-wrap gap-2 text-sm">
         <select
+          aria-label="Filter by catalogue"
           name="catalog"
           defaultValue={catalog ?? ""}
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
@@ -75,6 +76,7 @@ export default async function AdminProducts({
           <option value="THRIFT">Thrift</option>
         </select>
         <select
+          aria-label="Filter by status"
           name="status"
           defaultValue={status}
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"

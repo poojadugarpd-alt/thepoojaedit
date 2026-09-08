@@ -66,6 +66,7 @@ export default async function AdminReturnDetail({
                   <input type="hidden" name="returnItemId" value={it.id} />
                   <div className="flex gap-2">
                     <select
+                      aria-label="Inspection outcome"
                       name="outcome"
                       className="rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
                     >
@@ -95,6 +96,7 @@ export default async function AdminReturnDetail({
               {hid}
               <div className="flex gap-2">
                 <select
+                  aria-label="Return decision"
                   name="decision"
                   className="rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
                 >
@@ -123,6 +125,7 @@ export default async function AdminReturnDetail({
             <ActionForm action={resolveReturnAction} submitLabel="Resolve" compact>
               {hid}
               <select
+                aria-label="Return resolution"
                 name="resolution"
                 className="rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
               >
