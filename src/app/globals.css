@@ -6,8 +6,10 @@
  *  12px on every image; 999px on pills; nothing else is round.
  * ------------------------------------------------------------------ */
 
+/* Committed light design, like rhode.com — the same warm-greige palette on
+   every device regardless of the OS dark-mode setting. */
 :root {
-  color-scheme: light;
+  color-scheme: light only;
 
   --ground: #ffffff;
   --fill: #f1f0ed; /* pale sand — section bands, media bed */
@@ -28,32 +30,6 @@
   --font-sans:
     "Helvetica Neue", Helvetica, var(--font-inter), Arial, "Segoe UI", Roboto,
     system-ui, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --ground: #1b1a17;
-    --fill: #242320;
-    --ink: #c9c6bf;
-    --ink-strong: #efece5;
-    --ink-soft: #9a978f;
-    --line: #35332e;
-    --background: var(--ground);
-    --foreground: var(--ink-strong);
-  }
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --ground: #1b1a17;
-  --fill: #242320;
-  --ink: #c9c6bf;
-  --ink-strong: #efece5;
-  --ink-soft: #9a978f;
-  --line: #35332e;
-  --background: var(--ground);
-  --foreground: var(--ink-strong);
 }
 
 @theme inline {

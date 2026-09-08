@@ -36,24 +36,20 @@ export async function CollectionPage({
   const segment = SEGMENT_BY_CATALOG[catalog];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-4 text-sm text-black/55 dark:text-white/55"
-      >
-        <Link href={`/${segment}`} className="hover:underline">
+    <div className="u-page py-14 sm:py-20">
+      <nav aria-label="Breadcrumb" className="mb-8 text-[0.8125rem] text-ink-soft">
+        <Link
+          href={`/${segment}`}
+          className="font-bold uppercase tracking-[0.06em] hover:opacity-70"
+        >
           {CATALOG_LABEL[catalog]}
         </Link>
         <span aria-hidden> / </span>
         <span>{col.name}</span>
       </nav>
-      <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{col.name}</h1>
-      {col.description && (
-        <p className="mt-3 max-w-2xl text-sm text-black/65 dark:text-white/65">
-          {col.description}
-        </p>
-      )}
-      <div className="mt-10">
+      <h1 className="u-display">{col.name}</h1>
+      {col.description && <p className="u-lead mt-5">{col.description}</p>}
+      <div className="mt-12">
         <ProductGrid
           products={col.products}
           emptyMessage="Nothing in this collection right now."
