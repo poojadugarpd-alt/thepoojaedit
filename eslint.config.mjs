@@ -22,6 +22,8 @@ const eslintConfig = [
       "test-results/**",
       "src/generated/**",
       "next-env.d.ts",
+      "design/**",
+      "migration/**",
     ],
   },
 ];

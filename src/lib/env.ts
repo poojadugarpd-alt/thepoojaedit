@@ -73,6 +73,11 @@ const ServerEnvSchema = z
     INNGEST_EVENT_KEY: optionalNonEmpty,
     INNGEST_SIGNING_KEY: optionalNonEmpty,
 
+    // ── Instagram strip (Behold.so JSON feed) — optional ────────────────
+    BEHOLD_FEED_ID: optionalNonEmpty.describe(
+      "Behold.so feed id (feeds.behold.so/<id>). When unset or unreachable the homepage falls back to a curated product strip.",
+    ),
+
     // ── Monitoring — harness in Phase 1, DSN optional ────────────────────
     SENTRY_DSN: optionalNonEmpty,
     LOG_LEVEL: z

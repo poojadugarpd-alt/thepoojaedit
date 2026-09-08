@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { InstagramStrip } from "@/features/instagram/instagram-strip";
 import { ProductRail } from "@/features/catalog/product-rail";
+import { productPath } from "@/lib/catalog-routes";
 import { listProducts } from "@/server/catalog";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
 
@@ -78,9 +80,14 @@ export default async function HomePage() {
   const usedSlugs = new Set(
     [hero, editHero, thriftHero].map((h) => h?.product.slug).filter(Boolean),
   );
-  const gram = [...editItems, ...thriftItems]
+  const fallbackTiles = [...editItems, ...thriftItems]
     .filter((p) => p.primaryImage && !usedSlugs.has(p.slug))
-    .slice(0, 6);
+    .slice(0, 6)
+    .map((p) => ({
+      href: productPath(p.catalog, p.slug),
+      imageUrl: p.primaryImage!.url,
+      alt: p.primaryImage!.alt || p.title,
+    }));
 
   return (
     <div>
@@ -163,46 +170,8 @@ export default async function HomePage() {
         products={thriftItems}
       />
 
-      {/* Instagram */}
-      {gram.length >= 3 && (
-        <section className="u-section u-rule">
-          <div className="u-page flex items-end justify-between gap-4">
-            <div>
-              <p className="u-eyebrow">@poojadugar_</p>
-              <h2 className="u-h2 mt-3">On Instagram</h2>
-            </div>
-            <a
-              href="https://www.instagram.com/poojadugar_/"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="u-pill shrink-0"
-            >
-              Follow
-            </a>
-          </div>
-          <div className="u-page mt-10">
-            <ul className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-              {gram.map((p) => (
-                <li key={`${p.catalog}:${p.slug}`}>
-                  <Link
-                    href={`/${p.isThrift ? "thrift" : "the-pooja-edit"}/${p.slug}`}
-                    className="u-media block aspect-square"
-                  >
-                    <Image
-                      src={p.primaryImage!.url}
-                      alt={p.primaryImage!.alt || p.title}
-                      width={320}
-                      height={320}
-                      sizes="(max-width: 640px) 33vw, 15vw"
-                      className="h-full w-full object-cover"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+      {/* Instagram — live @poojadugar_ feed via Behold, curated fallback */}
+      <InstagramStrip fallback={fallbackTiles} />
 
       {/* Newsletter */}
       <section className="u-section u-rule">

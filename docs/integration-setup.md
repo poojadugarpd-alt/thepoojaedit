@@ -16,6 +16,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `META_APP_SECRET` | Approved templates only; template names in `src/server/notifications/templates.ts` (`order_confirmed_prepaid`, `order_received_cod`, `shipment_dispatched`, `out_for_delivery`, `order_delivered`, `delivery_failed`, `order_cancelled`, `refund_completed`) |
 | Email | `RESEND_API_KEY`, `EMAIL_FROM` (verified sender), `RESEND_WEBHOOK_SECRET` (Svix `whsec_…`, required for the delivery callback) | — |
 | Jobs | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | — |
+| Instagram | `BEHOLD_FEED_ID` | Optional. Behold.so feed id; homepage strip falls back to a curated product strip when unset |
 | Monitoring | Sentry DSN, server-only Sentry auth token (if source maps uploaded), `LOG_LEVEL` | — |
 | Business | Legal name, GSTIN, supplier state/address, invoice series, contact details, policy text — editable nonsecret settings may live in Postgres (`StoreSettings`) | Owner-confirmed before live |
 
@@ -32,6 +33,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | Meta WhatsApp Cloud API | 10 | Test number + test recipients | ◐ | **Code slice done (Phase 10)** — registry, transport (Graph REST), `/api/webhooks/whatsapp` (verify handshake + HMAC), delivery-status callbacks, all tested against `FakeWhatsAppTransport`. **To go live:** app + system user + phone number id → set the 4 `WHATSAPP_*`/`META_APP_SECRET` vars → submit each template name above for approval (lead time) → send one to a test recipient. |
 | Resend | 10 | Test sending + verified domain | ◐ | **Code slice done (Phase 10)** — transport (REST), `/api/webhooks/resend` (Svix), all tested against `FakeEmailTransport`. **To go live:** verify sender domain (DNS) → `RESEND_API_KEY` + `EMAIL_FROM` → add the webhook endpoint, copy its `whsec_` secret to `RESEND_WEBHOOK_SECRET` → send one email to a test recipient. |
 | Sentry | 1 | N/A | ☐ | Project + DSN; server auth token only if uploading source maps. |
+| Behold.so (Instagram feed) | 4 (storefront) | N/A — free tier | ☐ | **Code slice done (D-84)** — `src/server/instagram/behold.ts` + `src/features/instagram/instagram-strip.tsx`; homepage falls back to a curated product strip when unset/unreachable. **To go live:** at behold.so, connect the @poojadugar_ **Professional** Instagram account → create a feed → copy the id from `feeds.behold.so/<id>` → set `BEHOLD_FEED_ID`. No webhook, no secret, no consent gate. Free tier = 1 feed, a few refreshes/day. Post-launch, can be swapped for the first-party Meta Graph API (`instagram_business_basic`) once the WhatsApp Meta app + Business Verification exist. |
 | Vercel | 12 | Preview environment isolated from prod | ☐ | Project, env var scoping (dev/preview/prod), Node 22 runtime setting. |
 
 ## Callback / webhook URLs (to register when each phase lands)

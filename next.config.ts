@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cdn.shopify.com" },
       { protocol: "https", hostname: "shop-meta.s3.ap-south-1.amazonaws.com" },
       { protocol: "https", hostname: "dm2buy-aqbqh9cwb5cwb9he.z02.azurefd.net" },
+      // Behold.so rehosts the @poojadugar_ Instagram feed images on its own CDN.
+      { protocol: "https", hostname: "**.behold.so" },
     ],
   },
 };
