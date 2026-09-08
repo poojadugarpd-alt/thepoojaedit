@@ -65,6 +65,9 @@ const ServerEnvSchema = z
     // ── Email (Resend) — wired in Phase 10 ───────────────────────────────
     RESEND_API_KEY: optionalNonEmpty,
     EMAIL_FROM: optionalNonEmpty.describe("Verified sender identity."),
+    RESEND_WEBHOOK_SECRET: optionalNonEmpty.describe(
+      "Resend delivery-webhook signing secret (Svix). If unset, the callback endpoint 401s.",
+    ),
 
     // ── Background jobs (Inngest) — wired in Phase 6 ─────────────────────
     INNGEST_EVENT_KEY: optionalNonEmpty,

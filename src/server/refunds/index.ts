@@ -1,10 +1,18 @@
+import "server-only";
+
 /**
- * refunds domain service.
- *
- * Business logic for the refunds domain lives here and is the ONLY place it lives.
- * Route handlers, Server Actions, admin screens and Inngest jobs import from
- * this module; they never re-implement its rules. See docs/module-map.md.
- *
- * Populated in a later phase; intentionally empty in Phase 1.
+ * refunds domain service (master §6, §8). Workflow over the payments-domain
+ * `createOrderRefund` primitive: admin request, `refund.completed` event,
+ * credit note, and provider reconciliation. No inventory side effects.
  */
-export {};
+import { prisma } from "@/lib/db";
+import { getPaymentProvider } from "@/server/payments";
+
+import { requestRefund, type RequestRefundInput } from "./service";
+
+export { makeRefundReconcilePort, requestRefund } from "./service";
+export type { RequestRefundInput } from "./service";
+
+export function requestRefundNow(input: RequestRefundInput) {
+  return requestRefund(prisma, getPaymentProvider(), input);
+}

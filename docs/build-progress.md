@@ -31,8 +31,8 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 6 | Durable event delivery and scheduled recovery | `passed` (review gate) | `feat: Phase 6 — durable event delivery & scheduled recovery` | `src/server/events/*` (emit/dispatcher/side-effects/operational-tasks/scheduled); `src/server/webhooks/inbox.ts`; `src/inngest/*` + `/api/inngest`. See "Phase 6 progress" below. |
 | 7 | Razorpay and end-to-end prepaid/COD checkout | `passed (partial)` — live Razorpay test evidence deferred | `feat: Phase 7 (partial) — Razorpay checkout + prepaid/COD end-to-end` | `src/server/payments/*`; `/api/webhooks/razorpay`; `/checkout` + `src/features/checkout/*`; `reconcile-payments` cron. See "Phase 7 progress" below. |
 | 8 | Shadowfax and shipping operations _(provider changed from Shiprocket — master v1.1 / D-59)_ | `passed (partial)` — live Shadowfax test evidence deferred | `feat: Phase 8 (partial) — Shadowfax shipping operations` | `src/server/shipping/{port,status,shadowfax,testing,service}.ts`; `src/server/inventory/restock.ts`; `/api/webhooks/shadowfax`; `/admin/shipments/[id]/label`; `reconcile-shipments` + `create-shipment-on-confirm` Inngest fns; order-page tracking block. See "Phase 8 progress" below. |
-| 9 | Invoices, refunds and returns | `not-started` | — | — |
-| 10 | Notifications and delivery observability | `not-started` | — | — |
+| 9 | Invoices, refunds and returns | `passed (partial)` — owner review of business/tax fields + invoice samples pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/lib/documents.ts`; `src/server/invoices/{numbering,snapshots,pdf,service}.ts` (+ `pdf-lib`); `src/server/refunds/service.ts`; `src/server/returns/service.ts`; `src/server/inventory/restock.ts` (Phase 8); `/order/[orderNumber]/invoice`; `generate-invoice` + `reconcile-refunds` Inngest fns. See "Phase 9 progress" below. |
+| 10 | Notifications and delivery observability | `passed (partial)` — template/wording review + test-recipient evidence pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/server/notifications/{templates,transports,service,testing}.ts`; `/api/webhooks/whatsapp` + `/api/webhooks/resend`; `send-notifications` Inngest fn; seed `NotificationTemplate` rows. See "Phase 10 progress" below. |
 | 11 | Complete the operator dashboard | `not-started` | — | — |
 | 12 | Full-system verification and preview readiness | `not-started` | — | — |
 | 13 | Operational handover and authorized production launch | `not-started` | — | — |
@@ -393,6 +393,129 @@ harmless default — every write passes `"shadowfax"`); pickup address is a
 labelled `shipping.rules` fixture until the owner confirms it; single-shipment
 model (schema is split-ready).
 
+## Phase 9 progress (2026-09-08) — PARTIAL pass (review gate)
+
+Invoices, refunds workflow, returns/inspection. No schema migration (Phase 2
+`Invoice`/`InvoiceSequence`/`CreditNote`/`ReturnRequest`/`ReturnItem` already fit).
+Added **`pdf-lib`** (pure JS, MIT, `npm audit` 0).
+
+**New:**
+- `src/lib/documents.ts` — private `DocumentStore` (Supabase `documents` bucket
+  when configured, else a git-ignored `.storage/` dir; `InMemoryDocumentStore`
+  for tests). Distinct from the browser-upload `StoragePort`.
+- `src/server/invoices/numbering.ts` — `financialYearFor` (India Apr–Mar) +
+  `allocateInvoiceNumber` (atomic `INSERT … ON CONFLICT DO UPDATE … RETURNING`).
+- `snapshots.ts` — immutable legal / address / line / tax snapshots (by value
+  from the already-immutable `OrderItem`/`OrderAddress`).
+- `pdf.ts` — one-page GST invoice via `pdf-lib`; WinAnsi-safe (`Rs` not `₹`,
+  non-Latin stripped); DRAFT watermark for fixture / unconfirmed-business.
+- `service.ts` — `createInvoiceForOrder` (idempotent on `@@unique([orderId])`,
+  concurrent losers roll back their sequence increment → no gap),
+  `generateInvoicePdf` (idempotent, `INVOICE_FAILURE` task on failure, never
+  touches order/payment), `issueCreditNote` (per-`(invoiceId, refundId)`,
+  number under the invoice row lock).
+- `src/server/refunds/service.ts` — `requestRefund` (over the Phase 7
+  `createOrderRefund` aggregate-limit primitive; on COMPLETED → `refund.completed`
+  event + credit note), `makeRefundReconcilePort` (`fetchRefund` for missed
+  completions).
+- `src/server/returns/service.ts` — `createReturnRequest` (delivered-only,
+  final-sale rejected, per-line remaining-qty check), `decideReturn` /
+  `markReturnReceived` / `finalizeReturnInspection` (`RETURN_TRANSITIONS`,
+  audited), `inspectReturnItem` (`RESTOCK` → `restockUnits` key
+  `return-restock:<returnItemId>`, exactly once), `resolveReturn` (`REFUND` →
+  refund workflow for the line value; **never** restocks).
+- `/order/[orderNumber]/invoice` — PDF download, owner or `ORDER_VIEW` token,
+  generic 404 otherwise.
+- Inngest: `generate-invoice` (consumes `order.payment_settled`/`order.cod_confirmed`,
+  `runOnce`), `reconcile-refunds` (`*/15`, no-op without Razorpay).
+
+Decisions **D-67…D-72**.
+
+| Playbook §12 check | Result |
+| --- | --- |
+| simultaneous invoice creation → one identity | ✅ `invoices.itest.ts` — 3 concurrent `createInvoiceForOrder` → one `Invoice`, one number |
+| retries reuse it | ✅ a 4th call returns the same id + number |
+| financial-year boundary | ✅ `financialYearFor` unit + integration (confirmedAt 2026-03-15 → FY 2025-26) |
+| exact tax totals | ✅ `taxSnapshot` CGST+SGST+IGST = order tax; invoice total = order total; `breakdownByRate` sums |
+| product/tax edits do not alter old invoices | ✅ edit variant price + product title after issue → `lineSnapshot` byte-identical |
+| unauthorized PDF denied | ✅ `/order/[orderNumber]/invoice` needs owner or `ORDER_VIEW` token → 404 |
+| PDF job idempotent / repeatable | ✅ `generateInvoicePdf` twice → one object, same key; `%PDF-` header; render failure → `INVOICE_FAILURE` task, order untouched |
+| partial refunds sum correctly | ✅ `returns.itest.ts` — two 40% refunds COMPLETED; a third → `RefundLimitError`; order `PARTIALLY_REFUNDED` |
+| concurrent over-refunds blocked | ✅ Phase 7 `payments.itest.ts` (`FOR UPDATE` on the order) + `returns.itest.ts` |
+| unknown refund outcome reconciled | ✅ `makeRefundReconcilePort` drives a stuck PROCESSING refund to COMPLETED from `fetchRefund` |
+| duplicate inspection cannot restock twice | ✅ 2nd `inspectReturnItem(RESTOCK)` on the same line → `restocked:false`, on-hand unchanged, one `RETURN_RESTOCK` row |
+| credit note on refund | ✅ completed refund → one `CreditNote` (`reason REFUND`), invoice byte-identical; idempotent per refund |
+| render representative new/thrift/mixed PDFs | ✅ `pdf.test.ts` renders new-apparel (CGST/SGST) / thrift one-of-one / mixed inter-state (IGST, COD) / DRAFT fixture — valid PDFs, sent to the user for visual review |
+
+## Phase 10 progress (2026-09-08) — PARTIAL pass (review gate)
+
+Notifications: versioned template registry, channel eligibility/consent, durable
+delivery identities, verified callbacks, per-delivery dedup, audited replay. SMS
+absent by design. Zero new deps (Resend/Meta via `fetch`).
+
+**New:**
+- `src/server/notifications/templates.ts` — code registry (source of truth for
+  existence / version / Zod variable schema / rendering); a `NotificationTemplate`
+  DB row is an optional per-store DISABLE / provider-template-id override. Copy is
+  distinct per lifecycle event; **COD confirmation never says "paid" / "payment
+  successful"**.
+- `transports.ts` — `EmailTransport` (Resend REST), `WhatsAppTransport` (Meta
+  Graph REST), `InAppTransport` (`AdminNotification`); noop when unconfigured.
+- `service.ts` — `sendNotification` (eligibility → `deliveryKey` dedup on
+  `NotificationDelivery @@unique` → render → send → SENT/FAILED + task; skips are
+  never throws), `notifyForDomainEvent` (the master's event→channel matrix, one
+  failure never aborts the rest), `retryNotification` (audited), `applyDeliveryCallback`
+  (forward-only status; a stale callback cannot undo DELIVERED/READ).
+- `testing.ts` — `FakeEmailTransport` / `FakeWhatsAppTransport` (record-only, `failNext`).
+- `/api/webhooks/whatsapp` — GET verify handshake + POST `X-Hub-Signature-256`
+  HMAC (`META_APP_SECRET`) → status callbacks.
+- `/api/webhooks/resend` — POST Svix signature (`RESEND_WEBHOOK_SECRET`, `whsec_`
+  base64 key over `id.timestamp.body`) → status callbacks.
+- Inngest `send-notifications` (consumes `poojaedit/outbox.dispatched`,
+  independent of the other consumers).
+- `prisma/seed.ts` — `seedNotificationTemplates()` (11 templates).
+
+Decisions **D-73…D-76**.
+
+| Playbook §13 check | Result |
+| --- | --- |
+| missing email/consent does not break checkout | ✅ `notifications.itest.ts` — no email / no `transactionalConsent` / disabled template → `skipped`, no throw, no delivery row |
+| provider outage preserves paid order | ✅ transport `failNext` → `NotificationDelivery` FAILED + `notification:<id>` task; `notifyForDomainEvent` still resolves; order untouched |
+| duplicate event does not duplicate logical delivery | ✅ same `deliveryKey` → 2nd send `deduped`, one row; two `order.payment_settled` events (different `domainEventId`, same transition seed) → 3 deliveries total, not 6 |
+| stale callback cannot undo delivered state | ✅ DELIVERED then a `sent` callback → stays DELIVERED (`applied:false`) |
+| template variables validated | ✅ bad/missing vars → `TemplateVariableError`; unsupported channel rejected |
+| failures observable | ✅ FAILED row + `lastError` + `JOB_FAILURE` task |
+| replay safe | ✅ `retryNotification` on a FAILED row → SENT, one `AdminActivityLog{action:"notification.retry"}`, reuses the row (no dup) |
+| API acceptance ≠ delivery | ✅ transport returns id → status `SENT`; only a delivery callback → `DELIVERED` |
+| no COD "payment successful" message | ✅ `render.test.ts` + `notifications.itest.ts` — `order_confirmation_cod` has no `paid`/`payment successful`, says "Cash on Delivery" |
+| distinct wording per event | ✅ confirmation / shipping / delivery / cancellation / refund all separate templates + subjects |
+| test email rendering / approved WhatsApp template | ◐ rendered + asserted via fakes; **live Resend + approved Meta template deferred** (blocker #4) |
+
+**Suite (Phases 9+10):** `npm run check` ✅ (lint · typecheck · **85** unit incl.
+`invoices/numbering` (5) + `invoices/pdf` (5) + `notifications/render` (8) · build
+— `/order/[orderNumber]/invoice`, `/api/webhooks/whatsapp`, `/api/webhooks/resend`
+in the route table). `npm run test:integration` ✅ **144/144** (15 files;
+`invoices.itest.ts` **7**, `returns.itest.ts` **7**, `notifications.itest.ts` **12**
+new). `npm run test:e2e` ✅ **22/22**. `npm audit` ✅ 0.
+
+**Covers (advanced):** **AC-05** (return/RTO restock exactly once, never from
+refund), **AC-07** (invoice/refund/notification dedup), **AC-10** (doc/notification
+failure never rolls back a paid order; audited replay), **AC-11** (immutable
+FY-numbered GST invoice snapshots), **AC-12** (private PDF, authorized download),
+**AC-14** (template + delivery paths with consent + missing-channel handling).
+AC-11/12/14 stay `in-progress` pending owner review + live provider evidence.
+
+**Deferred:**
+- **Phase 9 checkpoint:** owner reviews business/tax/invoice fields + the sample
+  PDFs before any live issuance. `business.profile` is a labelled fixture; the
+  DRAFT watermark stays until real GSTIN/rates are confirmed.
+- **Phase 10 checkpoint (blocker #4):** a real Resend send to a test recipient +
+  an **approved** Meta WhatsApp template delivered to a test number. Resend Svix
+  secret + Meta app secret / verify token / phone-number id needed. Without them
+  the transports are noop and email/WhatsApp deliveries record as skipped/failed.
+- Supabase Storage for invoice PDFs — currently the local `.storage/` dir
+  (Phase 3 deferred).
+
 ## Blockers / information needed before later phases
 
 None blocked Phases 1–2 (local embedded PostgreSQL, no account). **Phase 3 is the first that wants a Supabase project** (Auth + Storage). Recorded so they are not rediscovered late:
@@ -400,7 +523,7 @@ None blocked Phases 1–2 (local embedded PostgreSQL, no account). **Phase 3 is 
 1. **Supabase project (dev)** — needed from Phase 3 for Auth + Storage, and to run the deferred Supavisor+Prisma concurrency proof. A local Supabase CLI stack (Docker) is an alternative but this machine has no Docker; a free hosted dev project is the likely path. Free-tier allowances / pause / backup entitlement verified against the live account when created. (D-open-3 resolved for Phase 2 = embedded Postgres; Phase 3 revisits.)
 2. **Razorpay test account** — **now the active gate for Phase 7's full pass.** Code slice complete + tested; needs test key id/secret + webhook secret, then a real test-mode payment and a real signed webhook to move AC-06/07/08/09 to `passed`. Steps in `docs/integration-setup.md`. No live charge/refund without explicit authorisation.
 3. **Shadowfax merchant account + confirmation of a provider-supported test arrangement** — **now the active gate for Phase 8's full pass.** Code slice complete + tested against `FakeShadowfax`; needs `SHADOWFAX_API_TOKEN` / `SHADOWFAX_CLIENT_ID` (+ `SHADOWFAX_WEBHOOK_TOKEN` if the account supports one), the real endpoint paths/fields confirmed, and a real shipment + callback + label + COD-remittance exercised. AC-13 stays `blocked` until a sandbox or authorised controlled test is confirmed. _(Provider changed from Shiprocket at the owner's direction — master v1.1 / D-59.)_
-4. **Meta WhatsApp Cloud API + approved templates**, **Resend verified sender** — needed from Phase 10.
+4. **Meta WhatsApp Cloud API + approved templates**, **Resend verified sender + Svix webhook secret** — **now the active gate for Phase 10's full pass.** Code slice complete + tested against fakes; needs `WHATSAPP_ACCESS_TOKEN`/`WHATSAPP_PHONE_NUMBER_ID`/`WHATSAPP_VERIFY_TOKEN`/`META_APP_SECRET` + `RESEND_API_KEY`/`EMAIL_FROM`/`RESEND_WEBHOOK_SECRET`, an approved WhatsApp template per key, then a real test-recipient send each. AC-14 stays `in-progress` until then. Template wording also needs an owner pass.
 5. **Inngest account (dev)** — needed from Phase 6.
 6. **Real business/tax configuration** — legal name, GSTIN, supplier state/address, HSN + rates, invoice series, contact details, policy text. Needed for live checkout/invoices (Phases 5, 9, 13). Development proceeds on clearly labelled fixtures until the owner confirms these.
 7. **Deploy target** — Vercel project + isolated preview environment, needed from Phase 12.

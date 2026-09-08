@@ -20,6 +20,13 @@ import {
   isShippingConfigured,
   makeShipmentReconcilePort,
 } from "@/server/shipping";
+import { getDocumentStore } from "@/lib/documents";
+import {
+  createInvoiceForOrder,
+  generateInvoicePdf,
+} from "@/server/invoices/service";
+import { makeRefundReconcilePort } from "@/server/refunds/service";
+import { notifyForDomainEvent } from "@/server/notifications";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -135,10 +142,96 @@ export const createShipmentOnConfirm = inngest.createFunction(
 );
 
 /**
+ * Poll Razorpay for refunds stuck non-terminal (master §8 — "unknown refund
+ * outcome reconciled"). No-op without Razorpay keys.
+ */
+export const reconcileRefunds = inngest.createFunction(
+  { id: "reconcile-refunds", concurrency: 1 },
+  { cron: "*/15 * * * *" },
+  async ({ step }) => {
+    if (!isPrepaidConfigured()) return { skipped: "razorpay not configured" };
+    return step.run("reconcile", () =>
+      runReconciliation([makeRefundReconcilePort(prisma, getPaymentProvider())]),
+    );
+  },
+);
+
+/**
+ * Issue the invoice + generate its private PDF when an order is CONFIRMED
+ * (master §6). Idempotent (`Invoice @@unique([orderId])` + PDF key check).
+ * A PDF failure opens an `INVOICE_FAILURE` task and is retried — it never
+ * touches order/payment state.
+ */
+export const generateInvoice = inngest.createFunction(
+  { id: "generate-invoice", retries: 4, concurrency: 4 },
+  { event: "poojaedit/outbox.dispatched" },
+  async ({ event, step }) => {
+    const { domainEventId, type, aggregateType, aggregateId } = event.data as {
+      domainEventId: string;
+      type: string;
+      aggregateType: string;
+      aggregateId: string;
+    };
+    if (
+      aggregateType !== "Order" ||
+      !["order.payment_settled", "order.cod_confirmed", "order.confirmed"].includes(type)
+    ) {
+      return { skipped: "not a confirmation event" };
+    }
+    const invoice = await step.run("issue-invoice", () =>
+      runOnce(prisma, {
+        executionKey: `${domainEventId}:invoice`,
+        handlerName: "issue-invoice",
+        eventId: domainEventId,
+        run: async () => {
+          const inv = await createInvoiceForOrder(prisma, { orderId: aggregateId });
+          return { result: { invoiceId: inv.id } };
+        },
+      }),
+    );
+    const invoiceId = (
+      invoice as { result?: { invoiceId?: string } }
+    )?.result?.invoiceId;
+    if (!invoiceId) return { skipped: "no invoice id (deduped)" };
+    return step.run("render-pdf", async () => {
+      const store = await getDocumentStore();
+      return generateInvoicePdf(prisma, store, { invoiceId });
+    });
+  },
+);
+
+/**
+ * Send the customer + admin notifications for a dispatched domain event
+ * (master §8). Independent consumer of `poojaedit/outbox.dispatched`; channel
+ * failure never affects order/payment state. `runOnce` + per-delivery keys give
+ * double dedup.
+ */
+export const sendNotifications = inngest.createFunction(
+  { id: "send-notifications", retries: 3, concurrency: 8 },
+  { event: "poojaedit/outbox.dispatched" },
+  async ({ event, step }) => {
+    const { domainEventId, type, aggregateType, aggregateId, payload } = event.data as {
+      domainEventId: string;
+      type: string;
+      aggregateType: string;
+      aggregateId: string;
+      payload: unknown;
+    };
+    return step.run("notify", () =>
+      notifyForDomainEvent(prisma, {
+        domainEventId,
+        type,
+        aggregateType,
+        aggregateId,
+        payload,
+      }),
+    );
+  },
+);
+
+/**
  * Consumer for every dispatched domain event. `step.run` gives durable retry;
- * `runOnce` adds cross-redelivery dedup keyed on the domain event. Real effects
- * (confirmation email / WhatsApp / invoice) attach in later phases as additional
- * consumers of the same event.
+ * `runOnce` adds cross-redelivery dedup keyed on the domain event.
  */
 export const onOutboxDispatched = inngest.createFunction(
   { id: "on-outbox-dispatched", retries: 4 },
@@ -169,6 +262,9 @@ export const functions = [
   outboxHealth,
   reconcilePayments,
   reconcileShipments,
+  reconcileRefunds,
   createShipmentOnConfirm,
+  generateInvoice,
+  sendNotifications,
   onOutboxDispatched,
 ];

@@ -357,9 +357,55 @@ function buildAddress(type: "BILLING" | "SHIPPING") {
   };
 }
 
+/**
+ * Notification templates (master §8). Rows exist so an operator can DISABLE a
+ * channel; the rendering + variable schema live in `src/server/notifications`.
+ * `variableSchema` here is a human-facing hint, not the enforcement.
+ */
+async function seedNotificationTemplates() {
+  const defs: {
+    key: string;
+    channels: ("EMAIL" | "WHATSAPP" | "IN_APP")[];
+    vars: string[];
+    providerTemplateId?: string;
+  }[] = [
+    { key: "order_confirmation_prepaid", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"], providerTemplateId: "order_confirmed_prepaid" },
+    { key: "order_confirmation_cod", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"], providerTemplateId: "order_received_cod" },
+    { key: "shipment_dispatched", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "awb", "courier", "trackingUrl"], providerTemplateId: "shipment_dispatched" },
+    { key: "shipment_out_for_delivery", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "trackingUrl"], providerTemplateId: "out_for_delivery" },
+    { key: "order_delivered", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber"], providerTemplateId: "order_delivered" },
+    { key: "delivery_failed", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "reason", "trackingUrl"], providerTemplateId: "delivery_failed" },
+    { key: "order_cancelled", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "reason"], providerTemplateId: "order_cancelled" },
+    { key: "refund_completed", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "amountPaise"], providerTemplateId: "refund_completed" },
+    { key: "admin_new_order", channels: ["IN_APP"], vars: ["orderNumber", "paymentMethod", "totalPaise"] },
+    { key: "admin_pending_cod", channels: ["IN_APP"], vars: ["orderNumber", "totalPaise"] },
+    { key: "admin_delivery_failed", channels: ["IN_APP"], vars: ["orderNumber", "reason"] },
+  ];
+  for (const d of defs) {
+    for (const channel of d.channels) {
+      await prisma.notificationTemplate.upsert({
+        where: {
+          key_channel_version_language: { key: d.key, channel, version: 1, language: "en" },
+        },
+        update: { isEnabled: true },
+        create: {
+          key: d.key,
+          channel,
+          version: 1,
+          language: "en",
+          isEnabled: true,
+          providerTemplateId: channel === "WHATSAPP" ? (d.providerTemplateId ?? null) : null,
+          variableSchema: { required: d.vars },
+        },
+      });
+    }
+  }
+}
+
 async function main() {
   const taxClass = await seedTaxAndSettings();
   await seedAdmin();
+  await seedNotificationTemplates();
   const { dresses, outerwear } = await seedCategories();
 
   const kurta = await seedNewApparel(taxClass.id, dresses.id);
