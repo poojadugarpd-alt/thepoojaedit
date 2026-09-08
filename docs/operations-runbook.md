@@ -114,9 +114,23 @@ Coverage required at launch: failed payments / reconciliation mismatches, stale 
 
 **Phase 9/10:** invoice PDF generation failure → `invoice-pdf:*` (`INVOICE_FAILURE`); refund provider failure → `refund-failure:*` (`REFUND_FAILURE`); notification delivery failure → `notification:*` (`JOB_FAILURE`). All land in the Needs-Attention queue (Phase 11). An external notifier on `JOB_FAILURE`/`INVOICE_FAILURE` task creation would itself be a `send-notifications` in-app entry — not built as a separate alerting channel in the MVP.
 
-## 9. Daily operator workflow _(filled from Phase 11)_
+## 9. Daily operator workflow _(filled Phase 11)_
 
-Needs Attention triage, pending COD confirmation, payment discrepancy review, COD remittance check, return-inspection workflow.
+The dashboard is at `/admin` (dev: `DEV_ADMIN_AUTH=1` + a seeded admin; prod: Supabase auth). A working pass:
+
+1. **`/admin`** — glance at Needs-Attention counts, open-order counters (pending payment / pending COD / needs review / to fulfil) and the 30-day money row.
+2. **`/admin/needs-attention`** — triage the `OperationalTask` queue (auto-refreshes, visibility-aware). Bulk-resolve clears only tasks whose condition is verifiably gone and reports every skip; a single task can be force-resolved with a reason once you've handled it out of band (audited as `task.resolve`). Task types → where to act:
+   - `COD_CONFIRMATION` → `/admin/orders?orderStatus=PENDING_CONFIRMATION` → Confirm COD.
+   - `PAYMENT_REVIEW` → the order → reconcile the money in the Razorpay dashboard, then fulfil or refund (§4).
+   - `NDR` → the shipment → contact the customer / arrange re-attempt via Shadowfax; the task auto-clears on a successful re-attempt scan.
+   - `RTO_INSPECTION` → `/admin/returns` isn't it — RTO is inspected via `inspectRtoNow` (a dedicated RTO screen is Phase-12 polish; use the shipment id).
+   - `LOW_STOCK` → `/admin/inventory` → reasoned correction; the task clears when available rises above the threshold.
+   - `SHIPMENT_FAILURE` / `INVOICE_FAILURE` / `refund-failure` / `notification:*` → §4 recovery table.
+3. **`/admin/orders`** — filter/search, open an order for the full timeline + contextual guarded actions (confirm / create shipment / issue invoice / refund / cancel / reconcile / sync COD / note). No raw status control — actions appear only when the lifecycle allows them.
+4. **`/admin/returns`** — decide → mark received → inspect each item (RESTOCK adds stock once) → finalise → resolve (REFUND runs the refund workflow).
+5. **`/admin/notifications`** — retry failed deliveries (audited).
+6. **`/admin/analytics`** — placed vs captured vs refunds vs COD remittance (all distinct); catalogue revenue is line-allocated; COD "outstanding" = collected but not yet remitted by the courier.
+7. **`/admin/settings`** — nonsecret business/policy config (versioned + audited) and credential health (present/absent only).
 
 ## 10. Incident notes
 

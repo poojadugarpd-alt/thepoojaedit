@@ -12,8 +12,16 @@ export const metadata: Metadata = {
 
 const NAV = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/needs-attention", label: "Needs Attention" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/returns", label: "Returns" },
+  { href: "/admin/notifications", label: "Notifications" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/products", label: "Products" },
-  { href: "/admin/products/new", label: "New product" },
+  { href: "/admin/activity", label: "Activity" },
+  { href: "/admin/settings", label: "Settings" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

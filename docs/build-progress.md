@@ -33,7 +33,7 @@ Status vocabulary: `not-started` · `in-progress` · `blocked` · `passed`
 | 8 | Shadowfax and shipping operations _(provider changed from Shiprocket — master v1.1 / D-59)_ | `passed (partial)` — live Shadowfax test evidence deferred | `feat: Phase 8 (partial) — Shadowfax shipping operations` | `src/server/shipping/{port,status,shadowfax,testing,service}.ts`; `src/server/inventory/restock.ts`; `/api/webhooks/shadowfax`; `/admin/shipments/[id]/label`; `reconcile-shipments` + `create-shipment-on-confirm` Inngest fns; order-page tracking block. See "Phase 8 progress" below. |
 | 9 | Invoices, refunds and returns | `passed (partial)` — owner review of business/tax fields + invoice samples pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/lib/documents.ts`; `src/server/invoices/{numbering,snapshots,pdf,service}.ts` (+ `pdf-lib`); `src/server/refunds/service.ts`; `src/server/returns/service.ts`; `src/server/inventory/restock.ts` (Phase 8); `/order/[orderNumber]/invoice`; `generate-invoice` + `reconcile-refunds` Inngest fns. See "Phase 9 progress" below. |
 | 10 | Notifications and delivery observability | `passed (partial)` — template/wording review + test-recipient evidence pending | `feat: Phase 9+10 — invoices, refunds/returns, notifications` | `src/server/notifications/{templates,transports,service,testing}.ts`; `/api/webhooks/whatsapp` + `/api/webhooks/resend`; `send-notifications` Inngest fn; seed `NotificationTemplate` rows. See "Phase 10 progress" below. |
-| 11 | Complete the operator dashboard | `not-started` | — | — |
+| 11 | Complete the operator dashboard | `passed (review gate)` — operator walkthrough is the checkpoint | `feat: Phase 11 — operator dashboard` | `src/server/admin/{orders,tasks,customers,settings,activity,bulk}.ts`; `src/server/analytics/index.ts`; `src/server/inventory/adjust.ts`; 11 `/admin/*` pages + 8 action files; `src/features/admin/{format,poll,bulk-form}.tsx`. See "Phase 11 progress" below. |
 | 12 | Full-system verification and preview readiness | `not-started` | — | — |
 | 13 | Operational handover and authorized production launch | `not-started` | — | — |
 
@@ -515,6 +515,76 @@ AC-11/12/14 stay `in-progress` pending owner review + live provider evidence.
   the transports are noop and email/WhatsApp deliveries record as skipped/failed.
 - Supabase Storage for invoice PDFs — currently the local `.storage/` dir
   (Phase 3 deferred).
+
+## Phase 11 progress (2026-09-08) — passed (review gate)
+
+The solo-operator dashboard, composed entirely from existing domain services —
+**no** alternate payment / inventory / shipment logic in any UI action, and no
+unrestricted "set status" control. No schema migration.
+
+**New — domain reads/helpers:**
+- `src/server/analytics/index.ts` — `getFinancialSummary` (placed vs captured vs
+  refunds vs COD remittance, kept distinct; catalogue revenue **line-allocated**
+  from `OrderItem`; **never reads acquisition/margin cost**), `getLowStock`,
+  `getAttentionSummary`, `getOverview`.
+- `src/server/admin/orders.ts` — `listOrders` (keyset cursor on `(createdAt, id)`,
+  stable under inserts; q / status / method filters), `getAdminOrder` (full
+  detail: items, addresses, timeline, payment attempts, shipments + events + COD,
+  invoices, refunds, returns, customer + notes), `orderStatusCounts`.
+- `src/server/admin/tasks.ts` — `listOpenTasks`; `resolveTaskChecked` — a task
+  clears only when its condition is verifiably gone (re-checks outbox / payment-
+  review / low-stock / cod-remittance / shipment-failure / invoice-pdf /
+  notification), else an explicit `force` + reason is required and audited.
+- `src/server/admin/{customers,settings,activity,bulk}.ts` — customer search +
+  private notes (no contact-based merging); nonsecret `StoreSettings` editor +
+  `credentialHealth` (present/absent, never values); activity feed;
+  `runBulk` (bounded to 50, per-record `{id, ok, error}`).
+- `src/server/inventory/adjust.ts` — `adjustStock` (reasoned, cannot go below
+  reserved or 0, `InventoryTransaction` ADJUST + `AdminActivityLog`, low-stock
+  task lifecycle); `listVariantLedger`.
+
+**New — UI (`/admin/*`, 11 pages + 8 `"use server"` action files):** overview ·
+needs-attention (bulk-resolve + per-task override) · orders (filter + keyset
+pagination) · orders/[orderNumber] (timeline + contextual guarded actions:
+confirm COD / create shipment / issue invoice / refund / cancel / reconcile /
+sync COD / note) · inventory (correction + ledger) · returns + returns/[id]
+(decide → receive → inspect → finalise → resolve) · notifications (failed +
+retry) · customers + customers/[id] · analytics · activity · settings. Every
+action independently calls `requireAdmin()`. `src/features/admin/`: `format.tsx`
+(money / `Pill` / `ts`), `poll.tsx` (visibility-aware polling with exponential
+backoff, no WebSockets), `bulk-form.tsx` (checkbox-select + partial-result
+reporting).
+
+Decisions **D-77…D-80**.
+
+| Playbook §14 check | Result |
+| --- | --- |
+| operator completes a prepaid lifecycle | ✅ `admin-dashboard.itest.ts` — place → capture → ship → deliver → invoice → refund, each visible in `getAdminOrder` |
+| operator completes a COD lifecycle | ✅ confirm → ship → deliver → collect; `paymentStatus` stays `COD_PENDING` through delivery, `COD_COLLECTED` only on a confirmed collection |
+| NDR / failed refund / job cases appear and resolve | ✅ an NDR scan → one `ndr:<shipmentId>` task in `listOpenTasks`; `resolveTaskChecked` refuses without a decision, succeeds with `force` + reason (audited `task.resolve`). Low-stock / payment-review tasks resolve only once the condition clears |
+| bulk actions report per-record failures | ✅ `runBulk` over a clearable + a still-active task → `{ attempted:2, succeeded:1, failed:1 }`, per-record error text |
+| inactive admin denied | ✅ `assertActiveAdmin(inactiveAdmin)` → `AuthorizationError`; every `/admin` action calls `requireAdmin()` (Phase 3 `auth.itest.ts` covers the identity paths) |
+| pagination stable | ✅ `listOrders` keyset — page 2 returns the same rows after a new order is inserted between page views; no overlap |
+| mixed-order revenue allocated by line | ✅ a TPE + THRIFT order → `byCatalogPaise` splits by line, both > 0, sum = order item total |
+| cost data restricted | ✅ `getOverview` / `getFinancialSummary` JSON contains no `acquisition*` key even with a thrift `acquisitionCostPaise` set |
+| inventory has no unrestricted quantity field | ✅ `adjustStock` — delta only, cannot breach `reserved` / 0, ledgered + audited |
+| UI poll / backoff | ✅ `Poll` component on needs-attention + orders + notifications; e2e asserts the control renders |
+| no "set status" bypass | ✅ every mutation routes through the owning domain service's transition table; the dashboard has no raw status setter |
+
+**Suite:** `npm run check` ✅ (lint · typecheck · **85** unit · build — 11 `/admin/*`
+routes present). `npm run test:integration` ✅ **154/154** (16 files;
+`admin-dashboard.itest.ts` **10** new). `npm run test:e2e` ✅ **26/26**
+(`e2e/admin.spec.ts` **2** new — shell + core screens + filtered list).
+
+**Covers:** **AC-12** (every admin mutation/read enforces authorization) and
+**AC-15** (operator can run a full prepaid + COD lifecycle and resolve
+operational failures).
+
+**Checkpoint:** an operator walkthrough with concrete fixtures + a note of
+residual usability issues. Residual now: keyboard-nav / axe sweep of the admin
+screens is Phase 12; the walkthrough for provider-gated steps (real capture /
+real tracking callbacks) waits on those accounts — the dashboard drives them
+through the same services the tests exercise with fakes.
 
 ## Blockers / information needed before later phases
 

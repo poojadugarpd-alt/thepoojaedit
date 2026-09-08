@@ -1,10 +1,17 @@
+import "server-only";
+
 /**
- * admin domain service.
- *
- * Business logic for the admin domain lives here and is the ONLY place it lives.
- * Route handlers, Server Actions, admin screens and Inngest jobs import from
- * this module; they never re-implement its rules. See docs/module-map.md.
- *
- * Populated in a later phase; intentionally empty in Phase 1.
+ * admin domain service (master §10). Guards + audit from Phase 3; the Phase 11
+ * dashboard reads (orders / tasks / customers / settings / activity / bulk) and
+ * the bounded bulk runner. Every mutation still flows through the owning domain
+ * service (orders / payments / shipping / refunds / returns / inventory) — this
+ * module never re-implements a lifecycle rule.
  */
-export {};
+export * from "./guards";
+export { auditLog } from "./audit";
+export * from "./orders";
+export * from "./tasks";
+export * from "./customers";
+export * from "./settings";
+export * from "./activity";
+export * from "./bulk";
