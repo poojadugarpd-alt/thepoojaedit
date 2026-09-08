@@ -54,21 +54,16 @@ export interface InstagramFeed {
 const FEED_BASE = "https://feeds.behold.so/";
 
 function pickImage(post: z.infer<typeof PostSchema>) {
+  // Prefer a Behold-rehosted size (applies to images and to video poster frames).
   const s = post.sizes ?? {};
-  const isVideo = (post.mediaType ?? "").toUpperCase() === "VIDEO";
-  const size = isVideo
-    ? undefined
-    : s.medium || s.large || s.small || s.full;
+  const size = s.medium || s.large || s.small || s.full;
   if (size) {
     return { url: size.mediaUrl, width: size.width ?? 640, height: size.height ?? 640 };
   }
   if (post.thumbnailUrl) {
     return { url: post.thumbnailUrl, width: 640, height: 640 };
   }
-  const any = s.large || s.medium || s.full || s.small;
-  return any
-    ? { url: any.mediaUrl, width: any.width ?? 640, height: any.height ?? 640 }
-    : null;
+  return null;
 }
 
 /**
@@ -99,6 +94,11 @@ export async function getInstagramFeed(): Promise<InstagramFeed | null> {
   for (const p of parsed.data.posts) {
     const img = pickImage(p);
     if (!img) continue;
+    // Only render images Behold has rehosted on its own CDN — raw Instagram CDN
+    // URLs (some reel/video thumbnails) are signed and expire within a day.
+    if (!/^https:\/\/([a-z0-9-]+\.)?behold\.(pictures|so)\//i.test(img.url)) {
+      continue;
+    }
     posts.push({
       id: p.id,
       permalink: p.permalink,
