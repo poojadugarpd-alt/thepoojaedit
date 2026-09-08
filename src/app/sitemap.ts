@@ -27,15 +27,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: u("/policies/terms"), changeFrequency: "monthly", priority: 0.3 },
   ];
 
+  // A cold database (e.g. a first deploy before Supabase is wired) must not fail
+  // the build — fall back to the static entries only.
   const [products, collections] = await Promise.all([
-    prisma.product.findMany({
-      where: { status: "PUBLISHED", publishedAt: { not: null } },
-      select: { catalog: true, slug: true, updatedAt: true },
-    }),
-    prisma.collection.findMany({
-      where: { isActive: true },
-      select: { catalog: true, slug: true, updatedAt: true },
-    }),
+    prisma.product
+      .findMany({
+        where: { status: "PUBLISHED", publishedAt: { not: null } },
+        select: { catalog: true, slug: true, updatedAt: true },
+      })
+      .catch(() => []),
+    prisma.collection
+      .findMany({
+        where: { isActive: true },
+        select: { catalog: true, slug: true, updatedAt: true },
+      })
+      .catch(() => []),
   ]);
 
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
