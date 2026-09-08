@@ -9,7 +9,7 @@ export function Gallery({ images, title }: { images: PublicImage[]; title: strin
   const [active, setActive] = useState(0);
   if (images.length === 0) {
     return (
-      <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg bg-black/5 text-sm text-black/40 dark:bg-white/10 dark:text-white/40">
+      <div className="u-media flex aspect-[3/4] w-full items-center justify-center text-sm text-ink-soft">
         No image
       </div>
     );
@@ -17,14 +17,14 @@ export function Gallery({ images, title }: { images: PublicImage[]; title: strin
   const main = images[Math.min(active, images.length - 1)];
   return (
     <div>
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-black/5 dark:bg-white/10">
+      <div className="u-media relative aspect-[3/4] w-full">
         <Image
           key={main.url}
           src={main.url}
           alt={main.alt || title}
           fill
           priority
-          sizes="(max-width: 1024px) 100vw, 520px"
+          sizes="(max-width: 1024px) 100vw, 560px"
           className="object-cover"
         />
       </div>
@@ -37,13 +37,13 @@ export function Gallery({ images, title }: { images: PublicImage[]; title: strin
                 aria-label={`View image ${i + 1}`}
                 aria-current={i === active ? "true" : undefined}
                 onClick={() => setActive(i)}
-                className={`relative h-20 w-16 shrink-0 overflow-hidden rounded border transition-colors ${
+                className={`relative h-24 w-20 shrink-0 overflow-hidden rounded-[10px] border transition-opacity ${
                   i === active
-                    ? "border-foreground"
-                    : "border-transparent hover:border-black/30 dark:hover:border-white/40"
+                    ? "border-ink-strong"
+                    : "border-transparent opacity-70 hover:opacity-100"
                 }`}
               >
-                <Image src={im.url} alt="" fill sizes="64px" className="object-cover" />
+                <Image src={im.url} alt="" fill sizes="80px" className="object-cover" />
               </button>
             </li>
           ))}

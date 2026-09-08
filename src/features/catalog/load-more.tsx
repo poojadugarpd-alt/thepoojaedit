@@ -54,22 +54,20 @@ export function LoadMoreGrid({
       <p aria-live="polite" className="sr-only">
         Showing {items.length} products
       </p>
-      <div className="mt-10 flex flex-col items-center gap-2">
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+      <div className="mt-14 flex flex-col items-center gap-3">
+        {error && <p className="text-sm text-ink">{error}</p>}
         {cursor ? (
           <button
             type="button"
             onClick={loadMore}
             disabled={loading}
-            className="rounded-full border border-black/20 px-6 py-2 text-sm font-medium transition-colors hover:border-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 dark:border-white/25 dark:hover:border-white/60"
+            className="u-pill u-pill--ghost"
           >
             {loading ? "Loading…" : "Load more"}
           </button>
         ) : (
           items.length > 0 && (
-            <p className="text-xs text-black/45 dark:text-white/45">
-              That&rsquo;s everything.
-            </p>
+            <p className="u-eyebrow">That&rsquo;s everything</p>
           )
         )}
       </div>

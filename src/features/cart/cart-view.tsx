@@ -19,14 +19,14 @@ function Line({ line }: { line: CartLine }) {
   const setQuantity = useCart((s) => s.setQuantity);
   const removeLine = useCart((s) => s.removeLine);
   return (
-    <li className="flex gap-4 py-4">
-      <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded bg-black/5 dark:bg-white/10">
+    <li className="flex gap-5 py-6">
+      <div className="u-media relative h-28 w-24 shrink-0">
         {line.imageUrl && (
           <Image
             src={line.imageUrl}
             alt=""
             fill
-            sizes="80px"
+            sizes="96px"
             className="object-cover"
           />
         )}
@@ -34,20 +34,18 @@ function Line({ line }: { line: CartLine }) {
       <div className="flex flex-1 flex-col">
         <Link
           href={productPath(line.catalog, line.productSlug)}
-          className="text-sm font-medium hover:underline"
+          className="u-label hover:opacity-70"
         >
           {line.productTitle}
         </Link>
         {line.variantLabel && (
-          <span className="text-xs text-black/55 dark:text-white/55">
-            {line.variantLabel}
-          </span>
+          <span className="mt-1 text-[0.85rem] text-ink-soft">{line.variantLabel}</span>
         )}
-        <span className="mt-1 text-sm">{formatPaiseINR(line.unitPricePaise)}</span>
-        <p className="mt-1 text-xs text-black/50 dark:text-white/50">
-          {line.returnPolicyNote}
-        </p>
-        <div className="mt-2 flex items-center gap-3">
+        <span className="mt-1 text-[0.95rem] text-ink">
+          {formatPaiseINR(line.unitPricePaise)}
+        </span>
+        <p className="mt-1 text-xs text-ink-soft">{line.returnPolicyNote}</p>
+        <div className="mt-3 flex items-center gap-4">
           <label className="sr-only" htmlFor={`qty-${line.variantId}`}>
             Quantity for {line.productTitle}
           </label>
@@ -57,18 +55,18 @@ function Line({ line }: { line: CartLine }) {
             min={1}
             value={line.quantity}
             onChange={(e) => setQuantity(line.variantId, Number(e.target.value))}
-            className="w-16 rounded border border-black/20 bg-transparent px-2 py-1 text-sm dark:border-white/25"
+            className="w-16 rounded-[10px] border border-line bg-transparent px-2 py-1.5 text-sm text-ink focus-visible:border-ink-strong"
           />
           <button
             type="button"
             onClick={() => removeLine(line.variantId)}
-            className="text-xs text-black/55 underline hover:text-rose-600 dark:text-white/55"
+            className="text-[0.8125rem] font-bold uppercase tracking-[0.06em] text-ink underline underline-offset-4 hover:opacity-60"
           >
             Remove
           </button>
         </div>
       </div>
-      <div className="text-sm font-medium">
+      <div className="text-[0.95rem] text-ink-strong">
         {formatPaiseINR(line.unitPricePaise * line.quantity)}
       </div>
     </li>
@@ -83,20 +81,18 @@ export function CartView() {
   const groups = useMemo(() => groupByCatalog(lines), [lines]);
 
   if (!hydrated) {
-    return (
-      <p className="text-sm text-black/50 dark:text-white/50">Loading your cart…</p>
-    );
+    return <p className="text-[0.95rem] text-ink-soft">Loading your cart…</p>;
   }
 
   if (count === 0) {
     return (
-      <div className="rounded-md border border-dashed border-black/15 p-10 text-center dark:border-white/20">
-        <p className="text-sm text-black/60 dark:text-white/60">Your cart is empty.</p>
-        <div className="mt-4 flex justify-center gap-4 text-sm">
-          <Link href="/the-pooja-edit" className="underline">
+      <div className="border-t border-line py-16">
+        <p className="u-h3">Your cart is empty.</p>
+        <div className="mt-6 flex gap-6">
+          <Link href="/the-pooja-edit" className="u-textlink">
             The Pooja Edit
           </Link>
-          <Link href="/thrift" className="underline">
+          <Link href="/thrift" className="u-textlink">
             Thrift Store
           </Link>
         </div>
@@ -105,16 +101,14 @@ export function CartView() {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_20rem]">
+    <div className="grid gap-12 lg:grid-cols-[1fr_20rem]">
       <div>
         {(Object.keys(groups) as CatalogType[])
           .filter((c) => groups[c].length > 0)
           .map((c) => (
-            <section key={c} className="mb-6">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-black/55 dark:text-white/55">
-                {CATALOG_LABEL[c]}
-              </h2>
-              <ul className="divide-y divide-black/10 dark:divide-white/10">
+            <section key={c} className="mb-10">
+              <h2 className="u-label">{CATALOG_LABEL[c]}</h2>
+              <ul className="mt-2 divide-y divide-line border-t border-line">
                 {groups[c].map((line) => (
                   <Line key={line.variantId} line={line} />
                 ))}
@@ -123,22 +117,19 @@ export function CartView() {
           ))}
       </div>
 
-      <aside className="h-fit rounded-lg border border-black/10 p-5 dark:border-white/15">
-        <h2 className="text-sm font-semibold">Summary</h2>
-        <div className="mt-3 flex justify-between text-sm">
+      <aside className="h-fit border-t border-line pt-6">
+        <h2 className="u-label">Summary</h2>
+        <div className="mt-4 flex justify-between text-[0.95rem] text-ink">
           <span>
             Subtotal ({count} item{count === 1 ? "" : "s"})
           </span>
-          <span className="font-medium">{formatPaiseINR(subtotal)}</span>
+          <span className="text-ink-strong">{formatPaiseINR(subtotal)}</span>
         </div>
-        <p className="mt-2 text-xs text-black/50 dark:text-white/50">
+        <p className="mt-3 text-xs text-ink-soft">
           Prices and availability are confirmed at checkout. Shipping and taxes
           calculated there.
         </p>
-        <Link
-          href="/checkout"
-          className="mt-4 block rounded-full bg-foreground px-6 py-3 text-center text-sm font-semibold text-background hover:opacity-90"
-        >
+        <Link href="/checkout" className="u-pill mt-6 w-full">
           Proceed to checkout
         </Link>
       </aside>

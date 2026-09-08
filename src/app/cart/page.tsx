@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 
 export default function CartPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Your cart</h1>
-      <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+    <div className="u-page py-14 sm:py-20">
+      <h1 className="u-display">Your cart</h1>
+      <p className="u-lead mt-5">
         Pieces from both catalogues can be checked out together.
       </p>
-      <div className="mt-8">
+      <div className="mt-12">
         <CartView />
       </div>
     </div>

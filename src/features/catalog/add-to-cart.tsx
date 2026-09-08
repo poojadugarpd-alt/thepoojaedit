@@ -42,11 +42,11 @@ export function AddToCart({
 
   if (availability === "SOLD") {
     return (
-      <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+      <div className="rounded-[10px] border border-line bg-fill p-4 text-[0.95rem] text-ink">
         This piece has sold. It was one of one, so it won&rsquo;t be restocked —
         <Link
           href={`/${catalog === "THRIFT" ? "thrift" : "the-pooja-edit"}`}
-          className="ml-1 underline"
+          className="ml-1 underline underline-offset-2 hover:opacity-70"
         >
           see what else is in.
         </Link>
@@ -58,7 +58,7 @@ export function AddToCart({
     <div className="space-y-4">
       {variants.length > 1 && (
         <div>
-          <label htmlFor="variant" className="block text-sm font-medium">
+          <label htmlFor="variant" className="u-label block">
             {catalog === "THRIFT" ? "Size" : "Choose a size"}
           </label>
           <select
@@ -68,7 +68,7 @@ export function AddToCart({
               setVariantId(e.target.value);
               setAdded(false);
             }}
-            className="mt-1 w-full rounded-md border border-black/20 bg-transparent px-3 py-2 text-sm dark:border-white/25"
+            className="mt-2 w-full rounded-[10px] border border-line bg-transparent px-3 py-2.5 text-[0.95rem] text-ink focus-visible:border-ink-strong"
           >
             {variants.map((v) => (
               <option key={v.id} value={v.id} disabled={!v.available}>
@@ -85,7 +85,7 @@ export function AddToCart({
 
       {!isOneOfOne && (
         <div>
-          <label htmlFor="qty" className="block text-sm font-medium">
+          <label htmlFor="qty" className="u-label block">
             Quantity
           </label>
           <input
@@ -97,7 +97,7 @@ export function AddToCart({
             onChange={(e) =>
               setQty(Math.max(1, Math.min(Number(e.target.value) || 1, maxQty)))
             }
-            className="mt-1 w-24 rounded-md border border-black/20 bg-transparent px-3 py-2 text-sm dark:border-white/25"
+            className="mt-2 w-24 rounded-[10px] border border-line bg-transparent px-3 py-2.5 text-[0.95rem] text-ink focus-visible:border-ink-strong"
           />
         </div>
       )}
@@ -121,23 +121,23 @@ export function AddToCart({
           });
           setAdded(true);
         }}
-        className="w-full rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        className="u-pill w-full"
       >
         {canAdd ? "Add to cart" : "Unavailable"}
       </button>
 
-      <p aria-live="polite" className="min-h-[1.25rem] text-sm">
+      <p aria-live="polite" className="min-h-[1.25rem] text-[0.95rem]">
         {added && (
-          <span className="text-emerald-700 dark:text-emerald-400">
+          <span className="text-ink">
             Added to cart.{" "}
-            <Link href="/cart" className="underline">
+            <Link href="/cart" className="underline underline-offset-2 hover:opacity-70">
               View cart
             </Link>
           </span>
         )}
       </p>
 
-      <p className="text-xs text-black/55 dark:text-white/55">{returnPolicyNote}</p>
+      <p className="text-xs text-ink-soft">{returnPolicyNote}</p>
     </div>
   );
 }

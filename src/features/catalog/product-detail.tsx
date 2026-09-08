@@ -29,8 +29,8 @@ function Measurements({ value }: { value: unknown }) {
   if (entries.length === 0) return null;
   return (
     <div>
-      <dt className="font-medium">Measurements</dt>
-      <dd className="mt-1">
+      <dt className="u-label">Measurements</dt>
+      <dd className="mt-1 text-ink">
         <ul className="space-y-0.5">
           {entries.map(([k, v]) => {
             const m = v as { value?: unknown; unit?: unknown };
@@ -45,7 +45,7 @@ function Measurements({ value }: { value: unknown }) {
             );
           })}
         </ul>
-        <p className="mt-1 text-xs text-black/60 dark:text-white/55">
+        <p className="mt-1 text-xs text-ink-soft">
           Units as recorded by the seller; confirm before ordering.
         </p>
       </dd>
@@ -62,51 +62,51 @@ function ThriftDetailsBlock({
     ? (thrift.flaws as { description?: string }[])
     : [];
   return (
-    <section className="mt-8 border-t border-black/10 pt-6 dark:border-white/15">
-      <h2 className="text-sm font-semibold uppercase tracking-wide">The details</h2>
-      <dl className="mt-3 grid gap-4 text-sm sm:grid-cols-2">
+    <section className="mt-16 border-t border-line pt-10">
+      <h2 className="u-label">The details</h2>
+      <dl className="mt-6 grid gap-6 text-[0.95rem] text-ink sm:grid-cols-2">
         <div>
-          <dt className="font-medium">Condition</dt>
-          <dd>
+          <dt className="u-label">Condition</dt>
+          <dd className="mt-1">
             {CONDITION_LABEL[thrift.conditionGrade] ?? thrift.conditionGrade}
             {thrift.conditionNotes ? ` — ${thrift.conditionNotes}` : ""}
           </dd>
         </div>
         {thrift.originalBrand && (
           <div>
-            <dt className="font-medium">Original brand</dt>
-            <dd>{thrift.originalBrand}</dd>
+            <dt className="u-label">Original brand</dt>
+            <dd className="mt-1">{thrift.originalBrand}</dd>
           </div>
         )}
         {thrift.labelledSize && (
           <div>
-            <dt className="font-medium">Labelled size</dt>
-            <dd>{thrift.labelledSize}</dd>
+            <dt className="u-label">Labelled size</dt>
+            <dd className="mt-1">{thrift.labelledSize}</dd>
           </div>
         )}
         {thrift.recommendedFit && (
           <div>
-            <dt className="font-medium">Recommended fit</dt>
-            <dd>{thrift.recommendedFit}</dd>
+            <dt className="u-label">Recommended fit</dt>
+            <dd className="mt-1">{thrift.recommendedFit}</dd>
           </div>
         )}
         {thrift.fabric && (
           <div>
-            <dt className="font-medium">Fabric</dt>
-            <dd>{thrift.fabric}</dd>
+            <dt className="u-label">Fabric</dt>
+            <dd className="mt-1">{thrift.fabric}</dd>
           </div>
         )}
         {thrift.alterations && (
           <div>
-            <dt className="font-medium">Alterations</dt>
-            <dd>{thrift.alterations}</dd>
+            <dt className="u-label">Alterations</dt>
+            <dd className="mt-1">{thrift.alterations}</dd>
           </div>
         )}
         <Measurements value={thrift.measurements} />
         {flaws.length > 0 && (
           <div className="sm:col-span-2">
-            <dt className="font-medium">Flaws</dt>
-            <dd>
+            <dt className="u-label">Flaws</dt>
+            <dd className="mt-1">
               <ul className="list-inside list-disc">
                 {flaws.map((f, i) => (
                   <li key={i}>{f.description ?? String(f)}</li>
@@ -117,14 +117,14 @@ function ThriftDetailsBlock({
         )}
         {thrift.authenticityNotes && (
           <div className="sm:col-span-2">
-            <dt className="font-medium">Authenticity</dt>
-            <dd>{thrift.authenticityNotes}</dd>
+            <dt className="u-label">Authenticity</dt>
+            <dd className="mt-1">{thrift.authenticityNotes}</dd>
           </div>
         )}
         {thrift.careNotes && (
           <div className="sm:col-span-2">
-            <dt className="font-medium">Care</dt>
-            <dd>{thrift.careNotes}</dd>
+            <dt className="u-label">Care</dt>
+            <dd className="mt-1">{thrift.careNotes}</dd>
           </div>
         )}
       </dl>
@@ -172,49 +172,40 @@ export function ProductDetail({
     .filter(Boolean);
 
   return (
-    <article className="mx-auto max-w-5xl px-4 py-10">
+    <article className="u-page py-12 sm:py-16">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(product, url)) }}
       />
 
-      <nav
-        aria-label="Breadcrumb"
-        className="mb-6 text-sm text-black/55 dark:text-white/55"
-      >
-        <Link href={`/${segment}`} className="hover:underline">
+      <nav aria-label="Breadcrumb" className="mb-10 text-[0.8125rem] text-ink-soft">
+        <Link href={`/${segment}`} className="font-bold uppercase tracking-[0.06em] hover:opacity-70">
           {CATALOG_LABEL[product.catalog]}
         </Link>
         <span aria-hidden> / </span>
         <span>{product.title}</span>
       </nav>
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         <Gallery images={product.images} title={product.title} />
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{product.title}</h1>
+        <div className="lg:pt-4">
+          <h1 className="u-h2">{product.title}</h1>
           {product.brand && (
-            <p className="mt-1 text-sm text-black/60 dark:text-white/60">
-              {product.brand}
-            </p>
+            <p className="mt-2 text-[0.95rem] text-ink-soft">{product.brand}</p>
           )}
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-4">
             <Price
               pricePaise={product.fromPricePaise}
               compareAtPaise={product.compareAtPaise}
               className="text-lg"
             />
             <AvailabilityBadge availability={product.availability} />
-            {product.isThrift && (
-              <span className="text-xs uppercase tracking-wide text-black/60 dark:text-white/55">
-                One of one
-              </span>
-            )}
+            {product.isThrift && <span className="u-eyebrow">One of one</span>}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <AddToCart
               catalog={product.catalog}
               productSlug={product.slug}
@@ -228,7 +219,7 @@ export function ProductDetail({
           </div>
 
           {descParas.length > 0 && (
-            <div className="mt-8 space-y-2 text-sm leading-relaxed text-black/80 dark:text-white/80">
+            <div className="mt-10 space-y-3 text-[0.95rem] leading-relaxed text-ink">
               {descParas.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
@@ -240,11 +231,9 @@ export function ProductDetail({
       {product.thrift && <ThriftDetailsBlock thrift={product.thrift} />}
 
       {product.availability === "SOLD" && alternatives.length > 0 && (
-        <section className="mt-12 border-t border-black/10 pt-8 dark:border-white/15">
-          <h2 className="text-sm font-semibold uppercase tracking-wide">
-            More like this
-          </h2>
-          <div className="mt-4">
+        <section className="mt-16 border-t border-line pt-10">
+          <h2 className="u-label">More like this</h2>
+          <div className="mt-8">
             <ProductGrid products={alternatives} />
           </div>
         </section>

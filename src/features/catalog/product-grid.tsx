@@ -10,14 +10,10 @@ export function ProductGrid({
   emptyMessage?: string;
 }) {
   if (products.length === 0) {
-    return (
-      <p className="rounded-md border border-dashed border-black/15 p-8 text-center text-sm text-black/55 dark:border-white/20 dark:text-white/55">
-        {emptyMessage}
-      </p>
-    );
+    return <p className="py-16 text-[0.95rem] text-ink-soft">{emptyMessage}</p>;
   }
   return (
-    <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-x-3 gap-y-12 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
       {products.map((p) => (
         <li key={`${p.catalog}:${p.slug}`}>
           <ProductCard product={p} />

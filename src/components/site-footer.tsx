@@ -1,34 +1,76 @@
 import Link from "next/link";
 
-const FOOTER_LINKS = [
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+const SHOP_LINKS = [
+  { href: "/the-pooja-edit", label: "The Pooja Edit" },
+  { href: "/thrift", label: "Thrift Store" },
+  { href: "/search", label: "Search" },
+];
+
+const HELP_LINKS = [
   { href: "/size-guide", label: "Size guide" },
   { href: "/policies/shipping", label: "Shipping" },
   { href: "/policies/returns-exchanges", label: "Returns & exchanges" },
+  { href: "/contact", label: "Contact" },
+];
+
+const STUDIO_LINKS = [
+  { href: "/about", label: "About" },
   { href: "/policies/privacy", label: "Privacy" },
   { href: "/policies/terms", label: "Terms" },
 ];
 
+const COLUMNS = [
+  { heading: "Shop", links: SHOP_LINKS },
+  { heading: "Help", links: HELP_LINKS },
+  { heading: "Studio", links: STUDIO_LINKS },
+];
+
 export function SiteFooter() {
   return (
-    <footer className="border-t border-black/10 dark:border-white/15">
-      <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-black/70 dark:text-white/70">
-        <nav aria-label="Footer">
-          <ul className="flex flex-wrap gap-x-4 gap-y-2">
-            {FOOTER_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className="hover:underline underline-offset-4">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <p className="mt-6">
-          © {new Date().getFullYear()} The Pooja Edit. All prices in INR, inclusive of
-          taxes where applicable.
+    <footer className="mt-auto border-t border-line bg-fill">
+      <div className="u-page py-16 sm:py-20">
+        <p className="u-h2">The Pooja Edit</p>
+        <p className="u-lead mt-3">
+          New pieces and second lives, made and kept in Jaipur.
         </p>
+
+        <nav
+          aria-label="Footer"
+          className="mt-12 grid gap-10 sm:grid-cols-3 sm:max-w-2xl"
+        >
+          {COLUMNS.map((col) => (
+            <div key={col.heading}>
+              <h2 className="u-label">{col.heading}</h2>
+              <ul className="mt-4 flex flex-col gap-3">
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-[0.95rem] text-ink hover:text-ink-strong"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="mt-14 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-ink-soft">
+            © {new Date().getFullYear()} The Pooja Edit. All prices in INR, inclusive
+            of taxes where applicable.
+          </p>
+          <a
+            href="https://www.instagram.com/poojadugar_/"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="u-textlink"
+          >
+            @poojadugar_
+          </a>
+        </div>
       </div>
     </footer>
   );

@@ -69,12 +69,10 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
 
   if (hydrated && lines.length === 0) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Checkout</h1>
-        <p className="mt-4 text-sm text-black/65 dark:text-white/65">
-          Your cart is empty.
-        </p>
-        <Link href="/" className="mt-6 inline-block text-sm underline">
+      <div className="u-page max-w-lg py-24">
+        <h1 className="u-h2">Checkout</h1>
+        <p className="u-lead mt-4">Your cart is empty.</p>
+        <Link href="/" className="u-textlink mt-6">
           Continue shopping
         </Link>
       </div>
@@ -183,14 +181,12 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Checkout</h1>
+    <div className="u-page max-w-2xl py-12 sm:py-16">
+      <h1 className="u-h2">Checkout</h1>
 
-      <ol className="mt-6 space-y-6">
+      <ol className="mt-10 space-y-10">
         <li>
-          <h2 className="text-sm font-medium uppercase tracking-wide text-black/50 dark:text-white/50">
-            Delivery address
-          </h2>
+          <h2 className="u-label">Delivery address</h2>
           <form onSubmit={onReview} className="mt-3 grid gap-3 sm:grid-cols-2">
             <Input label="Full name" value={addr.name} onChange={set("name")} required autoComplete="name" />
             <Input label="Phone" value={addr.phone} onChange={set("phone")} required inputMode="tel" autoComplete="tel" />
@@ -198,13 +194,13 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
             <Input label="Address" value={addr.line1} onChange={set("line1")} required autoComplete="address-line1" className="sm:col-span-2" />
             <Input label="Apartment, suite (optional)" value={addr.line2} onChange={set("line2")} autoComplete="address-line2" className="sm:col-span-2" />
             <Input label="City" value={addr.city} onChange={set("city")} required autoComplete="address-level2" />
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-black/60 dark:text-white/60">State</span>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="u-label u-label--muted">State</span>
               <select
                 value={addr.stateCode}
                 onChange={set("stateCode")}
                 required
-                className="rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25"
+                className="rounded-[10px] border border-line bg-transparent px-3 py-2.5 text-ink focus-visible:border-ink-strong"
               >
                 <option value="">Choose…</option>
                 {IN_STATES.map((s) => (
@@ -217,8 +213,8 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
             <Input label="PIN code" value={addr.postcode} onChange={set("postcode")} required inputMode="numeric" autoComplete="postal-code" />
 
             <fieldset className="sm:col-span-2 mt-2">
-              <legend className="text-sm text-black/60 dark:text-white/60">Payment</legend>
-              <div className="mt-2 flex flex-col gap-2 text-sm">
+              <legend className="u-label u-label--muted">Payment</legend>
+              <div className="mt-3 flex flex-col gap-2 text-sm">
                 <label className="flex items-center gap-2">
                   <input
                     type="radio"
@@ -233,7 +229,7 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
                   <span>
                     Pay online (UPI / card / netbanking)
                     {!prepaidEnabled && (
-                      <span className="ml-1 text-black/45 dark:text-white/45">
+                      <span className="ml-1 text-ink-soft">
                         — not available in this environment
                       </span>
                     )}
@@ -255,11 +251,7 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
             </fieldset>
 
             <div className="sm:col-span-2">
-              <button
-                type="submit"
-                disabled={busy}
-                className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
-              >
+              <button type="submit" disabled={busy} className="u-pill">
                 {busy && !quote ? "Checking…" : "Review order"}
               </button>
             </div>
@@ -268,10 +260,8 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
 
         {quote && (
           <li>
-            <h2 className="text-sm font-medium uppercase tracking-wide text-black/50 dark:text-white/50">
-              Review &amp; pay
-            </h2>
-            <div className="mt-3 rounded border border-black/10 p-4 dark:border-white/15">
+            <h2 className="u-label">Review &amp; pay</h2>
+            <div className="mt-4 rounded-[10px] border border-line p-5">
               <table className="w-full text-sm">
                 <tbody>
                   {quote.lines.map((l) => (
@@ -285,25 +275,27 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
                   ))}
                 </tbody>
               </table>
-              <dl className="mt-3 space-y-1 border-t border-black/10 pt-3 text-sm dark:border-white/10">
+              <dl className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
                 <Line label="Subtotal" value={quote.subtotalPaise} />
                 {quote.discountPaise > 0 && <Line label="Discount" value={-quote.discountPaise} />}
                 <Line label="Shipping" value={quote.shippingPaise} />
                 {quote.codFeePaise > 0 && <Line label="COD fee" value={quote.codFeePaise} />}
                 <Line label="Tax" value={quote.taxPaise} />
-                <div className="flex justify-between border-t border-black/15 pt-1 font-semibold dark:border-white/20">
-                  <dt>Total</dt>
+                <div className="flex justify-between border-t border-line pt-2 text-ink-strong">
+                  <dt className="font-bold uppercase tracking-[0.06em] text-[0.8125rem]">
+                    Total
+                  </dt>
                   <dd>{formatPaiseINR(quote.totalPaise)}</dd>
                 </div>
               </dl>
-              <p className="mt-2 text-[11px] text-black/45 dark:text-white/45">
+              <p className="mt-3 text-[11px] text-ink-soft">
                 Stock is held for {Math.round(quote.reservationTtlSeconds / 60)} minutes
                 after you place a prepaid order.
               </p>
               <button
                 onClick={onPlace}
                 disabled={busy}
-                className="mt-4 w-full rounded bg-black px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
+                className="u-pill mt-5 w-full"
               >
                 {busy
                   ? "Working…"
@@ -317,12 +309,15 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
       </ol>
 
       {error && (
-        <p role="alert" className="mt-4 rounded border border-red-500/40 bg-red-500/5 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+        <p
+          role="alert"
+          className="mt-6 rounded-[10px] border border-ink-strong bg-fill px-4 py-3 text-sm text-ink-strong"
+        >
           {error}
         </p>
       )}
 
-      <p className="mt-6 text-xs text-black/45 dark:text-white/45">
+      <p className="mt-8 text-xs text-ink-soft">
         Cart total (as displayed): {formatPaiseINR(displaySubtotal)} across{" "}
         {lines.map((l) => CATALOG_LABEL[l.catalog]).filter((v, i, a) => a.indexOf(v) === i).join(" + ")}.
         The server recalculates the exact price and tax above.
@@ -337,11 +332,11 @@ function Input({
   ...rest
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className={`flex flex-col gap-1 text-sm ${className ?? ""}`}>
-      <span className="text-black/60 dark:text-white/60">{label}</span>
+    <label className={`flex flex-col gap-1.5 text-sm ${className ?? ""}`}>
+      <span className="u-label u-label--muted">{label}</span>
       <input
         {...rest}
-        className="rounded border border-black/20 bg-transparent px-3 py-2 dark:border-white/25"
+        className="rounded-[10px] border border-line bg-transparent px-3 py-2.5 text-ink focus-visible:border-ink-strong"
       />
     </label>
   );
@@ -350,8 +345,8 @@ function Input({
 function Line({ label, value }: { label: string; value: number }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-black/55 dark:text-white/55">{label}</dt>
-      <dd>{formatPaiseINR(value)}</dd>
+      <dt className="text-ink-soft">{label}</dt>
+      <dd className="text-ink">{formatPaiseINR(value)}</dd>
     </div>
   );
 }

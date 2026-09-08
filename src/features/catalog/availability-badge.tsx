@@ -6,13 +6,6 @@ const LABEL: Record<PublicAvailability, string> = {
   SOLD: "Sold",
 };
 
-const CLASS: Record<PublicAvailability, string> = {
-  IN_STOCK:
-    "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-100",
-  OUT_OF_STOCK: "bg-black/10 text-black/60 dark:bg-white/15 dark:text-white/60",
-  SOLD: "bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-100",
-};
-
 export function AvailabilityBadge({
   availability,
   className = "",
@@ -22,7 +15,7 @@ export function AvailabilityBadge({
 }) {
   return (
     <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${CLASS[availability]} ${className}`}
+      className={`text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-ink-soft ${className}`}
     >
       {LABEL[availability]}
     </span>

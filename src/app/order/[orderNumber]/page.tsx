@@ -21,8 +21,8 @@ type Params = {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between py-1 text-sm">
-      <span className="text-black/55 dark:text-white/55">{label}</span>
-      <span>{value}</span>
+      <span className="text-ink-soft">{label}</span>
+      <span className="text-ink">{value}</span>
     </div>
   );
 }
@@ -45,13 +45,13 @@ export default async function OrderPage({ params, searchParams }: Params) {
 
   if (!order) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-20 text-center">
-        <h1 className="text-xl font-semibold">Order not found</h1>
-        <p className="mt-3 text-sm text-black/60 dark:text-white/60">
+      <div className="u-page max-w-lg py-24">
+        <h1 className="u-h2">Order not found</h1>
+        <p className="u-lead mt-4">
           We couldn&rsquo;t find that order, or the link has expired. Check the link in
           your confirmation, or sign in to your account.
         </p>
-        <Link href="/" className="mt-6 inline-block text-sm underline">
+        <Link href="/" className="u-textlink mt-6">
           Back to shop
         </Link>
       </div>
@@ -59,39 +59,31 @@ export default async function OrderPage({ params, searchParams }: Params) {
   }
 
   const shipping = order.addresses.find((a) => a.type === "SHIPPING");
-  const billing = order.addresses.find((a) => a.type === "BILLING");
 
   const awaitingPrepaid =
     order.paymentMethod === "PREPAID_RAZORPAY" &&
     order.orderStatus === "PENDING_PAYMENT";
 
+  const billing = order.addresses.find((a) => a.type === "BILLING");
+
   const banner = review
-    ? {
-        tone: "amber" as const,
-        text: "We've received your payment and are reviewing this order. We'll email you shortly — no action needed.",
-      }
+    ? "We've received your payment and are reviewing this order. We'll email you shortly — no action needed."
     : placed && order.paymentMethod === "COD"
-      ? {
-          tone: "green" as const,
-          text: "Order placed. It's pending confirmation — we'll message you to confirm your cash-on-delivery order.",
-        }
+      ? "Order placed. It's pending confirmation — we'll message you to confirm your cash-on-delivery order."
       : placed && !awaitingPrepaid
-        ? { tone: "green" as const, text: "Payment received — your order is confirmed." }
+        ? "Payment received — your order is confirmed."
         : null;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-xl font-semibold">Order {order.orderNumber}</h1>
+    <div className="u-page max-w-2xl py-14 sm:py-20">
+      <h1 className="u-h2">Order {order.orderNumber}</h1>
 
       {banner && (
         <p
-          className={`mt-3 rounded border px-3 py-2 text-sm ${
-            banner.tone === "green"
-              ? "border-green-600/30 bg-green-600/5 text-green-800 dark:text-green-300"
-              : "border-amber-500/40 bg-amber-500/5 text-amber-800 dark:text-amber-200"
-          }`}
+          role="status"
+          className="mt-4 rounded-[10px] border border-line bg-fill px-4 py-3 text-sm text-ink-strong"
         >
-          {banner.text}
+          {banner}
         </p>
       )}
 
@@ -104,29 +96,31 @@ export default async function OrderPage({ params, searchParams }: Params) {
           phone={order.contactPhone}
         />
       )}
-      <p className="mt-1 text-sm text-black/55 dark:text-white/55">
+      <p className="mt-2 text-sm text-ink-soft">
         Placed{" "}
         {order.placedAt ? new Date(order.placedAt).toLocaleDateString("en-IN") : "—"}
       </p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded border border-black/10 p-4 text-sm dark:border-white/15">
-          <p className="font-medium">Status</p>
-          <Row label="Order" value={order.orderStatus.replaceAll("_", " ")} />
-          <Row label="Payment" value={order.paymentStatus.replaceAll("_", " ")} />
-          <Row
-            label="Fulfilment"
-            value={order.fulfillmentStatus.replaceAll("_", " ")}
-          />
-          <Row
-            label="Method"
-            value={order.paymentMethod === "COD" ? "Cash on delivery" : "Prepaid"}
-          />
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-[10px] border border-line p-5 text-sm">
+          <p className="u-label">Status</p>
+          <div className="mt-2">
+            <Row label="Order" value={order.orderStatus.replaceAll("_", " ")} />
+            <Row label="Payment" value={order.paymentStatus.replaceAll("_", " ")} />
+            <Row
+              label="Fulfilment"
+              value={order.fulfillmentStatus.replaceAll("_", " ")}
+            />
+            <Row
+              label="Method"
+              value={order.paymentMethod === "COD" ? "Cash on delivery" : "Prepaid"}
+            />
+          </div>
         </div>
         {shipping && (
-          <div className="rounded border border-black/10 p-4 text-sm dark:border-white/15">
-            <p className="font-medium">Shipping to</p>
-            <p className="mt-1">{shipping.name}</p>
+          <div className="rounded-[10px] border border-line p-5 text-sm text-ink">
+            <p className="u-label">Shipping to</p>
+            <p className="mt-2">{shipping.name}</p>
             <p>
               {shipping.line1}
               {shipping.line2 ? `, ${shipping.line2}` : ""}
@@ -140,28 +134,25 @@ export default async function OrderPage({ params, searchParams }: Params) {
       </div>
 
       {order.shipments.length > 0 && (
-        <div className="mt-6 rounded border border-black/10 p-4 text-sm dark:border-white/15">
-          <p className="font-medium">Tracking</p>
+        <div className="mt-6 rounded-[10px] border border-line p-5 text-sm text-ink">
+          <p className="u-label">Tracking</p>
           {order.shipments.map((s) => (
-            <div key={s.id} className="mt-2">
+            <div key={s.id} className="mt-3">
               <Row label="Carrier" value={s.courier ?? "Shadowfax"} />
               {s.awb && <Row label="AWB" value={s.awb} />}
-              <Row
-                label="Status"
-                value={s.statusNormalized.replaceAll("_", " ")}
-              />
+              <Row label="Status" value={s.statusNormalized.replaceAll("_", " ")} />
               {s.trackingUrl && (
                 <a
                   href={s.trackingUrl}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="mt-1 inline-block text-xs underline"
+                  className="mt-1 inline-block text-xs underline underline-offset-2 hover:opacity-70"
                 >
                   Track on the carrier site
                 </a>
               )}
               {s.events.length > 0 && (
-                <ol className="mt-2 space-y-0.5 text-[11px] text-black/55 dark:text-white/55">
+                <ol className="mt-2 space-y-0.5 text-[11px] text-ink-soft">
                   {s.events.slice(-6).map((e) => (
                     <li key={e.id}>
                       {(e.statusNormalized ?? e.statusRaw ?? "").replaceAll("_", " ")}
@@ -177,32 +168,38 @@ export default async function OrderPage({ params, searchParams }: Params) {
         </div>
       )}
 
-      <table className="mt-6 w-full text-sm">
+      <table className="mt-8 w-full text-sm text-ink">
         <thead>
-          <tr className="border-b border-black/15 text-left dark:border-white/20">
-            <th className="py-2 font-medium">Item</th>
-            <th className="py-2 font-medium">Qty</th>
-            <th className="py-2 text-right font-medium">Total</th>
+          <tr className="border-b border-line text-left">
+            <th className="py-2 font-bold uppercase tracking-[0.06em] text-[0.75rem] text-ink-strong">
+              Item
+            </th>
+            <th className="py-2 font-bold uppercase tracking-[0.06em] text-[0.75rem] text-ink-strong">
+              Qty
+            </th>
+            <th className="py-2 text-right font-bold uppercase tracking-[0.06em] text-[0.75rem] text-ink-strong">
+              Total
+            </th>
           </tr>
         </thead>
         <tbody>
           {order.items.map((i) => (
-            <tr key={i.id} className="border-b border-black/10 dark:border-white/10">
-              <td className="py-2">
+            <tr key={i.id} className="border-b border-line">
+              <td className="py-3">
                 {i.title}
                 {i.size ? ` · ${i.size}` : ""}
-                <span className="block text-[11px] text-black/45 dark:text-white/45">
+                <span className="block text-[11px] text-ink-soft">
                   {CATALOG_LABEL[i.catalog]}
                 </span>
               </td>
-              <td className="py-2">{i.quantity}</td>
-              <td className="py-2 text-right">{formatPaiseINR(i.totalPaise)}</td>
+              <td className="py-3">{i.quantity}</td>
+              <td className="py-3 text-right">{formatPaiseINR(i.totalPaise)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="mt-4 ml-auto max-w-xs">
+      <div className="mt-5 ml-auto max-w-xs">
         <Row label="Subtotal" value={formatPaiseINR(order.subtotalPaise)} />
         {order.discountPaise > 0 && (
           <Row label="Discount" value={`-${formatPaiseINR(order.discountPaise)}`} />
@@ -212,8 +209,10 @@ export default async function OrderPage({ params, searchParams }: Params) {
           <Row label="COD fee" value={formatPaiseINR(order.codFeePaise)} />
         )}
         <Row label="Tax" value={formatPaiseINR(order.taxPaise)} />
-        <div className="mt-1 flex justify-between border-t border-black/15 pt-2 text-sm font-semibold dark:border-white/20">
-          <span>Total</span>
+        <div className="mt-1 flex justify-between border-t border-line pt-2 text-sm text-ink-strong">
+          <span className="font-bold uppercase tracking-[0.06em] text-[0.8125rem]">
+            Total
+          </span>
           <span>{formatPaiseINR(order.totalPaise)}</span>
         </div>
       </div>

@@ -14,31 +14,33 @@ const UTILITY_LINKS = [
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-black/10 dark:border-white/15">
+    <header className="sticky top-0 z-40 border-b border-line bg-ground/80 backdrop-blur-md">
       <nav
         aria-label="Primary"
-        className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3"
+        className="u-page flex flex-wrap items-center gap-x-7 gap-y-2 py-4 sm:py-6"
       >
         <Link
           href="/"
           aria-label="The Pooja Edit — home"
-          className="font-mono text-sm font-bold tracking-tight"
+          className="u-label shrink-0 hover:opacity-70"
         >
           THE POOJA EDIT
         </Link>
-        <ul className="flex gap-4 text-sm">
+
+        <ul className="flex gap-x-6 gap-y-1">
           {CATALOG_LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="hover:underline underline-offset-4">
+              <Link href={link.href} className="u-label u-label--muted hover:opacity-70">
                 {link.label}
               </Link>
             </li>
           ))}
         </ul>
-        <ul className="ml-auto flex gap-4 text-sm text-black/70 dark:text-white/70">
+
+        <ul className="ml-auto flex items-center gap-5">
           {UTILITY_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="hover:underline underline-offset-4">
+            <li key={link.href} className="hidden sm:block">
+              <Link href={link.href} className="u-label u-label--muted hover:opacity-70">
                 {link.label}
               </Link>
             </li>

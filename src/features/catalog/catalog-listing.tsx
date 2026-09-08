@@ -29,18 +29,19 @@ export async function CatalogListing({
   const page = await listProducts({ catalog, sort });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <header className="max-w-2xl">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {CATALOG_LABEL[catalog]}
-        </h1>
+    <div className="u-page py-14 sm:py-20">
+      <header className="max-w-3xl">
+        <h1 className="u-display">{CATALOG_LABEL[catalog]}</h1>
         <p
-          className="mt-3 text-sm text-black/65 dark:text-white/65"
+          className="u-lead mt-5"
           dangerouslySetInnerHTML={{ __html: INTRO[catalog] }}
         />
       </header>
 
-      <nav aria-label="Sort" className="mt-8 flex flex-wrap gap-2 text-sm">
+      <nav
+        aria-label="Sort"
+        className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-2"
+      >
         {SORT_OPTIONS.map((opt) => {
           const active = opt.value === sort;
           return (
@@ -50,10 +51,10 @@ export async function CatalogListing({
                 opt.value === "newest" ? `/${segment}` : `/${segment}?sort=${opt.value}`
               }
               aria-current={active ? "true" : undefined}
-              className={`rounded-full border px-3 py-1 transition-colors ${
+              className={`text-[0.8125rem] font-bold uppercase tracking-[0.06em] transition-opacity ${
                 active
-                  ? "border-black bg-foreground text-background dark:border-white"
-                  : "border-black/20 hover:border-black/50 dark:border-white/25 dark:hover:border-white/60"
+                  ? "text-ink-strong underline underline-offset-4"
+                  : "text-ink hover:opacity-60"
               }`}
             >
               {opt.label}
@@ -62,7 +63,7 @@ export async function CatalogListing({
         })}
       </nav>
 
-      <div className="mt-10">
+      <div className="mt-12">
         <LoadMoreGrid
           segment={segment}
           sort={sort}

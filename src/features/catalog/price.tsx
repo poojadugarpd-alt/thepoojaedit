@@ -21,10 +21,10 @@ export function Price({
   const showCompare = compareAtPaise != null && compareAtPaise > pricePaise;
   return (
     <span className={className}>
-      {fromPrefix && <span className="text-black/65 dark:text-white/60">from </span>}
-      <span className="font-medium">{formatPaiseINR(pricePaise)}</span>
+      {fromPrefix && <span className="text-ink-soft">from </span>}
+      <span className="text-ink-strong">{formatPaiseINR(pricePaise)}</span>
       {showCompare && (
-        <span className="ml-2 text-black/65 line-through dark:text-white/60">
+        <span className="ml-2 text-ink-soft line-through">
           {formatPaiseINR(compareAtPaise)}
         </span>
       )}
