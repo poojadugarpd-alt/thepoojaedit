@@ -1,0 +1,783 @@
+<title>Pooja Edit Storefront Mockups</title>
+<meta name="description" content="Editable HTML mockups for The Pooja Edit + Thrift Store — foundations, components and every storefront screen and state across mobile, tablet and desktop." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" />
+
+<style>
+  /* ============================================================================
+   * The Pooja Edit + Thrift Store — HTML mockup set
+   * Committed LIGHT design (see design/DESIGN.md). Tokens = the project's own.
+   * ==========================================================================*/
+  :root {
+    color-scheme: light;
+    --ground: #ffffff;
+    --fill: #f1f0ed;
+    --ink: #625f59;
+    --ink-strong: #403e39;
+    --ink-soft: #6a6762;
+    --line: #d8d6d1;
+    --line-strong: #c4c4c4;
+    --ok: #2f5233; --ok-bg: #e4ede2;
+    --wait: #7a5a1e; --wait-bg: #f3e7cf;
+    --stop: #8a3320; --stop-bg: #f0dfda;
+    --r-media: 12px; --r-bar: 14px; --r-input: 10px;
+    --sans: "Helvetica Neue", Helvetica, "Inter", Arial, "Segoe UI", Roboto, system-ui, sans-serif;
+
+    /* app chrome (deliberately cool grey so it never competes with the mockups) */
+    --chrome-bg: #16151a;
+    --chrome-panel: #201f26;
+    --chrome-line: #33323b;
+    --chrome-ink: #c9c7d0;
+    --chrome-ink-dim: #8b8994;
+    --chrome-accent: #b7a99a;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--chrome-bg); color: var(--chrome-ink); font-family: var(--sans); font-size: 14px; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button { font: inherit; cursor: pointer; }
+
+  /* ---- app shell --------------------------------------------------------- */
+  .app { display: grid; grid-template-columns: 264px 1fr; grid-template-rows: 52px 1fr; height: 100vh; }
+  .app__bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; padding: 0 16px; border-bottom: 1px solid var(--chrome-line); background: var(--chrome-panel); }
+  .app__bar h1 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin: 0; color: var(--chrome-ink); }
+  .app__bar .sub { color: var(--chrome-ink-dim); font-size: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--chrome-line); border-radius: 999px; overflow: hidden; }
+  .seg button { background: transparent; color: var(--chrome-ink-dim); border: 0; padding: 5px 12px; font-size: 12px; }
+  .seg button[aria-pressed="true"] { background: var(--chrome-accent); color: #1a1720; font-weight: 700; }
+  .app__bar .spacer { flex: 1; }
+  .toggle { display: inline-flex; align-items: center; gap: 7px; color: var(--chrome-ink-dim); font-size: 12px; }
+  .toggle input { accent-color: var(--chrome-accent); }
+
+  .app__rail { border-right: 1px solid var(--chrome-line); background: var(--chrome-panel); overflow-y: auto; padding: 10px 0 40px; }
+  .rail__group { padding: 12px 16px 4px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--chrome-ink-dim); }
+  .rail__item { display: block; width: 100%; text-align: left; background: transparent; border: 0; color: var(--chrome-ink); padding: 7px 16px 7px 22px; font-size: 13px; line-height: 1.3; border-left: 2px solid transparent; }
+  .rail__item:hover { background: #2a2932; }
+  .rail__item[aria-current="true"] { border-left-color: var(--chrome-accent); background: #2a2932; color: #fff; }
+  .rail__item .k { display: block; font-size: 11px; color: var(--chrome-ink-dim); }
+
+  .app__stage { overflow: auto; padding: 40px; background:
+      radial-gradient(circle at 1px 1px, #26252d 1px, transparent 0) 0 0 / 24px 24px, var(--chrome-bg); }
+  .stagehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; color: var(--chrome-ink-dim); font-size: 12px; }
+  .stagehead b { color: var(--chrome-ink); font-size: 14px; font-weight: 600; }
+  .flowsnote { margin: 0 0 22px; padding: 10px 14px; border: 1px dashed var(--chrome-line); border-radius: 10px; color: var(--chrome-ink-dim); font-size: 12px; max-width: 900px; }
+  .flowsnote b { color: var(--chrome-accent); }
+
+  /* device frame */
+  .devrow { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; }
+  .device { flex: none; }
+  .device__label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--chrome-ink-dim); margin-bottom: 8px; }
+  .device__viewport { border: 1px solid var(--chrome-line); border-radius: 18px; padding: 10px; background: #0e0d12; }
+  .device__screen { border-radius: 8px; overflow: hidden; background: var(--ground); box-shadow: 0 20px 60px -20px rgba(0,0,0,.6); }
+
+  .hidden { display: none !important; }
+
+  /* ============================================================================
+   * MOCKUP DESIGN SYSTEM  (scoped under .pe so it never touches app chrome)
+   * ==========================================================================*/
+  .pe { background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.45; letter-spacing: .01em; }
+  .pe *, .pe *::before, .pe *::after { box-sizing: border-box; }
+  .pe img { max-width: 100%; }
+
+  .pe-display { color: var(--ink-strong); font-weight: 400; font-size: clamp(2.4rem, 1rem + 7vw, 3.4rem); line-height: 1.04; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+  .pe-d1440 { font-size: clamp(3rem, 1rem + 5vw, 4.4rem); }
+  .pe-h2 { color: var(--ink-strong); font-weight: 400; font-size: 1.7rem; line-height: 1.14; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+  .pe-h3 { color: var(--ink-strong); font-weight: 400; font-size: 1.2rem; line-height: 1.2; margin: 0; }
+  .pe-lead { font-size: 1.05rem; line-height: 1.5; color: var(--ink); max-width: 42ch; margin: 0; }
+  .pe-body { font-size: .95rem; color: var(--ink); margin: 0; }
+  .pe-cap { font-size: .78rem; color: var(--ink-soft); margin: 0; }
+  .pe-label { font-weight: 700; font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-strong); margin: 0; }
+  .pe-eyebrow { font-weight: 700; font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+  .pe-price { font-size: .95rem; color: var(--ink-strong); }
+
+  .pe-pill { display: inline-flex; align-items: center; justify-content: center; gap: .5em; padding: .85em 1.7em; border-radius: 999px; background: var(--ink-strong); color: #fff; font-size: .9rem; font-weight: 400; border: 0; line-height: 1; text-decoration: none; }
+  .pe-pill--ghost { background: transparent; color: var(--ink-strong); border: 1px solid var(--line-strong); }
+  .pe-pill--block { display: flex; width: 100%; }
+  .pe-textlink { display: inline-block; font-weight: 700; font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-strong); border-bottom: 1px solid currentColor; padding-bottom: 2px; text-decoration: none; }
+
+  .pe-bar { margin: 12px; border-radius: var(--r-bar); background: var(--fill); }
+  .pe-ann { padding: 10px 16px; text-align: center; }
+  .pe-nav { display: flex; align-items: center; gap: 24px; padding: 16px 18px; flex-wrap: wrap; }
+  .pe-nav--d { padding: 22px 28px; }
+  .pe-navlink { font-weight: 700; font-size: .8125rem; letter-spacing: .09em; text-transform: uppercase; color: var(--ink); text-decoration: none; }
+  .pe-navlink--brand { color: var(--ink-strong); }
+  .pe-nav .grow { flex: 1; }
+
+  .pe-section { padding: 40px 20px; }
+  .pe-section--d { padding: 64px; }
+  .pe-section--fill { background: var(--fill); }
+  .pe-rule { border-top: 1px solid var(--line); }
+  .pe-stack { display: flex; flex-direction: column; gap: 16px; }
+  .pe-row { display: flex; align-items: center; gap: 12px; }
+  .pe-row--between { justify-content: space-between; }
+  .pe-row--wrap { flex-wrap: wrap; }
+
+  .pe-panel { position: relative; border-radius: var(--r-media); background: var(--fill); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .pe-panel::after { content: attr(data-label); position: absolute; font-size: .7rem; letter-spacing: .04em; color: var(--ink-soft); text-align: center; padding: 0 8px; }
+  .pe-panel--45 { aspect-ratio: 4/5; }
+  .pe-panel--11 { aspect-ratio: 1/1; }
+  .pe-panel--wide { aspect-ratio: 16/10; }
+
+  .pe-tag { position: absolute; left: 12px; top: 12px; background: #fff; color: var(--ink-strong); font-weight: 700; font-size: .625rem; letter-spacing: .06em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; }
+
+  .pe-grid { display: grid; gap: 12px 12px; }
+  .pe-grid--2 { grid-template-columns: repeat(2, 1fr); }
+  .pe-grid--3 { grid-template-columns: repeat(3, 1fr); }
+  .pe-grid--4 { grid-template-columns: repeat(4, 1fr); gap: 40px 16px; }
+  .pe-grid--2 { gap: 36px 12px; }
+  .pe-grid--3 { gap: 40px 16px; }
+
+  .pe-card { display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: inherit; }
+  .pe-card .np { display: flex; align-items: baseline; gap: 12px; }
+  .pe-card .np .pe-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pe-card .meta { font-size: .85rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .pe-rail { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .pe-rail .pe-card { flex: 0 0 60%; }
+  .pe-railctl { display: flex; justify-content: flex-end; gap: 12px; margin-top: 12px; }
+  .pe-circ { width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink-strong); display: inline-flex; align-items: center; justify-content: center; }
+
+  .pe-kv { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .pe-kv .k { color: var(--ink-soft); }
+  .pe-kv .v { color: var(--ink); text-align: right; }
+
+  .pe-field { display: flex; flex-direction: column; gap: 6px; }
+  .pe-field > span { font-weight: 700; font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .pe-field input, .pe-field select { height: 44px; border-radius: var(--r-input); border: 1px solid var(--line); background: #fff; padding: 0 14px; font: inherit; font-size: .95rem; color: var(--ink); }
+  .pe-field input:focus, .pe-field select:focus { outline: 2px solid var(--ink-strong); outline-offset: 2px; border-color: var(--ink-strong); }
+  .pe-field--error input, .pe-field--error select { border-color: var(--stop); }
+  .pe-field--error .err { color: var(--stop); font-size: .78rem; }
+
+  .pe-note { border-radius: var(--r-input); padding: 12px 14px; font-size: .85rem; }
+  .pe-note--ok { background: var(--ok-bg); color: var(--ok); }
+  .pe-note--wait { background: var(--wait-bg); color: var(--wait); }
+  .pe-note--stop { background: var(--stop-bg); color: var(--stop); }
+  .pe-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; }
+  .pe-badge--plain { background: #fff; color: var(--ink-strong); border: 1px solid var(--line); }
+  .pe-badge--ok { background: var(--ok-bg); color: var(--ok); }
+  .pe-badge--wait { background: var(--wait-bg); color: var(--wait); }
+  .pe-badge--stop { background: var(--stop-bg); color: var(--stop); }
+
+  .pe-sizes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pe-sizes button { border-radius: 999px; border: 1px solid var(--line); background: #fff; color: var(--ink); padding: 9px 15px; font-size: .85rem; }
+  .pe-sizes button[aria-pressed="true"] { background: var(--ink-strong); color: #fff; border-color: var(--ink-strong); }
+  .pe-sizes button:disabled { color: var(--ink-soft); text-decoration: line-through; }
+  .pe-qty { display: inline-flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--r-input); padding: 8px 12px; font-size: .9rem; }
+
+  .pe-foot { background: var(--fill); padding: 40px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .pe-foot .cols { display: flex; gap: 40px; flex-wrap: wrap; }
+  .pe-foot .cols div { display: flex; flex-direction: column; gap: 8px; }
+  .pe-foot .cols a { text-decoration: none; color: var(--ink-soft); font-size: .9rem; }
+
+  .pe-overlay { position: relative; }
+  .pe-sheet { border-radius: 16px 16px 0 0; }
+  .pe-menu-row { display: block; padding: 12px 0; font-size: 1rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+
+  .pe-two { display: grid; grid-template-columns: 1fr; gap: 24px; }
+  .pe-two--d { grid-template-columns: 1.1fr .9fr; gap: 48px; }
+  .pe-listcols { display: grid; grid-template-columns: 240px 1fr; gap: 40px; }
+  .pe-cartcols { display: grid; grid-template-columns: 1fr; gap: 40px; }
+  .pe-cartcols--d { grid-template-columns: 1fr 360px; }
+  .pe-summary { background: var(--fill); border-radius: var(--r-media); padding: 24px; display: flex; flex-direction: column; gap: 10px; height: max-content; }
+
+  .pe-cartline { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .pe-cartline .pe-panel { flex: 0 0 80px; }
+  .pe-cartline .c { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+  .pe-radio { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: .9rem; color: var(--ink); }
+  .pe-radio i { width: 18px; height: 18px; border-radius: 999px; border: 1px solid var(--ink-strong); flex: none; }
+  .pe-radio i.on { border-width: 6px; }
+
+  .pe-hand { border: 1px solid var(--line); border-radius: var(--r-media); padding: 24px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .pe-hand .mark { font-weight: 700; letter-spacing: .04em; color: var(--ink-strong); }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 52px auto 1fr; }
+    .app__rail { max-height: 180px; }
+  }
+</style>
+
+<div class="app">
+  <header class="app__bar">
+    <h1>The Pooja Edit — Mockups</h1>
+    <span class="sub">customer storefront · v1</span>
+    <div class="seg" role="group" aria-label="Breakpoint">
+      <button data-bp="390" aria-pressed="true">Mobile 390</button>
+      <button data-bp="768" aria-pressed="false">Tablet 768</button>
+      <button data-bp="1440" aria-pressed="false">Desktop 1440</button>
+    </div>
+    <span class="spacer"></span>
+    <label class="toggle"><input type="checkbox" id="proto" checked /> Prototype (clicks navigate · simulated)</label>
+  </header>
+
+  <nav class="app__rail" id="rail" aria-label="Screens"></nav>
+
+  <main class="app__stage" id="stage">
+    <div class="stagehead"><b id="scr-title">—</b><span id="scr-route"></span></div>
+    <p class="flowsnote" id="flowsnote"></p>
+    <div id="scr-host" class="devrow"></div>
+  </main>
+</div>
+
+<!-- ========================================================================
+     SCREENS  — each .screen has: data-id, data-name, data-group, data-bp,
+     data-route, optionally data-flow. JS renders one at a time in a device frame.
+     ==================================================================== -->
+<div id="screens" hidden>
+
+  <!-- ================= FOUNDATIONS ================= -->
+  <section class="screen" data-id="foundations" data-name="Foundations" data-group="Foundations" data-bp="1440" data-route="design/DESIGN.md §2–4">
+    <div class="pe" style="padding:48px; display:flex; flex-direction:column; gap:40px;">
+      <h2 class="pe-h2">Foundations</h2>
+
+      <div>
+        <p class="pe-label" style="margin-bottom:14px;">Colour — one warm ink on white, sand as the second surface, no accent</p>
+        <div style="display:flex; flex-wrap:wrap; gap:16px;">
+          <span data-sw="#ffffff" data-n="--ground" data-r="page background"></span>
+          <span data-sw="#f1f0ed" data-n="--fill" data-r="bars, panels, sections"></span>
+          <span data-sw="#625f59" data-n="--ink" data-r="body · 5.4:1"></span>
+          <span data-sw="#403e39" data-n="--ink-strong" data-r="headings, pill · 9.7:1"></span>
+          <span data-sw="#6a6762" data-n="--ink-soft" data-r="secondary · 5.0:1 (lightest text)"></span>
+          <span data-sw="#d8d6d1" data-n="--line" data-r="hairline"></span>
+          <span data-sw="#c4c4c4" data-n="--line-strong" data-r="controls"></span>
+          <span data-sw="#e4ede2" data-n="--ok-bg" data-r="prepaid confirmed"></span>
+          <span data-sw="#f3e7cf" data-n="--wait-bg" data-r="COD / pending"></span>
+          <span data-sw="#f0dfda" data-n="--stop-bg" data-r="failed / sold / error"></span>
+        </div>
+        <div id="swhost" style="display:flex; flex-wrap:wrap; gap:16px;"></div>
+      </div>
+
+      <div>
+        <p class="pe-label" style="margin-bottom:14px;">Type — Inter (Helvetica Neue on macOS). Size carries hierarchy; weight & colour stay quiet.</p>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">display / 88 max</span><span class="pe-display">One brand, two ways to shop.</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">h2 / 30</span><span class="pe-h2">From the Thrift Store</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">h3 / 20</span><span class="pe-h3">The details</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">lead / 18</span><span class="pe-lead">Pre-loved and one-of-one, with condition and measurements on every piece.</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">body / 16</span><span class="pe-body">Pure cotton kurti with a full cotton lining and a corset back.</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">label / 13·700·caps</span><span class="pe-label">Raktima Kurti</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">eyebrow / 12·700·caps</span><span class="pe-eyebrow">New apparel</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">price / 16</span><span class="pe-price">₹1,499</span></div>
+          <div class="pe-row" style="gap:24px;"><span class="pe-cap" style="width:120px;">caption / 12</span><span class="pe-cap">As measured flat by the seller; confirm before ordering.</span></div>
+        </div>
+      </div>
+
+      <div>
+        <p class="pe-label" style="margin-bottom:14px;">Spacing (4-based) · Radius — 12 media · 14 bars · 10 inputs · 999 pills</p>
+        <div class="pe-row" style="align-items:flex-end; gap:12px;">
+          <span data-sp="4"></span><span data-sp="8"></span><span data-sp="12"></span><span data-sp="16"></span><span data-sp="20"></span><span data-sp="24"></span><span data-sp="32"></span><span data-sp="40"></span><span data-sp="56"></span><span data-sp="72"></span><span data-sp="96"></span>
+        </div>
+        <div class="pe-row" style="gap:16px; margin-top:20px;">
+          <span style="width:80px;height:56px;background:var(--fill);border:1px solid var(--line);border-radius:12px;"></span>
+          <span style="width:80px;height:56px;background:var(--fill);border:1px solid var(--line);border-radius:14px;"></span>
+          <span style="width:80px;height:56px;background:var(--fill);border:1px solid var(--line);border-radius:10px;"></span>
+          <span style="width:120px;height:44px;background:var(--ink-strong);border-radius:999px;"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMPONENTS ================= -->
+  <section class="screen" data-id="components" data-name="Components" data-group="Foundations" data-bp="1440" data-route="design/DESIGN.md §7 · design/figma-plugin (component sets)">
+    <div class="pe" style="padding:48px; display:flex; flex-direction:column; gap:36px;">
+      <h2 class="pe-h2">Components</h2>
+
+      <div><p class="pe-label" style="margin-bottom:12px;">Button — pill / ghost / text-link · default / hover / disabled</p>
+        <div class="pe-row pe-row--wrap" style="gap:16px;">
+          <button class="pe-pill">Add to cart</button>
+          <button class="pe-pill" style="opacity:.84;">Add to cart · hover</button>
+          <button class="pe-pill" disabled style="opacity:.4;">Unavailable</button>
+          <button class="pe-pill pe-pill--ghost">Load more</button>
+          <a class="pe-textlink">All new pieces</a>
+        </div>
+      </div>
+
+      <div><p class="pe-label" style="margin-bottom:12px;">Badge — icon + label + colour, never colour alone</p>
+        <div class="pe-row pe-row--wrap" style="gap:12px;">
+          <span class="pe-badge pe-badge--plain">One of one</span>
+          <span class="pe-badge pe-badge--plain">Sold</span>
+          <span class="pe-badge pe-badge--ok">● Payment received</span>
+          <span class="pe-badge pe-badge--wait">● Pending confirmation</span>
+          <span class="pe-badge pe-badge--stop">● Payment failed</span>
+          <span class="pe-badge" style="background:var(--fill);color:var(--ink-soft);">Final sale</span>
+          <span class="pe-badge" style="background:var(--fill);color:var(--ink-soft);">Returnable</span>
+        </div>
+      </div>
+
+      <div><p class="pe-label" style="margin-bottom:12px;">Field — default / focus / error</p>
+        <div class="pe-row pe-row--wrap" style="gap:24px; align-items:flex-start;">
+          <label class="pe-field" style="width:240px;"><span>Full name</span><input placeholder="Priya Sharma" /></label>
+          <label class="pe-field" style="width:240px;"><span>Phone</span><input value="+91 98xxxxxx21" style="outline:2px solid var(--ink-strong);outline-offset:2px;border-color:var(--ink-strong);" /></label>
+          <label class="pe-field pe-field--error" style="width:240px;"><span>PIN code</span><input value="30" /><span class="err">Enter a 6-digit PIN code</span></label>
+        </div>
+      </div>
+
+      <div><p class="pe-label" style="margin-bottom:12px;">Product card — edit / thrift / sold. Sand panel → name-left / price-right → note. No border, no shadow.</p>
+        <div class="pe-row" style="gap:24px; align-items:flex-start;">
+          <a class="pe-card" style="width:200px;"><span class="pe-panel pe-panel--45" data-label="Apparel photo"></span><span class="np"><span class="pe-label">Raktima Kurti</span><span class="pe-price">₹1,499</span></span><span class="meta">Cotton</span></a>
+          <a class="pe-card" style="width:200px;"><span class="pe-panel pe-panel--45" data-label="Thrift photo"><span class="pe-tag">One of one</span></span><span class="np"><span class="pe-label">On the racks green dress</span><span class="pe-price">₹500</span></span><span class="meta">Good · labelled M</span></a>
+          <a class="pe-card" style="width:200px;"><span class="pe-panel pe-panel--45" data-label="Thrift photo" style="opacity:.6;"><span class="pe-tag">Sold</span></span><span class="np"><span class="pe-label">MANGO Mini Bag</span><span class="pe-price">₹300</span></span><span class="meta">Sold — one of one</span></a>
+        </div>
+      </div>
+
+      <div><p class="pe-label" style="margin-bottom:12px;">Announcement bar + Header (mobile / desktop) — inset rounded sand bars</p>
+        <div class="pe" style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+          <div class="pe-bar pe-ann"><span class="pe-eyebrow">Considered clothing, new and second-life</span></div>
+          <div class="pe-bar"><nav class="pe-nav"><a class="pe-navlink pe-navlink--brand">The Pooja Edit</a><a class="pe-navlink">The Pooja Edit</a><a class="pe-navlink">Thrift Store</a><span class="grow"></span><a class="pe-navlink">☰</a></nav></div>
+          <div class="pe-bar"><nav class="pe-nav pe-nav--d"><a class="pe-navlink pe-navlink--brand">The Pooja Edit</a><a class="pe-navlink">The Pooja Edit</a><a class="pe-navlink">Thrift Store</a><span class="grow"></span><a class="pe-navlink">Search</a><a class="pe-navlink">Account</a><a class="pe-navlink">Bag (2)</a></nav></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  /* ---- token specimens fill-in (Foundations) --------------------------------*/
+  document.querySelectorAll('[data-sw]').forEach(function (el) {
+    el.style.cssText = 'display:flex;flex-direction:column;gap:6px;width:190px;';
+    el.innerHTML = '<span style="height:56px;border:1px solid var(--line);border-radius:10px;background:' + el.dataset.sw + '"></span>' +
+      '<span class="pe-body" style="font-size:.8rem;color:var(--ink)">' + el.dataset.n + '</span>' +
+      '<span class="pe-cap">' + el.dataset.sw + ' · ' + el.dataset.r + '</span>';
+  });
+  document.querySelectorAll('[data-sp]').forEach(function (el) {
+    var n = el.dataset.sp;
+    el.style.cssText = 'display:flex;flex-direction:column;gap:4px;align-items:center;';
+    el.innerHTML = '<span style="width:24px;height:' + n + 'px;background:var(--ink-soft);border-radius:2px;display:block;"></span><span class="pe-cap">' + n + '</span>';
+  });
+</script>
+
+<!-- ======= remaining screens injected by builder script below ======= -->
+<script>
+(function () {
+  var SCREENS = document.getElementById('screens');
+  function mk(id, name, group, bp, route, flow, html) {
+    var s = document.createElement('section');
+    s.className = 'screen';
+    s.dataset.id = id; s.dataset.name = name; s.dataset.group = group; s.dataset.bp = bp; s.dataset.route = route || '';
+    if (flow) s.dataset.flow = flow;
+    s.innerHTML = html;
+    SCREENS.appendChild(s);
+  }
+  /* small markup helpers */
+  var P = function (label, cls) { return '<span class="pe-panel ' + (cls || 'pe-panel--45') + '" data-label="' + label + '"></span>'; };
+  var ANN = '<div class="pe-bar pe-ann"><span class="pe-eyebrow">Considered clothing, new and second-life</span></div>';
+  var HEADm = '<div class="pe-bar"><nav class="pe-nav"><a class="pe-navlink pe-navlink--brand" data-goto="m-home">The Pooja Edit</a><a class="pe-navlink" data-goto="m-edit-list">The Pooja Edit</a><a class="pe-navlink" data-goto="m-thrift-list">Thrift Store</a><span class="grow"></span><a class="pe-navlink" data-goto="m-menu">☰</a></nav></div>';
+  var HEADd = '<div class="pe-bar"><nav class="pe-nav pe-nav--d"><a class="pe-navlink pe-navlink--brand" data-goto="d-home">The Pooja Edit</a><a class="pe-navlink" data-goto="d-list">The Pooja Edit</a><a class="pe-navlink" data-goto="d-list">Thrift Store</a><span class="grow"></span><a class="pe-navlink">Search</a><a class="pe-navlink">Account</a><a class="pe-navlink" data-goto="d-cart">Bag (2)</a></nav></div>';
+  var FOOT = '<footer class="pe-foot"><span class="pe-h3">The Pooja Edit</span><span class="pe-cap">New pieces and second lives, made and kept in Jaipur.</span><div class="cols"><div><span class="pe-label">Shop</span><a>The Pooja Edit</a><a>Thrift Store</a><a>Search</a></div><div><span class="pe-label">Help</span><a>Size guide</a><a>Shipping</a><a>Returns &amp; exchanges</a><a>Contact</a></div><div><span class="pe-label">Studio</span><a>About</a><a>Privacy</a><a>Terms</a></div></div><span class="pe-cap">© 2026 The Pooja Edit. All prices in INR, inclusive of taxes where applicable.</span></footer>';
+
+  function card(name, price, meta, label, tag, dim) {
+    return '<a class="pe-card" data-goto="' + (tag === 'Sold' ? 'm-sold' : name.indexOf('kurti') > -1 || name === 'Raktima Kurti' ? 'm-edit-pdp' : 'm-thrift-pdp') + '">' +
+      '<span class="pe-panel pe-panel--45" data-label="' + label + '"' + (dim ? ' style="opacity:.6"' : '') + '>' + (tag ? '<span class="pe-tag">' + tag + '</span>' : '') + '</span>' +
+      '<span class="np"><span class="pe-label">' + name + '</span><span class="pe-price">' + price + '</span></span>' +
+      '<span class="meta">' + meta + '</span></a>';
+  }
+  var EDIT = [
+    ['Raktima Kurti', '₹1,499', 'Cotton', 'Apparel photo'],
+    ['Beige Linen Pants', '₹1,490', 'Linen', 'Apparel photo'],
+    ['Keepa Kurti', '₹1,290', 'Cotton', 'Apparel photo'],
+    ['Khushi Kurti', '₹1,490', 'Block print', 'Apparel photo'],
+    ['Black Linen Pants', '₹1,490', 'Linen', 'Apparel photo'],
+    ['Kurti 05', '₹990', 'Cotton', 'Apparel photo'],
+    ['Kurti 06', '₹990', 'Cotton', 'Apparel photo'],
+    ['Co-ord set — blue', '₹2,190', 'Cotton', 'Apparel photo']
+  ];
+  var THRIFT = [
+    ['On the racks green dress', '₹500', 'Good · bust 34', 'Thrift photo', 'One of one'],
+    ['Windcheater jacket', '₹700', 'Excellent · upto bust 36', 'Thrift photo', 'One of one'],
+    ['Bonkers lower (used)', '₹300', 'Good · waist 26', 'Thrift photo', ''],
+    ['MANGO Mini Bag', '₹300', 'Sold — one of one', 'Thrift photo', 'Sold', true],
+    ['Zara ribbed top', '₹400', 'Like new · S', 'Thrift photo', 'One of one'],
+    ['Printed pants', '₹500', 'Good · waist 26–28', 'Thrift photo', ''],
+    ['Blue kurti', '₹350', 'Good · XS', 'Thrift photo', 'One of one'],
+    ['Nike Air Force', '₹400', 'Fair · UK 6', 'Thrift photo', '']
+  ];
+  function grid(list, cols) {
+    return '<div class="pe-grid pe-grid--' + cols + '">' + list.map(function (r) { return card(r[0], r[1], r[2], r[3], r[4] || '', r[5]); }).join('') + '</div>';
+  }
+  function rail(list) {
+    return '<div class="pe-rail">' + list.slice(0, 5).map(function (r) { return card(r[0], r[1], r[2], r[3], r[4] || '', r[5]); }).join('') +
+      '</div><div class="pe-railctl"><span class="pe-circ">‹</span><span class="pe-circ">›</span></div>';
+  }
+
+  /* ============ MOBILE (390) ============ */
+  mk('m-home', 'Home — two catalogue entrances', 'Mobile Storefront (390)', '390', '/', 'Home → listing → PDP → cart → checkout → confirmation',
+    '<div class="pe">' + ANN + HEADm +
+    '<section class="pe-section pe-stack"><span class="pe-eyebrow">The Pooja Edit + Thrift Store</span>' +
+    '<h1 class="pe-display">One brand, two ways to shop.</h1>' +
+    '<p class="pe-lead">New, slow-made apparel from the studio, and pre-loved one-of-one pieces. One cart holds both — each keeps its own return policy at checkout.</p>' +
+    '<div class="pe-row pe-row--wrap" style="gap:20px;"><a class="pe-pill" data-goto="m-edit-list">Shop The Pooja Edit</a><a class="pe-textlink" data-goto="m-thrift-list">Shop Thrift Store</a></div></section>' +
+    '<section class="pe-section pe-stack" style="padding-top:0;">' + P('Editorial image — the piece', 'pe-panel--wide') + '<div class="pe-row pe-row--between"><span class="pe-label">Raktima Kurti</span><a class="pe-textlink" data-goto="m-edit-pdp">Shop the piece</a></div></section>' +
+    '<section class="pe-section pe-rule pe-stack"><span class="pe-eyebrow">New apparel</span><div class="pe-row pe-row--between"><span class="pe-h3">New in</span><a class="pe-textlink" data-goto="m-edit-list">All new pieces</a></div>' + rail(EDIT) + '</section>' +
+    '<section class="pe-section pe-section--fill pe-stack" style="gap:28px;">' +
+      '<div class="pe-stack" style="gap:12px;">' + P('Catalogue image', 'pe-panel--45') + '<span class="pe-h3">The Pooja Edit</span><p class="pe-body">Original apparel — kurtis, co-ord sets and linen, in real sizes and colours.</p><a class="pe-textlink" data-goto="m-edit-list">View the collection</a></div>' +
+      '<div class="pe-stack" style="gap:12px;">' + P('Catalogue image', 'pe-panel--45') + '<span class="pe-h3">Thrift Store</span><p class="pe-body">Pre-loved and one-of-one. Every piece listed with its condition, measurements and any flaws. When it&rsquo;s gone, it&rsquo;s gone.</p><a class="pe-textlink" data-goto="m-thrift-list">Browse the rails</a></div>' +
+    '</section>' +
+    '<section class="pe-section pe-rule pe-stack"><span class="pe-eyebrow">Pre-loved</span><div class="pe-row pe-row--between"><span class="pe-h3">From the Thrift Store</span><a class="pe-textlink" data-goto="m-thrift-list">All pre-loved</a></div>' + rail(THRIFT) + '</section>' +
+    '<section class="pe-section pe-rule pe-stack"><div class="pe-row pe-row--between"><span class="pe-h3">On Instagram</span><a class="pe-pill">Follow</a></div><div class="pe-grid pe-grid--3">' + P('@poojadugar_', 'pe-panel--11') + P('@poojadugar_', 'pe-panel--11') + P('@poojadugar_', 'pe-panel--11') + '</div><p class="pe-cap">Curated product images linking to their pages — not a live Instagram embed.</p></section>' +
+    '<section class="pe-section pe-rule pe-stack"><span class="pe-eyebrow">Newsletter</span><span class="pe-h3">Get the drop list</span><p class="pe-body">One email when new pieces and thrift restocks go live. No noise.</p><label class="pe-field"><span>Email address</span><input placeholder="you@email.com" /></label><button class="pe-pill pe-pill--block">Notify me</button></section>' +
+    FOOT + '</div>');
+
+  function listing(id, name, cat, eyebrow, sub, list, alt) {
+    return '<div class="pe">' + ANN + HEADm +
+      '<section class="pe-section pe-stack"><span class="pe-eyebrow">' + eyebrow + '</span><h1 class="pe-display">' + name + '</h1><p class="pe-body">' + sub + '</p>' +
+      '<div class="pe-row pe-row--between" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;"><a class="pe-label" data-goto="m-filter">Filter &amp; sort</a><span class="pe-cap">' + (cat === 'thrift' ? '37 pieces' : '24 pieces') + '</span></div></section>' +
+      '<section class="pe-section pe-stack" style="padding-top:16px;">' + grid(list, 2) + '<button class="pe-pill pe-pill--ghost" style="align-self:center;">Load more</button><p class="pe-cap" style="text-align:center;">That&rsquo;s everything.</p></section>' + FOOT + '</div>';
+  }
+  mk('m-edit-list', 'The Pooja Edit — listing', 'Mobile Storefront (390)', '390', '/the-pooja-edit', 'Home → listing → PDP',
+    listing('m-edit-list', 'The Pooja Edit', 'edit', 'New apparel', 'Original, slow-made apparel from the studio — kurtis, co-ord sets and linen.', EDIT));
+  mk('m-thrift-list', 'Thrift — listing', 'Mobile Storefront (390)', '390', '/thrift', '',
+    listing('m-thrift-list', 'Thrift Store', 'thrift', 'Pre-loved · one of each', 'Pre-loved and one-of-one. Each piece is listed as-is with its own measurements; when it&rsquo;s gone, it&rsquo;s gone.', THRIFT));
+
+  mk('m-edit-pdp', 'Edit PDP — variant selection', 'Mobile Storefront (390)', '390', '/the-pooja-edit/[slug]', 'variant → add-to-cart feedback',
+    '<div class="pe">' + ANN + HEADm +
+    '<section class="pe-section pe-stack" style="gap:12px;">' + P('Apparel photo 1 of 5', 'pe-panel--45') +
+    '<div class="pe-row" style="gap:8px;">' + P('•', 'pe-panel--11').replace('--11', '--11" style="width:64px;height:80px') + P('•', 'pe-panel--11').replace('--11', '--11" style="width:64px;height:80px') + P('•', 'pe-panel--11').replace('--11', '--11" style="width:64px;height:80px') + P('•', 'pe-panel--11').replace('--11', '--11" style="width:64px;height:80px') + '</div></section>' +
+    '<section class="pe-section pe-stack" style="padding-top:0;"><span class="pe-eyebrow">The Pooja Edit</span><h1 class="pe-h2">Raktima Kurti</h1>' +
+    '<div class="pe-row" style="gap:12px;"><span class="pe-h3">₹1,499</span><span class="pe-cap">Available</span></div>' +
+    '<span class="pe-label">Size</span><div class="pe-sizes"><button>XXS</button><button>XS</button><button>S</button><button aria-pressed="true">M</button><button>L</button><button disabled>XL</button><button>2XL</button></div>' +
+    '<div class="pe-row" style="gap:12px;"><span class="pe-qty">−&nbsp;&nbsp;1&nbsp;&nbsp;+</span><a class="pe-pill" style="flex:1;" data-goto="m-cart">Add to cart</a></div>' +
+    '<p class="pe-note pe-note--ok">Added to cart. <a data-goto="m-cart" style="text-decoration:underline;">View cart</a></p>' +
+    '<p class="pe-cap">Returnable within 7 days · Ships pan-India via Shadowfax.</p></section>' +
+    '<section class="pe-section pe-stack"><span class="pe-label">About this piece</span><p class="pe-body">Pure cotton kurti with a full cotton lining and a corset back. Slow-made in Jaipur.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Fabric &amp; care</span><div><div class="pe-kv"><span class="k">Fabric</span><span class="v">Pure cotton (from the maker&rsquo;s notes)</span></div><div class="pe-kv"><span class="k">Care</span><span class="v">Gentle hand wash, dry in shade</span></div></div>' +
+    '<span class="pe-label" style="margin-top:8px;">Fit &amp; length</span><div><div class="pe-kv"><span class="k">Length</span><span class="v">32 in</span></div><div class="pe-kv"><span class="k">Fit</span><span class="v">True to size · size up for relaxed</span></div></div><a class="pe-textlink">Size guide</a></section>' +
+    '<section class="pe-section pe-rule pe-stack"><span class="pe-label">More like this</span>' + rail(EDIT) + '</section>' + FOOT + '</div>');
+
+  function thriftPdp(sold) {
+    return '<div class="pe">' + ANN + HEADm +
+    '<section class="pe-section pe-stack" style="gap:12px;"><span class="pe-panel pe-panel--45" data-label="Thrift photo 1 of 6"' + (sold ? ' style="opacity:.6"' : '') + '></span>' +
+    '<div class="pe-row" style="gap:8px;">' + ['front', 'back', 'detail', 'flaw'].map(function (r) { return '<span class="pe-panel" data-label="' + r + '" style="width:64px;height:80px;border-radius:10px;"></span>'; }).join('') + '</div></section>' +
+    '<section class="pe-section pe-stack" style="padding-top:0;"><span class="pe-eyebrow">Thrift Store</span>' +
+    '<div class="pe-row" style="gap:10px;"><h1 class="pe-h2">On the racks green dress</h1><span class="pe-badge pe-badge--plain">' + (sold ? 'Sold' : 'One of one') + '</span></div>' +
+    '<span class="pe-h3">₹500</span>' +
+    (sold
+      ? '<p class="pe-body">This piece has sold — it was one of one, so it won&rsquo;t be restocked.</p>'
+      : '<a class="pe-pill pe-pill--block" data-goto="m-cart">Add to cart</a><p class="pe-cap">Final sale — one of one · Ships pan-India via Shadowfax.</p>') +
+    '</section>' +
+    '<section class="pe-section pe-stack"><span class="pe-label">Condition</span><p class="pe-body">Good — light wear, no damage. Worn a handful of times.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Measurements</span><div><div class="pe-kv"><span class="k">Bust</span><span class="v">34 in</span></div><div class="pe-kv"><span class="k">Length</span><span class="v">38 in</span></div><div class="pe-kv"><span class="k">Waist</span><span class="v">28 in</span></div></div>' +
+    '<p class="pe-cap">As measured flat by the seller; confirm before ordering. Unit assumed inches — not stated on the original listing.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Fit</span><p class="pe-body">Labelled M · runs slightly small · best on a UK 8–10.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Flaws</span><div class="pe-row" style="align-items:flex-start;gap:12px;"><span class="pe-panel" data-label="flaw" style="width:84px;height:84px;border-radius:10px;flex:none;"></span><p class="pe-body">Small pull near the left seam, ~1 cm. Not visible when worn. Shown in photo 6.</p></div></section>' +
+    '<section class="pe-section pe-rule pe-stack"><span class="pe-label">' + (sold ? 'Similar pieces still available' : 'More like this') + '</span>' + rail(THRIFT) + '</section>' + FOOT + '</div>';
+  }
+  mk('m-thrift-pdp', 'Thrift PDP — condition, measurements & flaws', 'Mobile Storefront (390)', '390', '/thrift/[slug]', '', thriftPdp(false));
+  mk('m-sold', 'Thrift PDP — sold state', 'Mobile Storefront (390)', '390', '/thrift/[slug]', 'sold → alternative products', thriftPdp(true));
+
+  function cart(mode) {
+    var body;
+    if (mode === 'empty') {
+      body = '<span class="pe-h3">Your cart is empty.</span><div class="pe-row" style="gap:20px;"><a class="pe-textlink" data-goto="m-edit-list">The Pooja Edit</a><a class="pe-textlink" data-goto="m-thrift-list">Thrift Store</a></div>';
+    } else if (mode === 'changed') {
+      body = '<p class="pe-note pe-note--wait"><b>Two things changed since you added these</b><br>• &ldquo;Silk scarf — paisley&rdquo; is no longer available — remove to continue.<br>• &ldquo;Raktima Kurti&rdquo; is now ₹1,599 (was ₹1,499).</p>' +
+        '<div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">Silk scarf — paisley</span><span class="pe-cap" style="color:var(--stop)">No longer available</span><a class="pe-textlink">Remove</a></div></div>' +
+        '<div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">Raktima Kurti · M</span><span class="pe-price">₹1,499 &nbsp;→&nbsp; ₹1,599</span><span class="pe-cap" style="color:var(--wait)">Price updated</span></div></div>' +
+        '<button class="pe-pill pe-pill--ghost pe-pill--block">Review again to continue</button>';
+    } else {
+      body = '<p class="pe-cap">Different return rules apply — see each item.</p>' +
+        '<span class="pe-label">The Pooja Edit</span>' +
+        '<div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">Raktima Kurti</span><span class="pe-cap">Size M</span><span class="pe-price">₹1,499</span><span class="pe-cap">Returnable within 7 days</span><div class="pe-row" style="gap:12px;"><span class="pe-qty">1</span><a class="pe-textlink">Remove</a></div></div></div>' +
+        '<span class="pe-label" style="margin-top:12px;">Thrift Store</span>' +
+        '<div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">On the racks green dress</span><span class="pe-cap">One of one</span><span class="pe-price">₹500</span><span class="pe-cap">Final sale — one of one</span><div class="pe-row" style="gap:12px;"><span class="pe-qty">1</span><a class="pe-textlink">Remove</a></div></div></div>' +
+        '<div class="pe-summary"><span class="pe-label">Summary</span><div class="pe-row pe-row--between"><span class="pe-body">Subtotal (2 items)</span><span class="pe-price">₹1,999</span></div><p class="pe-cap">Shipping &amp; taxes calculated at checkout.</p><a class="pe-pill pe-pill--block" data-goto="m-checkout">Proceed to checkout</a></div>';
+    }
+    return '<div class="pe">' + ANN + HEADm + '<section class="pe-section pe-stack"><h1 class="pe-display">Your cart</h1>' + body + '</section>' + FOOT + '</div>';
+  }
+  mk('m-cart', 'Cart — mixed catalogues', 'Mobile Storefront (390)', '390', '/cart', 'cart → checkout', cart('mixed'));
+  mk('m-cart-empty', 'Cart — empty', 'Mobile Storefront (390)', '390', '/cart', '', cart('empty'));
+  mk('m-cart-changed', 'Cart — item unavailable & price changed', 'Mobile Storefront (390)', '390', '/cart', 'price-changed feedback', cart('changed'));
+
+  function checkout(err) {
+    return '<div class="pe">' + ANN + HEADm +
+    '<section class="pe-section pe-stack"><h1 class="pe-h2">Checkout</h1><p class="pe-cap">No account needed. We&rsquo;ll email your order confirmation.</p>' +
+    (err ? '<p class="pe-note pe-note--stop" role="alert"><b>Fix 2 fields to continue</b><br>• Enter a 6-digit PIN code &nbsp; • Choose a state</p>' : '') +
+    '<span class="pe-label">Contact &amp; delivery</span>' +
+    '<label class="pe-field"><span>Full name</span><input value="Priya Sharma" /></label>' +
+    '<label class="pe-field"><span>Phone</span><input value="+91 98xxxxxx21" /></label>' +
+    '<label class="pe-field"><span>Address</span><input value="12 MG Road" /></label>' +
+    '<div class="pe-row" style="gap:12px;"><label class="pe-field" style="flex:1;"><span>City</span><input value="Jaipur" /></label>' +
+      '<label class="pe-field' + (err ? ' pe-field--error' : '') + '" style="flex:1;"><span>State</span><select><option>' + (err ? 'Choose…' : 'Rajasthan') + '</option></select>' + (err ? '<span class="err">Choose a state</span>' : '') + '</label></div>' +
+    '<label class="pe-field' + (err ? ' pe-field--error' : '') + '"><span>PIN code</span><input value="' + (err ? '30' : '302001') + '" />' + (err ? '<span class="err">Enter a 6-digit PIN code</span>' : '') + '</label>' +
+    '<span class="pe-label" style="margin-top:8px;">Delivery</span><div><div class="pe-kv"><span class="k">Standard delivery (3–6 days)</span><span class="v">₹79</span></div></div><p class="pe-cap">Cash on delivery is available for this address.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Payment</span>' +
+    '<div class="pe-radio"><i class="on"></i> Pay online — UPI / card / netbanking</div>' +
+    '<div class="pe-radio"><i></i> Cash on delivery&nbsp; (+₹0 fee)</div>' +
+    '</section>' +
+    '<section class="pe-section pe-section--fill pe-stack"><span class="pe-label">Review &amp; pay</span>' +
+    '<div><div class="pe-kv"><span class="k">Raktima Kurti · M × 1</span><span class="v">₹1,499</span></div><div class="pe-kv"><span class="k">On the racks green dress × 1</span><span class="v">₹500</span></div><div class="pe-kv"><span class="k">Subtotal</span><span class="v">₹1,999</span></div><div class="pe-kv"><span class="k">Shipping</span><span class="v">₹79</span></div><div class="pe-kv"><span class="k">Tax (incl.)</span><span class="v">₹0</span></div></div>' +
+    '<div class="pe-row pe-row--between"><span class="pe-label">Total</span><span class="pe-label">₹2,078</span></div>' +
+    '<p class="pe-cap">Stock is held for 10 minutes after you place a prepaid order.</p>' +
+    (err ? '<button class="pe-pill pe-pill--ghost pe-pill--block">Fix the fields above to continue</button>' : '<a class="pe-pill pe-pill--block" data-goto="m-handoff">Pay ₹2,078</a>') +
+    '<p class="pe-cap">You&rsquo;ll pay securely on Razorpay — an external screen.</p></section>' + FOOT + '</div>';
+  }
+  mk('m-checkout', 'Checkout — guest', 'Mobile Storefront (390)', '390', '/checkout', 'checkout → Razorpay handoff → confirmation', checkout(false));
+  mk('m-checkout-err', 'Checkout — validation errors', 'Mobile Storefront (390)', '390', '/checkout', '', checkout(true));
+
+  mk('m-handoff', 'Razorpay handoff — external', 'Mobile Storefront (390)', '390', 'checkout.razorpay.com (external)', 'failed payment → retry',
+    '<div class="pe">' + ANN + HEADm + '<section class="pe-section pe-stack" style="min-height:420px;justify-content:center;">' +
+    '<div class="pe-hand"><span class="mark">▲ Razorpay</span><p class="pe-body">You&rsquo;ll pay securely on Razorpay.</p><p class="pe-h3">₹2,078</p><p class="pe-cap">This is an external screen — not part of The Pooja Edit. Do not enter card or UPI details anywhere else.</p><span class="pe-cap">● connecting…</span></div>' +
+    '<div class="pe-row" style="gap:12px;justify-content:center;"><a class="pe-textlink" data-goto="m-conf-prepaid">Simulate success</a><a class="pe-textlink" data-goto="m-pay-failed">Simulate failure</a></div>' +
+    '</section></div>');
+
+  function order(mode) {
+    var badge = mode === 'prepaid' ? '<span class="pe-badge pe-badge--ok">● Payment received</span>'
+      : mode === 'cod' ? '<span class="pe-badge pe-badge--wait">● Pending confirmation</span>'
+      : mode === 'pending' ? '<span class="pe-badge pe-badge--wait">● Payment pending</span>'
+      : '<span class="pe-badge pe-badge--stop">● Payment failed</span>';
+    var line = mode === 'prepaid' ? 'Payment received. Your order is confirmed — we&rsquo;ll email the details and message you when it ships.'
+      : mode === 'cod' ? 'Order placed. It&rsquo;s pending confirmation — we&rsquo;ll message you to confirm your cash-on-delivery order.'
+      : mode === 'pending' ? 'We&rsquo;re confirming your payment. No action needed — we&rsquo;ll email you shortly.'
+      : 'Payment didn&rsquo;t go through. Your order is saved and the items are held for a short time.';
+    var pay = mode === 'prepaid' ? 'PAID' : mode === 'failed' ? 'FAILED' : mode === 'cod' ? 'COD — ON DELIVERY' : 'PENDING';
+    return '<div class="pe">' + ANN + HEADm +
+      '<section class="pe-section pe-stack">' + badge + '<h1 class="pe-h2">Order PE-2026-0142</h1><p class="pe-body">' + line + '</p>' +
+      (mode === 'failed' ? '<a class="pe-pill" data-goto="m-handoff">Try payment again</a><p class="pe-cap">or choose Cash on delivery instead.</p>' : '') + '</section>' +
+      '<section class="pe-section pe-section--fill pe-stack"><span class="pe-label">Status</span><div>' +
+      '<div class="pe-kv"><span class="k">Order</span><span class="v">' + (mode === 'cod' ? 'PENDING CONFIRMATION' : 'CONFIRMED') + '</span></div>' +
+      '<div class="pe-kv"><span class="k">Payment</span><span class="v">' + pay + '</span></div>' +
+      '<div class="pe-kv"><span class="k">Fulfilment</span><span class="v">PREPARING</span></div>' +
+      '<div class="pe-kv"><span class="k">Method</span><span class="v">' + (mode === 'cod' ? 'Cash on delivery' : 'Prepaid (Razorpay)') + '</span></div></div></section>' +
+      '<section class="pe-section pe-stack"><span class="pe-label">Tracking</span><div><div class="pe-kv"><span class="k">Carrier</span><span class="v">Shadowfax</span></div><div class="pe-kv"><span class="k">AWB</span><span class="v">SFX0293841</span></div><div class="pe-kv"><span class="k">Status</span><span class="v">PICKED UP</span></div></div><a class="pe-textlink" data-goto="m-track">Track this order</a>' +
+      '<span class="pe-label" style="margin-top:8px;">Delivery to</span><p class="pe-body">Priya Sharma<br>12 MG Road, Jaipur, Rajasthan 302001<br>+91 98xxxxxx21</p></section>' +
+      '<section class="pe-section pe-stack"><span class="pe-label">Items</span><div><div class="pe-kv"><span class="k">Raktima Kurti · M × 1</span><span class="v">₹1,499</span></div><div class="pe-kv"><span class="k">On the racks green dress × 1</span><span class="v">₹500</span></div><div class="pe-kv"><span class="k">Shipping</span><span class="v">₹79</span></div></div><div class="pe-row pe-row--between"><span class="pe-label">Total</span><span class="pe-label">₹2,078</span></div></section>' + FOOT + '</div>';
+  }
+  mk('m-conf-prepaid', 'Order confirmation — prepaid', 'Mobile Storefront (390)', '390', '/order/[n]?placed=1', 'confirmation → tracking', order('prepaid'));
+  mk('m-conf-cod', 'Order confirmation — COD', 'Mobile Storefront (390)', '390', '/order/[n]?placed=1', '', order('cod'));
+  mk('m-pay-pending', 'Payment pending', 'Mobile Storefront (390)', '390', '/order/[n]?review=1', '', order('pending'));
+  mk('m-pay-failed', 'Payment failed & retry', 'Mobile Storefront (390)', '390', '/order/[n]', 'failed → retry', order('failed'));
+  mk('m-track', 'Order & tracking', 'Mobile Storefront (390)', '390', '/order/[n]', '',
+    '<div class="pe">' + ANN + HEADm + '<section class="pe-section pe-stack"><span class="pe-badge pe-badge--ok">● Payment received</span><h1 class="pe-h2">Order PE-2026-0142</h1>' +
+    '<span class="pe-label">Shipment</span><div><div class="pe-kv"><span class="k">Carrier</span><span class="v">Shadowfax</span></div><div class="pe-kv"><span class="k">AWB</span><span class="v">SFX0293841</span></div><div class="pe-kv"><span class="k">Status</span><span class="v">OUT FOR DELIVERY</span></div></div><a class="pe-textlink">Track on the carrier site</a>' +
+    '<span class="pe-label" style="margin-top:8px;">Timeline</span><div><div class="pe-kv"><span class="k">Order placed</span><span class="v">8 Sep</span></div><div class="pe-kv"><span class="k">Picked up · Jaipur</span><span class="v">9 Sep</span></div><div class="pe-kv"><span class="k">In transit · Jaipur hub</span><span class="v">9 Sep</span></div><div class="pe-kv"><span class="k">Out for delivery</span><span class="v">10 Sep</span></div></div></section>' + FOOT + '</div>');
+
+  mk('m-menu', 'Mobile menu — open', 'Mobile Storefront (390)', '390', 'overlay', 'menu → catalogue',
+    '<div class="pe" style="min-height:640px;"><div class="pe-row pe-row--between" style="padding:20px;"><span class="pe-h3" data-goto="m-home">✕</span><span class="pe-navlink pe-navlink--brand">The Pooja Edit</span></div>' +
+    '<section class="pe-section" style="padding-top:0;"><span class="pe-label">The Pooja Edit</span>' +
+    ['New in', 'Kurtis &amp; tunics', 'Co-ord sets', 'Trousers &amp; linen', 'Shop everything'].map(function (r) { return '<a class="pe-menu-row" data-goto="m-edit-list">' + r + '</a>'; }).join('') +
+    '<span class="pe-label" style="display:block;margin-top:20px;">Thrift Store</span>' +
+    ['New arrivals', 'Kurtis &amp; sets', 'Dresses &amp; tops', 'Bags &amp; accessories', 'Shop everything'].map(function (r) { return '<a class="pe-menu-row" data-goto="m-thrift-list">' + r + '</a>'; }).join('') +
+    '<span class="pe-label" style="display:block;margin-top:20px;">More</span>' +
+    ['Search', 'Account', 'Help &amp; shipping'].map(function (r) { return '<a class="pe-menu-row">' + r + '</a>'; }).join('') +
+    '</section></div>');
+
+  mk('m-filter', 'Filter & sort — bottom sheet', 'Mobile Storefront (390)', '390', 'overlay', 'filter/sort → updated listing',
+    '<div class="pe pe-sheet" style="min-height:560px;"><div style="display:flex;justify-content:center;padding:10px;"><span style="width:40px;height:4px;border-radius:999px;background:var(--line-strong);"></span></div>' +
+    '<section class="pe-section pe-stack" style="padding-top:0;"><div class="pe-row pe-row--between"><span class="pe-h3">Filter &amp; sort</span><a class="pe-textlink">Clear all</a></div>' +
+    '<span class="pe-label">Sort</span>' +
+    '<div class="pe-radio"><i class="on"></i> Newest</div><div class="pe-radio"><i></i> Price — low to high</div><div class="pe-radio"><i></i> Price — high to low</div><div class="pe-radio"><i></i> Available only (thrift)</div>' +
+    '<span class="pe-label" style="margin-top:8px;">Condition (thrift)</span><div class="pe-sizes">' + ['New with tags', 'Like new', 'Excellent', 'Good', 'Fair'].map(function (c) { return '<button>' + c + '</button>'; }).join('') + '</div>' +
+    '<span class="pe-label" style="margin-top:8px;">Size</span><div class="pe-sizes">' + ['XS', 'S', 'M', 'L', 'XL'].map(function (c) { return '<button>' + c + '</button>'; }).join('') + '</div>' +
+    '<a class="pe-pill pe-pill--block" data-goto="m-thrift-list">Apply · 18 pieces</a></section></div>');
+
+  mk('m-search', 'Search — results', 'Mobile Storefront (390)', '390', '/search?q=linen', '',
+    '<div class="pe">' + ANN + HEADm + '<section class="pe-section pe-stack">' +
+    '<label class="pe-field"><span>Search</span><input value="linen" /></label><p class="pe-cap">6 results for &ldquo;linen&rdquo; · each card shows its catalogue label</p>' +
+    grid([EDIT[1], EDIT[4], THRIFT[5], EDIT[7], THRIFT[2], EDIT[0]], 2) + '</section>' + FOOT + '</div>');
+  mk('m-search-empty', 'Search — no results', 'Mobile Storefront (390)', '390', '/search?q=qwerty', '',
+    '<div class="pe">' + ANN + HEADm + '<section class="pe-section pe-stack">' +
+    '<label class="pe-field"><span>Search</span><input value="qwerty" /></label>' +
+    '<span class="pe-h3">Nothing matched &ldquo;qwerty&rdquo;.</span><p class="pe-body">Try a fabric, a colour, or a piece — or start from a catalogue:</p>' +
+    '<div class="pe-row" style="gap:20px;"><a class="pe-textlink" data-goto="m-edit-list">The Pooja Edit</a><a class="pe-textlink" data-goto="m-thrift-list">Thrift Store</a></div>' +
+    '<p class="pe-cap">Popular: Kurtis · Co-ord sets · Linen trousers · Dresses</p></section>' + FOOT + '</div>');
+
+  /* ============ DESKTOP (1440) ============ */
+  mk('d-home', 'Home', 'Desktop Storefront (1440)', '1440', '/', '',
+    '<div class="pe">' + ANN + HEADd +
+    '<section class="pe-section--d pe-section pe-stack" style="gap:24px;"><span class="pe-eyebrow">The Pooja Edit + Thrift Store</span>' +
+    '<h1 class="pe-display pe-d1440">One brand, two ways to shop.</h1><p class="pe-lead">New, slow-made apparel from the studio, and pre-loved one-of-one pieces. One cart holds both.</p>' +
+    '<div class="pe-row" style="gap:24px;"><a class="pe-pill" data-goto="d-list">Shop The Pooja Edit</a><a class="pe-textlink" data-goto="d-list">Shop Thrift Store</a></div></section>' +
+    '<section class="pe-section pe-section--d" style="padding-top:0;">' + P('Editorial image — full width', 'pe-panel--wide') + '</section>' +
+    '<section class="pe-section pe-section--d pe-rule pe-stack"><span class="pe-eyebrow">New apparel</span><div class="pe-row pe-row--between"><span class="pe-h2">New in</span><a class="pe-textlink" data-goto="d-list">All new pieces</a></div>' +
+    '<div class="pe-grid pe-grid--4">' + EDIT.slice(0, 4).map(function (r) { return card(r[0], r[1], r[2], r[3]); }).join('') + '</div><div class="pe-railctl"><span class="pe-circ">‹</span><span class="pe-circ">›</span></div></section>' +
+    '<section class="pe-section pe-section--d pe-section--fill"><div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">' +
+      '<div class="pe-stack" style="gap:16px;">' + P('Catalogue image', 'pe-panel--wide') + '<span class="pe-h3">The Pooja Edit</span><p class="pe-body">Original apparel — kurtis, co-ord sets and linen.</p><a class="pe-textlink" data-goto="d-list">View the collection</a></div>' +
+      '<div class="pe-stack" style="gap:16px;">' + P('Catalogue image', 'pe-panel--wide') + '<span class="pe-h3">Thrift Store</span><p class="pe-body">Pre-loved and one-of-one. Condition, measurements and flaws on every piece.</p><a class="pe-textlink" data-goto="d-pdp">Browse the rails</a></div>' +
+    '</div></section>' + FOOT + '</div>');
+
+  mk('d-list', 'Thrift listing — filter rail', 'Desktop Storefront (1440)', '1440', '/thrift', '',
+    '<div class="pe">' + ANN + HEADd +
+    '<section class="pe-section pe-section--d pe-stack"><span class="pe-eyebrow">Pre-loved · one of each</span><h1 class="pe-display pe-d1440">Thrift Store</h1><p class="pe-body">Pre-loved and one-of-one. Each piece is listed as-is with its own measurements.</p></section>' +
+    '<section class="pe-section pe-section--d" style="padding-top:0;"><div class="pe-listcols">' +
+    '<aside class="pe-stack" style="gap:20px;">' +
+      ['Category|Kurtis &amp; sets,Dresses &amp; tops,Trousers,Bags', 'Condition|Like new,Excellent,Good', 'Labelled size|XS,S,M,L', 'Availability|In stock,Show sold', 'Price|Under ₹500,₹500–₹1,000'].map(function (b) { var p = b.split('|'); return '<div class="pe-stack" style="gap:8px;"><span class="pe-label">' + p[0] + '</span>' + p[1].split(',').map(function (o) { return '<span class="pe-body">' + o + '</span>'; }).join('') + '</div>'; }).join('') +
+    '</aside>' +
+    '<div class="pe-stack" style="gap:16px;"><div class="pe-row pe-row--between"><span class="pe-cap">37 pieces</span><span class="pe-body">Sort: Newest ▾</span></div>' +
+    '<div class="pe-grid pe-grid--3">' + THRIFT.concat(THRIFT).slice(0, 9).map(function (r) { return card(r[0], r[1], r[2], r[3], r[4] || '', r[5]); }).join('') + '</div></div>' +
+    '</div></section>' + FOOT + '</div>');
+
+  mk('d-pdp', 'Thrift PDP — 2-column', 'Desktop Storefront (1440)', '1440', '/thrift/[slug]', '',
+    '<div class="pe">' + ANN + HEADd +
+    '<section class="pe-section pe-section--d"><div class="pe-two pe-two--d">' +
+    '<div class="pe-stack" style="gap:12px;">' + P('Thrift photo 1 of 6', 'pe-panel--45') + '<div class="pe-row" style="gap:10px;">' + ['front', 'back', 'detail', 'flaw', 'tag'].map(function (r) { return '<span class="pe-panel" data-label="' + r + '" style="width:96px;height:120px;border-radius:10px;"></span>'; }).join('') + '</div></div>' +
+    '<div class="pe-stack"><span class="pe-eyebrow">Thrift Store</span><div class="pe-row" style="gap:10px;"><h1 class="pe-h2">On the racks green dress</h1><span class="pe-badge pe-badge--plain">One of one</span></div>' +
+    '<span class="pe-h3">₹500</span><a class="pe-pill" data-goto="d-cart" style="align-self:flex-start;">Add to cart</a><p class="pe-cap">Final sale — one of one · Ships pan-India via Shadowfax.</p>' +
+    '<span class="pe-label" style="margin-top:8px;">Condition</span><p class="pe-body">Good — light wear, no damage.</p>' +
+    '<span class="pe-label">Measurements</span><div><div class="pe-kv"><span class="k">Bust</span><span class="v">34 in</span></div><div class="pe-kv"><span class="k">Length</span><span class="v">38 in</span></div><div class="pe-kv"><span class="k">Waist</span><span class="v">28 in</span></div></div><p class="pe-cap">As measured flat by the seller; confirm before ordering.</p>' +
+    '<span class="pe-label">Fit</span><p class="pe-body">Labelled M · runs slightly small.</p>' +
+    '<span class="pe-label">Flaws</span><div class="pe-row" style="gap:12px;align-items:flex-start;"><span class="pe-panel" data-label="flaw" style="width:96px;height:96px;border-radius:10px;flex:none;"></span><p class="pe-body">Small pull near the left seam, ~1 cm. Not visible when worn.</p></div></div>' +
+    '</div></section>' + FOOT + '</div>');
+
+  mk('d-cart', 'Cart — summary sidebar', 'Desktop Storefront (1440)', '1440', '/cart', '',
+    '<div class="pe">' + ANN + HEADd + '<section class="pe-section pe-section--d pe-stack"><h1 class="pe-display pe-d1440">Your cart</h1>' +
+    '<div class="pe-cartcols pe-cartcols--d"><div class="pe-stack" style="gap:12px;"><p class="pe-cap">Different return rules apply — see each item.</p>' +
+    '<span class="pe-label">The Pooja Edit</span><div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">Raktima Kurti</span><span class="pe-cap">Size M · Returnable within 7 days</span></div><span class="pe-price">₹1,499</span></div>' +
+    '<span class="pe-label">Thrift Store</span><div class="pe-cartline">' + P('img', 'pe-panel--45') + '<div class="c"><span class="pe-body">On the racks green dress</span><span class="pe-cap">One of one · Final sale</span></div><span class="pe-price">₹500</span></div></div>' +
+    '<div class="pe-summary"><span class="pe-label">Summary</span><div class="pe-row pe-row--between"><span class="pe-body">Subtotal (2 items)</span><span class="pe-price">₹1,999</span></div><p class="pe-cap">Shipping &amp; taxes calculated at checkout.</p><a class="pe-pill pe-pill--block" data-goto="d-checkout">Proceed to checkout</a></div>' +
+    '</div></section>' + FOOT + '</div>');
+
+  mk('d-checkout', 'Checkout — guest, summary sidebar', 'Desktop Storefront (1440)', '1440', '/checkout', '',
+    '<div class="pe">' + ANN + HEADd + '<section class="pe-section pe-section--d pe-stack"><h1 class="pe-h2">Checkout</h1>' +
+    '<div class="pe-cartcols pe-cartcols--d"><div class="pe-stack" style="gap:16px;"><p class="pe-cap">No account needed. We&rsquo;ll email your order confirmation.</p>' +
+    '<span class="pe-label">Contact &amp; delivery</span>' +
+    '<label class="pe-field"><span>Full name</span><input value="Priya Sharma" /></label><label class="pe-field"><span>Phone</span><input value="+91 98xxxxxx21" /></label><label class="pe-field"><span>Address</span><input value="12 MG Road, Jaipur" /></label><label class="pe-field"><span>PIN code</span><input value="302001" /></label>' +
+    '<span class="pe-label">Payment</span><div class="pe-radio"><i class="on"></i> Pay online — UPI / card / netbanking</div><div class="pe-radio"><i></i> Cash on delivery</div></div>' +
+    '<div class="pe-summary"><span class="pe-label">Review &amp; pay</span>' +
+    '<div><div class="pe-kv"><span class="k">Raktima Kurti · M × 1</span><span class="v">₹1,499</span></div><div class="pe-kv"><span class="k">On the racks green dress × 1</span><span class="v">₹500</span></div><div class="pe-kv"><span class="k">Subtotal</span><span class="v">₹1,999</span></div><div class="pe-kv"><span class="k">Shipping</span><span class="v">₹79</span></div><div class="pe-kv"><span class="k">Tax (incl.)</span><span class="v">₹0</span></div></div>' +
+    '<div class="pe-row pe-row--between"><span class="pe-label">Total</span><span class="pe-label">₹2,078</span></div><p class="pe-cap">Stock is held for 10 minutes after a prepaid order.</p><a class="pe-pill pe-pill--block" data-goto="m-handoff">Pay ₹2,078</a><p class="pe-cap">You&rsquo;ll pay securely on Razorpay — an external screen.</p></div>' +
+    '</div></section>' + FOOT + '</div>');
+
+  mk('d-nav', 'Expanded navigation — category panel', 'Desktop Storefront (1440)', '1440', '/', '',
+    '<div class="pe">' + HEADd +
+    '<div class="pe-bar" style="margin-top:0;"><div class="pe-nav pe-nav--d" style="align-items:flex-start;gap:48px;">' +
+    '<div class="pe-stack" style="gap:10px;"><span class="pe-label">Shop The Pooja Edit</span>' + ['New in', 'Kurtis &amp; tunics', 'Co-ord sets', 'Trousers &amp; linen', 'View everything'].map(function (r) { return '<span class="pe-body">' + r + '</span>'; }).join('') + '</div>' +
+    '<div class="pe-stack" style="gap:10px;"><span class="pe-label">Shop Thrift Store</span>' + ['New arrivals', 'Kurtis &amp; sets', 'Dresses &amp; tops', 'Bags &amp; accessories', 'Everything one-of-one'].map(function (r) { return '<span class="pe-body">' + r + '</span>'; }).join('') + '</div>' +
+    P('Category image', 'pe-panel--wide').replace('pe-panel ', 'pe-panel ') + '</div></div>' +
+    '<section class="pe-section pe-section--d"><p class="pe-cap">Opens on focus / click (not hover-only) for keyboard and screen-reader users. Esc or blur closes it; focus returns to the catalogue link.</p></section></div>');
+
+  /* ============ TABLET (768) ============ */
+  mk('t-list', 'Tablet — listing (768)', 'Responsive (768)', '768', '/the-pooja-edit', '',
+    '<div class="pe">' + ANN + HEADd.replace('pe-nav--d', 'pe-nav') +
+    '<section class="pe-section pe-stack" style="padding:40px;"><span class="pe-eyebrow">New apparel</span><h1 class="pe-h2">The Pooja Edit</h1>' +
+    '<div class="pe-row pe-row--between" style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0;"><span class="pe-label">Filter &amp; sort</span><span class="pe-body">Sort: Newest ▾</span></div>' +
+    '<div class="pe-grid pe-grid--3">' + EDIT.slice(0, 9).map(function (r) { return card(r[0], r[1], r[2], r[3]); }).join('') + '</div></section>' + FOOT + '</div>');
+  mk('t-checkout', 'Tablet — checkout (768)', 'Responsive (768)', '768', '/checkout', '',
+    '<div class="pe">' + ANN + HEADd.replace('pe-nav--d', 'pe-nav') +
+    '<section class="pe-section pe-stack" style="padding:40px;"><h1 class="pe-h2">Checkout</h1>' +
+    '<label class="pe-field"><span>Full name</span><input value="Priya Sharma" /></label><label class="pe-field"><span>Phone</span><input value="+91 98xxxxxx21" /></label><label class="pe-field"><span>Address</span><input value="12 MG Road, Jaipur" /></label>' +
+    '<span class="pe-label">Payment</span><div class="pe-radio"><i class="on"></i> Pay online — UPI / card / netbanking</div>' +
+    '<div class="pe-summary"><span class="pe-label">Review &amp; pay</span><div class="pe-kv"><span class="k">Subtotal</span><span class="v">₹1,999</span></div><div class="pe-kv"><span class="k">Shipping</span><span class="v">₹79</span></div><div class="pe-row pe-row--between"><span class="pe-label">Total</span><span class="pe-label">₹2,078</span></div><a class="pe-pill pe-pill--block" data-goto="m-handoff">Pay ₹2,078</a></div>' +
+    '</section>' + FOOT + '</div>');
+
+  /* ============ RESPONSIVE COMPARISON ============ */
+  mk('responsive', 'Responsive — listing at 390 / 768 / 1440', 'Responsive (768)', 'multi', 'DESIGN.md §5', '',
+    '<div style="color:var(--chrome-ink);"><p style="max-width:820px;color:var(--chrome-ink-dim);font-size:13px;line-height:1.6;">Same screen across breakpoints. Desktop is a different composition (filter rail + sort, 3–4 col grid) — not a stretched phone. Everything holds to 360px: name/price rows truncate, tap targets ≥ 44px. Switch the breakpoint control above to inspect any single screen at true width.</p></div>');
+})();
+</script>
+
+<script>
+  /* ---- app controller -------------------------------------------------- */
+  var screens = Array.prototype.slice.call(document.querySelectorAll('#screens .screen'));
+  var rail = document.getElementById('rail');
+  var host = document.getElementById('scr-host');
+  var titleEl = document.getElementById('scr-title');
+  var routeEl = document.getElementById('scr-route');
+  var flowsEl = document.getElementById('flowsnote');
+  var protoOn = document.getElementById('proto');
+  var bp = '390';
+  var current = 'foundations';
+
+  function byId(id) { return screens.filter(function (s) { return s.dataset.id === id; })[0]; }
+
+  function buildRail() {
+    var groups = {};
+    screens.forEach(function (s) {
+      var g = s.dataset.group;
+      var showAll = (g.indexOf('Foundations') === 0 || g.indexOf('Responsive') === 0);
+      var matchBp = s.dataset.bp === bp || s.dataset.bp === 'multi';
+      if (!showAll && !matchBp) return;
+      (groups[g] = groups[g] || []).push(s);
+    });
+    rail.innerHTML = '';
+    Object.keys(groups).forEach(function (g) {
+      var h = document.createElement('div'); h.className = 'rail__group'; h.textContent = g; rail.appendChild(h);
+      groups[g].forEach(function (s) {
+        var b = document.createElement('button');
+        b.className = 'rail__item'; b.dataset.id = s.dataset.id;
+        b.innerHTML = s.dataset.name + '<span class="k">' + (s.dataset.route || '') + '</span>';
+        if (s.dataset.id === current) b.setAttribute('aria-current', 'true');
+        b.addEventListener('click', function () { show(s.dataset.id); });
+        rail.appendChild(b);
+      });
+    });
+  }
+
+  function show(id) {
+    var s = byId(id); if (!s) return;
+    current = id;
+    Array.prototype.forEach.call(rail.querySelectorAll('.rail__item'), function (b) {
+      b.toggleAttribute('aria-current', b.dataset.id === id);
+    });
+    titleEl.textContent = s.dataset.name;
+    routeEl.textContent = s.dataset.route ? '· ' + s.dataset.route : '';
+    flowsEl.style.display = s.dataset.flow ? 'block' : 'none';
+    if (s.dataset.flow) flowsEl.innerHTML = '<b>Prototype flow:</b> ' + s.dataset.flow + ' — <i>simulated; no real payment or inventory.</i>';
+
+    host.innerHTML = '';
+    if (s.dataset.id === 'responsive') {
+      ['390', '768', '1440'].forEach(function (w) {
+        var src = w === '390' ? 'm-edit-list' : w === '768' ? 't-list' : 'd-list';
+        host.appendChild(deviceOf(src, w, true));
+      });
+      return;
+    }
+    var w = s.dataset.bp === 'multi' ? '390' : s.dataset.bp;
+    host.appendChild(deviceOf(id, w, false));
+  }
+
+  function deviceOf(id, w, mini) {
+    var s = byId(id);
+    var wrap = document.createElement('div'); wrap.className = 'device';
+    var lab = document.createElement('div'); lab.className = 'device__label';
+    lab.textContent = s.dataset.name + '  ·  ' + w + 'px';
+    var vp = document.createElement('div'); vp.className = 'device__viewport';
+    var scr = document.createElement('div'); scr.className = 'device__screen';
+    scr.style.width = w + 'px';
+    if (mini) { scr.style.transform = 'scale(.62)'; scr.style.transformOrigin = 'top left'; vp.style.width = (w * .62 + 20) + 'px'; vp.style.height = '760px'; vp.style.overflow = 'hidden'; }
+    scr.innerHTML = s.innerHTML;
+    wireGoto(scr);
+    vp.appendChild(scr); wrap.appendChild(lab); wrap.appendChild(vp);
+    return wrap;
+  }
+
+  function wireGoto(root) {
+    root.querySelectorAll('[data-goto]').forEach(function (el) {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (!protoOn.checked) return;
+        var t = el.dataset.goto;
+        // keep breakpoint sensible: m- ids are 390, d- ids 1440, t- 768
+        if (t.indexOf('d-') === 0 && bp !== '1440') setBp('1440');
+        else if (t.indexOf('t-') === 0 && bp !== '768') setBp('768');
+        else if (t.indexOf('m-') === 0 && bp !== '390') setBp('390');
+        show(t);
+        document.getElementById('stage').scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+  }
+
+  function setBp(v) {
+    bp = v;
+    Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.bp === v ? 'true' : 'false');
+    });
+    buildRail();
+    // if current screen doesn't fit the new bp, jump to that bp's home-ish
+    var s = byId(current);
+    if (s && s.dataset.bp !== bp && s.dataset.bp !== 'multi' && s.dataset.group.indexOf('Foundations') !== 0 && s.dataset.group.indexOf('Responsive') !== 0) {
+      show(v === '1440' ? 'd-home' : v === '768' ? 't-list' : 'm-home');
+    } else {
+      show(current);
+    }
+  }
+
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () { setBp(b.dataset.bp); });
+  });
+  protoOn.addEventListener('change', function () { show(current); });
+
+  buildRail();
+  show('foundations');
+</script>
