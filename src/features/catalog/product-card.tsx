@@ -4,7 +4,6 @@ import Link from "next/link";
 import { SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
 
-import { AvailabilityBadge } from "./availability-badge";
 import { Price } from "./price";
 
 export function ProductCard({ product }: { product: PublicProductCard }) {
@@ -12,16 +11,17 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
   const href = `/${segment}/${product.slug}`;
   const img = product.primaryImage;
   const sold = product.availability === "SOLD";
+  const tag = sold ? "SOLD" : product.isThrift ? "One of one" : null;
 
   return (
     <Link href={href} className="group flex flex-col">
-      <div className="u-media relative aspect-[3/4] w-full">
+      <div className="u-card-panel">
         {img ? (
           <Image
             src={img.url}
             alt={img.alt}
             fill
-            sizes="(max-width: 640px) 72vw, (max-width: 1024px) 33vw, 300px"
+            sizes="(max-width: 640px) 78vw, (max-width: 1024px) 40vw, 320px"
             className={`object-cover transition-opacity duration-300 group-hover:opacity-90 ${
               sold ? "opacity-60" : ""
             }`}
@@ -31,34 +31,21 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
             No image
           </div>
         )}
-        {sold ? (
-          <span className="absolute left-3 top-3 rounded-full bg-ground/90 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-ink-strong">
-            SOLD
-          </span>
-        ) : (
-          product.isThrift && (
-            <span className="absolute left-3 top-3 rounded-full bg-ground/90 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-ink-strong">
-              One of one
-            </span>
-          )
-        )}
+        {tag && <span className="u-card-tag">{tag}</span>}
       </div>
 
-      <div className="mt-4 flex flex-1 flex-col gap-1.5">
-        <h3 className="u-label">{product.title}</h3>
-        {product.brand && <p className="text-[0.9rem] text-ink-soft">{product.brand}</p>}
-        <div className="mt-auto flex items-center gap-3 pt-1">
-          <Price
-            pricePaise={product.fromPricePaise}
-            compareAtPaise={product.compareAtPaise}
-            fromPrefix={!product.isThrift}
-            className="text-[0.95rem]"
-          />
-          {product.availability === "OUT_OF_STOCK" && (
-            <AvailabilityBadge availability={product.availability} />
-          )}
-        </div>
+      <div className="mt-3.5 flex items-baseline gap-3">
+        <h3 className="u-label min-w-0 flex-1 truncate">{product.title}</h3>
+        <Price
+          pricePaise={product.fromPricePaise}
+          compareAtPaise={product.compareAtPaise}
+          fromPrefix={!product.isThrift}
+          className="shrink-0 text-[0.85rem]"
+        />
       </div>
+      {product.brand && (
+        <p className="mt-1 truncate text-[0.85rem] text-ink-soft">{product.brand}</p>
+      )}
     </Link>
   );
 }

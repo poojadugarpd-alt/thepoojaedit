@@ -14,15 +14,15 @@ const UTILITY_LINKS = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-ground/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40">
       <nav
         aria-label="Primary"
-        className="u-page flex flex-wrap items-center gap-x-7 gap-y-2 py-4 sm:py-6"
+        className="u-bar flex flex-wrap items-center gap-x-7 gap-y-2 px-4 py-4 sm:px-6 sm:py-5"
       >
         <Link
           href="/"
           aria-label="The Pooja Edit — home"
-          className="u-label shrink-0 hover:opacity-70"
+          className="u-navlink shrink-0 !text-ink-strong"
         >
           THE POOJA EDIT
         </Link>
@@ -30,17 +30,17 @@ export function SiteHeader() {
         <ul className="flex gap-x-6 gap-y-1">
           {CATALOG_LINKS.map((link) => (
             <li key={link.href}>
-              <Link href={link.href} className="u-label u-label--muted hover:opacity-70">
+              <Link href={link.href} className="u-navlink">
                 {link.label}
               </Link>
             </li>
           ))}
         </ul>
 
-        <ul className="ml-auto flex items-center gap-5">
+        <ul className="ml-auto flex items-center gap-x-6">
           {UTILITY_LINKS.map((link) => (
             <li key={link.href} className="hidden sm:block">
-              <Link href={link.href} className="u-label u-label--muted hover:opacity-70">
+              <Link href={link.href} className="u-navlink">
                 {link.label}
               </Link>
             </li>

@@ -17,14 +17,17 @@
   --ink-strong: #403e39; /* headings, pill fill */
   --ink-soft: #6a6762; /* secondary text — AA on both white and --fill */
   --line: #d8d6d1; /* hairline */
+  --line-strong: #c4c4c4; /* stronger hairline — carousel controls, dividers */
 
   /* aliases kept so existing `bg-foreground` / `text-background` still resolve */
   --background: var(--ground);
   --foreground: var(--ink-strong);
 
   --radius-media: 12px;
+  --radius-bar: 14px;
+  --bar-inset: 12px;
   --gutter: clamp(1.25rem, 5vw, 4rem);
-  --section-y: clamp(3.5rem, 8vw, 7.5rem);
+  --section-y: clamp(4rem, 9vw, 8.5rem);
   --measure: 62ch;
 
   --font-sans:
@@ -39,6 +42,7 @@
   --color-ink-strong: var(--ink-strong);
   --color-ink-soft: var(--ink-soft);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -101,13 +105,13 @@ body {
   border-top: 1px solid var(--line);
 }
 
-/* Oversized calm display type — weight 400, size carries it */
+/* Oversized calm display type — weight 400, size carries it (Rhode scale) */
 .u-display {
   color: var(--ink-strong);
   font-weight: 400;
-  font-size: clamp(2.5rem, 1rem + 7.5vw, 7rem);
-  line-height: 1.05;
-  letter-spacing: -0.015em;
+  font-size: clamp(2.75rem, 1rem + 9vw, 8.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 .u-h2 {
@@ -212,12 +216,36 @@ body {
   overflow: hidden;
 }
 
+/* Inset rounded sand bar — announcement ticker + nav float on white */
+.u-bar {
+  margin: var(--bar-inset);
+  border-radius: var(--radius-bar);
+  background: var(--fill);
+}
+
+/* Nav / bar link — uppercase, tracked, weight 700 */
+.u-navlink {
+  font-weight: 700;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink);
+  transition: opacity 0.2s ease;
+}
+.u-navlink:hover {
+  opacity: 0.6;
+}
+
+.u-section--fill {
+  background: var(--fill);
+}
+
 /* Horizontal product rail */
 .u-rail {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(72vw, 1fr);
-  gap: 12px;
+  grid-auto-columns: minmax(78vw, 1fr);
+  gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
@@ -233,5 +261,51 @@ body {
 @media (min-width: 640px) {
   .u-rail {
     grid-auto-columns: minmax(300px, 1fr);
+    gap: 18px;
   }
+}
+
+/* Circular carousel control */
+.u-railbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong, #c4c4c4);
+  color: var(--ink-strong);
+  background: var(--ground);
+  transition:
+    opacity 0.2s ease,
+    border-color 0.2s ease;
+}
+.u-railbtn:hover {
+  border-color: var(--ink-strong);
+}
+.u-railbtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Product card — Rhode anatomy: sand panel, then name/price row, then note */
+.u-card-panel {
+  position: relative;
+  border-radius: var(--radius-media);
+  background: var(--fill);
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+}
+.u-card-tag {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  border-radius: 999px;
+  background: var(--ground);
+  color: var(--ink-strong);
+  font-weight: 700;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.6rem;
 }

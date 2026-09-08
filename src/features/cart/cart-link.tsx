@@ -10,7 +10,7 @@ export function CartLink() {
   return (
     <Link
       href="/cart"
-      className="u-label u-label--muted hover:opacity-70"
+      className="u-navlink"
       aria-label={hydrated && count > 0 ? `Cart, ${count} items` : "Cart"}
     >
       Cart{hydrated && count > 0 ? ` (${count})` : ""}

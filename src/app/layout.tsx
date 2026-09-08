@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { AnnouncementTicker } from "@/components/announcement-ticker";
 import { EnvironmentBanner } from "@/components/environment-banner";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -36,6 +37,7 @@ export default function RootLayout({
       >
         <SkipLink />
         <EnvironmentBanner />
+        <AnnouncementTicker />
         <SiteHeader />
         <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>
           {children}
