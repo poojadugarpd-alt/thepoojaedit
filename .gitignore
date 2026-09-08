@@ -55,3 +55,7 @@ yarn-error.log*
 rzp-*.csv
 *-key*.csv
 *.key
+
+# Design research — large reference captures (regenerate with design/research/_capture.mjs)
+design/research/screenshots/
+design/research/raw/

@@ -1,0 +1,11 @@
+{
+  "name": "The Pooja Edit — Mockup Builder",
+  "id": "the-pooja-edit-mockup-builder",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"],
+    "reasoning": "Builds frames, components and variables locally. No network access."
+  }
+}
