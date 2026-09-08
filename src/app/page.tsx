@@ -40,21 +40,29 @@ function Rail({
   );
 }
 
-const EMPTY_PAGE = { items: [] as PublicProductCard[], nextCursor: null };
+const EMPTY_ITEMS: PublicProductCard[] = [];
+
+/**
+ * The homepage rails are decorative — a cold database (e.g. a build before the
+ * database is provisioned) must never turn the landing page into a 500. The
+ * guard is a `try`/`catch`, not `.catch()`, because a missing `DATABASE_URL`
+ * throws synchronously the first time the Prisma client is touched.
+ */
+async function railItems(catalog: "THE_POOJA_EDIT" | "THRIFT") {
+  try {
+    return (await listProducts({ catalog, sort: "newest", limit: 10 })).items;
+  } catch {
+    return EMPTY_ITEMS;
+  }
+}
 
 export default async function HomePage() {
-  // The homepage rails are decorative — never let a cold DB (e.g. a build before
-  // the database is provisioned) turn the landing page into a 500.
-  const [edit, thrift] = await Promise.all([
-    listProducts({ catalog: "THE_POOJA_EDIT", sort: "newest", limit: 10 }).catch(
-      () => EMPTY_PAGE,
-    ),
-    listProducts({ catalog: "THRIFT", sort: "newest", limit: 10 }).catch(
-      () => EMPTY_PAGE,
-    ),
+  const [editItems, thriftItems] = await Promise.all([
+    railItems("THE_POOJA_EDIT"),
+    railItems("THRIFT"),
   ]);
 
-  const gram = [...edit.items, ...thrift.items]
+  const gram = [...editItems, ...thriftItems]
     .filter((p) => p.primaryImage)
     .slice(0, 6);
 
@@ -82,14 +90,14 @@ export default async function HomePage() {
         heading="New in"
         href="/the-pooja-edit"
         shopLabel="All new pieces"
-        products={edit.items}
+        products={editItems}
       />
 
       <Rail
         heading="From the Thrift Store"
         href="/thrift"
         shopLabel="All pre-loved"
-        products={thrift.items}
+        products={thriftItems}
       />
 
       {/* Two edits — the split, kept literal so the routes read clearly */}

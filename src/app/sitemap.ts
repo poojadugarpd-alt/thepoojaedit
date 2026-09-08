@@ -28,21 +28,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // A cold database (e.g. a first deploy before Supabase is wired) must not fail
-  // the build — fall back to the static entries only.
-  const [products, collections] = await Promise.all([
-    prisma.product
-      .findMany({
+  // the build — fall back to the static entries only. This is a try/catch rather
+  // than `.catch()` because a missing DATABASE_URL throws synchronously the first
+  // time the Prisma client is touched.
+  let products: { catalog: keyof typeof SEGMENT_BY_CATALOG; slug: string; updatedAt: Date }[] = [];
+  let collections: { catalog: keyof typeof SEGMENT_BY_CATALOG; slug: string; updatedAt: Date }[] = [];
+  try {
+    [products, collections] = await Promise.all([
+      prisma.product.findMany({
         where: { status: "PUBLISHED", publishedAt: { not: null } },
         select: { catalog: true, slug: true, updatedAt: true },
-      })
-      .catch(() => []),
-    prisma.collection
-      .findMany({
+      }),
+      prisma.collection.findMany({
         where: { isActive: true },
         select: { catalog: true, slug: true, updatedAt: true },
-      })
-      .catch(() => []),
-  ]);
+      }),
+    ]);
+  } catch {
+    // keep the static entries only
+  }
 
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
     url: u(`/${SEGMENT_BY_CATALOG[p.catalog]}/${p.slug}`),
