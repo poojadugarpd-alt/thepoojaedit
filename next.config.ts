@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
   // Supabase Storage.
   images: {
     remotePatterns: [
+      // Product photography — Supabase Storage (public `product-images` bucket).
+      { protocol: "https", hostname: "**.supabase.co" },
+      // Legacy source CDNs — kept as a fallback; production images are on Storage.
       { protocol: "https", hostname: "cdn.shopify.com" },
       { protocol: "https", hostname: "shop-meta.s3.ap-south-1.amazonaws.com" },
       { protocol: "https", hostname: "dm2buy-aqbqh9cwb5cwb9he.z02.azurefd.net" },
