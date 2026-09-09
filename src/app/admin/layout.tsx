@@ -38,11 +38,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             ? "You are not signed in as an active admin."
             : "Admin is unavailable right now."}
         </p>
-        <p className="mt-4 text-xs text-black/45 dark:text-white/45">
-          Dev note: Supabase auth is not wired yet. Set{" "}
-          <code className="font-mono">DEV_ADMIN_AUTH=1</code> in{" "}
-          <code className="font-mono">.env.local</code> and seed an admin (`npm run
-          db:seed`) to use the admin UI locally.
+        <p className="mt-6">
+          <Link
+            href="/auth/login?next=/admin"
+            className="inline-block rounded-full bg-foreground px-6 py-2.5 text-sm font-medium text-background"
+          >
+            Sign in
+          </Link>
         </p>
       </div>
     );
@@ -75,6 +77,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               >
                 ← storefront
               </Link>
+            </li>
+            <li>
+              <form action="/auth/logout" method="post">
+                <button
+                  type="submit"
+                  className="block px-2 py-1 text-xs text-black/50 hover:text-black dark:text-white/50"
+                >
+                  Sign out
+                </button>
+              </form>
             </li>
           </ul>
         </nav>
