@@ -181,7 +181,9 @@ export default async function HomePage() {
           <p className="mt-4 text-ink">
             One email when new pieces and thrift restocks go live. No noise.
           </p>
-          <form className="mt-7 flex flex-col gap-3 sm:flex-row" action="/account">
+          {/* Newsletter capture is not wired yet — the form is inert until a
+              provider (Resend / Behold) is connected. */}
+          <form className="mt-7 flex flex-col gap-3 sm:flex-row">
             <label htmlFor="home-email" className="sr-only">
               Email address
             </label>

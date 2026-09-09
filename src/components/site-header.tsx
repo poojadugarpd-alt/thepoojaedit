@@ -7,10 +7,9 @@ const CATALOG_LINKS = [
   { href: "/thrift", label: "Thrift Store" },
 ];
 
-const UTILITY_LINKS = [
-  { href: "/search", label: "Search" },
-  { href: "/account", label: "Account" },
-];
+// "Account" is hidden until the Supabase Auth UI is built — checkout is
+// guest-only for now and there is no /account route.
+const UTILITY_LINKS = [{ href: "/search", label: "Search" }];
 
 export function SiteHeader() {
   return (
