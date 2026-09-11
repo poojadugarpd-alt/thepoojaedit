@@ -207,7 +207,9 @@ export const generateInvoice = inngest.createFunction(
  * double dedup.
  */
 export const sendNotifications = inngest.createFunction(
-  { id: "send-notifications", retries: 3, concurrency: 8 },
+  // 5 is the Inngest free-plan per-function concurrency ceiling — a sync
+  // rejects anything higher (found live 2026-09-11, D-97).
+  { id: "send-notifications", retries: 3, concurrency: 5 },
   { event: "poojaedit/outbox.dispatched" },
   async ({ event, step }) => {
     const { domainEventId, type, aggregateType, aggregateId, payload } = event.data as {
