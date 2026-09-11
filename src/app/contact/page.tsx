@@ -5,7 +5,7 @@ import { LegalPage } from "@/features/site-content/legal-page";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "How to reach The Pooja Edit + Thrift Store.",
+  description: "How to reach The Pooja Edit — by Pooja Dugar.",
   alternates: { canonical: "/contact" },
 };
 

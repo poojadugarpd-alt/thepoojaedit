@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { InstagramStrip } from "@/features/instagram/instagram-strip";
 import { ProductRail } from "@/features/catalog/product-rail";
-import { productPath } from "@/lib/catalog-routes";
+import { productPath, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { listProducts } from "@/server/catalog";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
 
@@ -93,18 +93,19 @@ export default async function HomePage() {
     <div>
       {/* Hero — the headline is the whole opening move, calm and oversized */}
       <section className="u-page pt-14 pb-16 sm:pt-20 sm:pb-24">
-        <p className="u-eyebrow">The Pooja Edit + Thrift Store</p>
+        <p className="u-eyebrow">The Pooja Edit · by Pooja Dugar</p>
         <h1 className="u-display mt-6 max-w-[14ch]">One brand, two ways to shop.</h1>
         <p className="u-lead mt-7">
-          New, slow-made apparel from the studio, and pre-loved one-of-one pieces.
-          One cart holds both — each keeps its own return policy at checkout.
+          Realistic, wearable clothes, the same ones you see on my Instagram. Shop
+          the Label for pieces I design in real sizes, or the Closet for one-off
+          pieces from my own wardrobe. One bag, one checkout.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-          <Link href="/the-pooja-edit" className="u-pill">
-            Shop The Pooja Edit
+          <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-pill">
+            Shop the Label
           </Link>
-          <Link href="/thrift" className="u-textlink">
-            Shop Thrift Store
+          <Link href={`/${SEGMENT_BY_CATALOG.THRIFT}`} className="u-textlink">
+            Shop the Closet
           </Link>
         </div>
       </section>
@@ -112,10 +113,7 @@ export default async function HomePage() {
       {/* Editorial band — one large image, only when we have product photography */}
       {hero && (
         <section className="u-page pb-4">
-          <Link
-            href={`/${hero.product.isThrift ? "thrift" : "the-pooja-edit"}/${hero.product.slug}`}
-            className="group block"
-          >
+          <Link href={productPath(hero.product.catalog, hero.product.slug)} className="group block">
             <div className="u-media relative aspect-[4/5] w-full sm:aspect-[16/10]">
               <Image
                 src={hero.image.url}
@@ -137,7 +135,7 @@ export default async function HomePage() {
       <RailSection
         eyebrow="New apparel"
         heading="New in"
-        href="/the-pooja-edit"
+        href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
         shopLabel="All new pieces"
         products={editItems}
       />
@@ -146,16 +144,16 @@ export default async function HomePage() {
       <section className="u-section u-section--fill">
         <div className="u-page grid gap-12 sm:grid-cols-2 sm:gap-8">
           <EditBlock
-            href="/the-pooja-edit"
-            heading="The Pooja Edit"
-            body="Original apparel — kurtis, co-ord sets and linen, restocked in real sizes and colours."
+            href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
+            heading="The Label"
+            body="Pooja's own designs — kurtis, co-ord sets and linen, made in real sizes and small runs."
             cta="View the collection"
             hero={editHero}
           />
           <EditBlock
-            href="/thrift"
-            heading="Thrift Store"
-            body="Pre-loved and one-of-one. Every piece listed with its condition, measurements and any flaws. When it's gone, it's gone."
+            href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
+            heading="The Closet"
+            body="Pooja's own wardrobe, passed on. Every piece is one of one, listed with its condition, measurements and any flaws, so you know exactly what you're getting. When it's gone, it's gone."
             cta="Browse the rails"
             hero={thriftHero}
           />
@@ -164,8 +162,8 @@ export default async function HomePage() {
 
       <RailSection
         eyebrow="Pre-loved"
-        heading="From the Thrift Store"
-        href="/thrift"
+        heading="From the Closet"
+        href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
         shopLabel="All pre-loved"
         products={thriftItems}
       />
@@ -179,7 +177,7 @@ export default async function HomePage() {
           <p className="u-eyebrow">Newsletter</p>
           <h2 className="u-h2 mt-3">Get the drop list</h2>
           <p className="mt-4 text-ink">
-            One email when new pieces and thrift restocks go live. No noise.
+            One email when new pieces and Closet restocks go live. No noise.
           </p>
           {/* Newsletter capture is not wired yet — the form is inert until a
               provider (Resend / Behold) is connected. */}

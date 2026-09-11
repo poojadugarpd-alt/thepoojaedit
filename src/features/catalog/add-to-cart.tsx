@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useCart } from "@/features/cart/store";
-import type { CatalogType } from "@/lib/catalog-routes";
+import { SEGMENT_BY_CATALOG, type CatalogType } from "@/lib/catalog-routes";
 import { formatPaiseINR } from "@/lib/money";
 import type { PublicAvailability, PublicVariant } from "@/server/catalog/public-shape";
 
@@ -45,7 +45,7 @@ export function AddToCart({
       <div className="rounded-[10px] border border-line bg-fill p-4 text-[0.95rem] text-ink">
         This piece has sold. It was one of one, so it won&rsquo;t be restocked —
         <Link
-          href={`/${catalog === "THRIFT" ? "thrift" : "the-pooja-edit"}`}
+          href={`/${SEGMENT_BY_CATALOG[catalog]}`}
           className="ml-1 underline underline-offset-2 hover:opacity-70"
         >
           see what else is in.

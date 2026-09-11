@@ -1,6 +1,6 @@
-# PoojaEdit.com — The Pooja Edit + Thrift Store
+# PoojaEdit.com — The Pooja Edit, by Pooja Dugar
 
-Mobile-first Indian fashion e-commerce site for one brand with two catalogs: **The Pooja Edit** (new apparel) and **Thrift Store** (pre-loved, one-of-one). Solo operator, Instagram-led traffic, low launch cost, real transactions.
+Mobile-first Indian fashion e-commerce site for one brand with two catalogs: **The Label** (new apparel) and **The Closet** (pre-loved, one-of-one, from Pooja's own wardrobe). Solo operator, Instagram-led traffic, low launch cost, real transactions.
 
 ## Repository state
 

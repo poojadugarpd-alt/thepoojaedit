@@ -12,8 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: u("/"), changeFrequency: "weekly", priority: 1 },
-    { url: u("/the-pooja-edit"), changeFrequency: "daily", priority: 0.9 },
-    { url: u("/thrift"), changeFrequency: "daily", priority: 0.9 },
+    { url: u(`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`), changeFrequency: "daily", priority: 0.9 },
+    { url: u(`/${SEGMENT_BY_CATALOG.THRIFT}`), changeFrequency: "daily", priority: 0.9 },
     { url: u("/about"), changeFrequency: "monthly", priority: 0.4 },
     { url: u("/contact"), changeFrequency: "monthly", priority: 0.4 },
     { url: u("/size-guide"), changeFrequency: "monthly", priority: 0.3 },

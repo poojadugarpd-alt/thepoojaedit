@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
 test("a customer can complete the checkout form with the keyboard only", async ({
   page,
 }) => {
-  await page.goto("/the-pooja-edit");
+  await page.goto("/label");
   await page.locator("ul.grid > li a").first().click();
   await page.getByRole("button", { name: /add to cart/i }).click();
   await expect(page.getByText(/added to cart/i)).toBeVisible();

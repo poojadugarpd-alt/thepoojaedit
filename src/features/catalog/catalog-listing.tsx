@@ -13,9 +13,9 @@ const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
 
 const INTRO: Record<CatalogType, string> = {
   THE_POOJA_EDIT:
-    "Original, slow-made apparel from the studio — kurtis, co-ord sets and linen.",
+    "Pooja&rsquo;s own designs — kurtis, co-ord sets and linen, made in real sizes and small runs.",
   THRIFT:
-    "Pre-loved and one-of-one. Each piece is listed as-is with its own measurements; when it&rsquo;s gone, it&rsquo;s gone.",
+    "Pooja&rsquo;s own wardrobe, passed on. Each piece is listed as-is with its own measurements; when it&rsquo;s gone, it&rsquo;s gone.",
 };
 
 export async function CatalogListing({

@@ -22,11 +22,11 @@ export default function NewProduct() {
                 value="THE_POOJA_EDIT"
                 defaultChecked
               />
-              The Pooja Edit (new apparel)
+              The Label (new apparel)
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="radio" name="catalog" value="THRIFT" />
-              Thrift (pre-loved, one of one)
+              The Closet (pre-loved, one of one)
             </label>
           </fieldset>
           <Field label="Slug" name="slug" required hint="lowercase, digits, hyphens" />

@@ -97,8 +97,8 @@ export default async function AdminOverview() {
           />
         </div>
         <p className="mt-2 text-xs text-black/45 dark:text-white/45">
-          Revenue by catalogue (line-allocated): The Pooja Edit{" "}
-          {money(f.placed.byCatalogPaise.THE_POOJA_EDIT)} · Thrift{" "}
+          Revenue by catalogue (line-allocated): The Label{" "}
+          {money(f.placed.byCatalogPaise.THE_POOJA_EDIT)} · The Closet{" "}
           {money(f.placed.byCatalogPaise.THRIFT)}. Net (captured − refunds){" "}
           {money(f.netRevenuePaise)}.
         </p>

@@ -1,4 +1,4 @@
-# DESIGN.md — The Pooja Edit + Thrift Store
+# DESIGN.md — The Pooja Edit (The Label + The Closet)
 
 Design direction, tokens and component contract for the customer storefront.
 Version 1.0 · 2026-09-08. Companion research: `design/research/`.
@@ -17,8 +17,10 @@ are preserved — this is presentation, not behaviour.
 ## 1. Design principles
 
 1. **One brand, two catalogs — differentiated by information, not decoration.**
-   The Pooja Edit and the Thrift Store share every pixel of chrome, type and
-   colour. They diverge only where the *content* differs: thrift adds a
+   The Label and The Closet (D-93; formerly "The Pooja Edit" / "Thrift Store"
+   as catalog names — the umbrella brand keeps "The Pooja Edit") share every
+   pixel of chrome, type and colour. They diverge only where the *content*
+   differs: the Closet adds a
    condition block, measurements, flaw photos, a one-of-one tag and an
    availability filter; edit adds size/stock variants. No second accent colour,
    no different font, no different layout for "the thrift side".
@@ -275,7 +277,7 @@ button stays sized, not replaced.
 
 | State | Treatment |
 | --- | --- |
-| Empty cart | `h3` "Your cart is empty." + two textlinks (The Pooja Edit / Thrift Store). No illustration. |
+| Empty cart | `h3` "Your cart is empty." + two textlinks (The Label / The Closet). No illustration. |
 | No search results | "Nothing matched '<q>'." + the two catalog entrances + a few category links. Never a dead end. |
 | Sold thrift PDP | full details retained; "This piece has sold — it was one of one, so it won't be restocked." + "Similar pieces still available" rail. |
 | Product unavailable (added, then gone) | inline panel on cart/checkout: "<name> is no longer available" + Remove. |
@@ -316,10 +318,10 @@ button stays sized, not replaced.
 
 The split is **informational, applied consistently**, never stylistic.
 
-| Aspect | The Pooja Edit | Thrift Store |
+| Aspect | The Label | The Closet |
 | --- | --- | --- |
 | Chrome, type, colour, layout | identical | identical |
-| Nav label | "The Pooja Edit" | "Thrift Store" |
+| Nav label | "Label" (short) / "The Label" (full) | "Closet" (short) / "The Closet" (full) |
 | Listing header sub-label | "New apparel" (eyebrow) | "Pre-loved · one of each" (eyebrow) |
 | Card tag | none (or `Low` / `Out of stock` text) | `One of one` (in stock) / `SOLD` |
 | Card meta line | fabric / brand (if known) | condition grade + labelled size |
@@ -329,7 +331,7 @@ The split is **informational, applied consistently**, never stylistic.
 | Return-policy note | "Returnable within N days" | "Final sale — one of one" (unless configured otherwise) |
 | Sold state | rare; "Back in stock" interest (if configured) | common; keep page useful + alternatives rail |
 | Filters | Category · Size · Price | Category · Labelled size · **Condition** · Price · **Availability** |
-| Search result card | catalog label "The Pooja Edit" | catalog label "Thrift Store" |
+| Search result card | catalog label "The Label" | catalog label "The Closet" |
 
 A shopper always knows which catalog they're in from the **nav label, the
 listing eyebrow, and the card tag** — three quiet signals, no colour change.

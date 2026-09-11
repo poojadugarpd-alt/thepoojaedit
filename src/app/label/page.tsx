@@ -4,16 +4,16 @@ import { CatalogListing } from "@/features/catalog/catalog-listing";
 import type { ProductSort } from "@/server/catalog";
 
 export const metadata: Metadata = {
-  title: "Thrift Store",
+  title: "The Label",
   description:
-    "Pre-loved, one-of-one fashion. Each piece listed as-is with its own measurements.",
-  alternates: { canonical: "/thrift" },
-  openGraph: { title: "Thrift Store", url: "/thrift" },
+    "The Label is Pooja Dugar's own designs — kurtis, co-ord sets and linen, made in real sizes and small runs.",
+  alternates: { canonical: "/label" },
+  openGraph: { title: "The Label", url: "/label" },
 };
 
 const SORTS = new Set<ProductSort>(["newest", "price_asc", "price_desc"]);
 
-export default async function ThriftPage({
+export default async function LabelPage({
   searchParams,
 }: {
   searchParams: Promise<{ sort?: string }>;
@@ -21,7 +21,7 @@ export default async function ThriftPage({
   const { sort } = await searchParams;
   return (
     <CatalogListing
-      catalog="THRIFT"
+      catalog="THE_POOJA_EDIT"
       sort={SORTS.has(sort as ProductSort) ? (sort as ProductSort) : "newest"}
     />
   );

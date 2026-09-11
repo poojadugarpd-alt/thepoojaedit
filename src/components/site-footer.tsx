@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { CATALOG_LABEL, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
+
 const SHOP_LINKS = [
-  { href: "/the-pooja-edit", label: "The Pooja Edit" },
-  { href: "/thrift", label: "Thrift Store" },
+  { href: `/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`, label: CATALOG_LABEL.THE_POOJA_EDIT },
+  { href: `/${SEGMENT_BY_CATALOG.THRIFT}`, label: CATALOG_LABEL.THRIFT },
   { href: "/search", label: "Search" },
 ];
 
@@ -30,9 +32,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-line bg-fill">
       <div className="u-page py-16 sm:py-20">
         <p className="u-h2">The Pooja Edit</p>
-        <p className="u-lead mt-3">
-          New pieces and second lives, made and kept in Jaipur.
-        </p>
+        <p className="u-lead mt-3">Realistic, wearable clothes by Pooja Dugar.</p>
 
         <nav
           aria-label="Footer"

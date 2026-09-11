@@ -68,7 +68,7 @@ function emailShell(title: string, bodyHtml: string): string {
 <h1 style="font-size:18px;margin:0 0 12px">${title}</h1>
 ${bodyHtml}
 <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
-<p style="font-size:12px;color:#888">The Pooja Edit + Thrift Store</p>
+<p style="font-size:12px;color:#888">The Pooja Edit — by Pooja Dugar</p>
 </body></html>`;
 }
 

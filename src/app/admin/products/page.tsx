@@ -72,8 +72,8 @@ export default async function AdminProducts({
           className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
         >
           <option value="">All catalogues</option>
-          <option value="THE_POOJA_EDIT">The Pooja Edit</option>
-          <option value="THRIFT">Thrift</option>
+          <option value="THE_POOJA_EDIT">The Label (new apparel)</option>
+          <option value="THRIFT">The Closet (pre-loved)</option>
         </select>
         <select
           aria-label="Filter by status"

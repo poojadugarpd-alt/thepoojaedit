@@ -18,7 +18,7 @@ test("checkout offers online payment only — Cash on delivery is not shown", as
   page,
 }) => {
   // add an in-stock item
-  await page.goto("/the-pooja-edit");
+  await page.goto("/label");
   await page.locator("ul.grid > li a").first().click();
   await page.getByRole("button", { name: /add to cart/i }).click();
   await expect(page.getByText(/added to cart/i)).toBeVisible();
@@ -57,7 +57,11 @@ test("checkout offers online payment only — Cash on delivery is not shown", as
     // real payment (that needs live Razorpay test-card entry, out of scope
     // for e2e).
     await page.getByRole("button", { name: /^Pay ₹/ }).click();
-    await expect(page.getByText(/secured by razorpay/i)).toBeVisible();
+    // Real network round-trip (Razorpay order creation + loading their
+    // checkout.js from a CDN) — slower than an internal render.
+    await expect(page.getByText(/secured by razorpay/i)).toBeVisible({
+      timeout: 15_000,
+    });
   } else {
     await page.getByRole("button", { name: /^Pay ₹/ }).click();
     await expect(

@@ -14,12 +14,12 @@ const POLICIES = {
     body: (
       <>
         <p>We ship across India.</p>
-        <h2>The Pooja Edit</h2>
+        <h2>The Label</h2>
         <p>
           Pieces are slow-made or made to order and currently ship in about
           5–10 business days.
         </p>
-        <h2>Thrift Store</h2>
+        <h2>The Closet</h2>
         <p>
           Pre-loved pieces are dispatched within about 2 working days of your
           order. Delivery time then depends on your location.
@@ -41,7 +41,7 @@ const POLICIES = {
           Return rules differ by catalogue, and each item shows its own on the
           product page and in your cart.
         </p>
-        <h2>The Pooja Edit (new apparel)</h2>
+        <h2>The Label (new apparel)</h2>
         <ul>
           <li>
             Raise a return or exchange request within <strong>48 hours of
@@ -61,10 +61,10 @@ const POLICIES = {
             tagged. Two-way shipping is paid by the customer.
           </li>
         </ul>
-        <h2>Thrift Store (pre-loved, one of one)</h2>
+        <h2>The Closet (pre-loved, one of one)</h2>
         <ul>
           <li>
-            Thrift pieces are <strong>final sale</strong> — no returns or
+            Closet pieces are <strong>final sale</strong> — no returns or
             cancellations. Please read the condition, measurements and flaws
             carefully before buying.
           </li>
@@ -124,7 +124,7 @@ const POLICIES = {
             not treated as paid until delivery.
           </li>
           <li>
-            Thrift pieces are sold as described, one of one, and final sale.
+            Closet pieces are sold as described, one of one, and final sale.
           </li>
         </ul>
         <p className="text-ink-soft">

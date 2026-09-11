@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { ProductGrid } from "@/features/catalog/product-grid";
-import type { CatalogType } from "@/lib/catalog-routes";
+import { CATALOG_LABEL, type CatalogType } from "@/lib/catalog-routes";
 import { searchProducts } from "@/server/catalog";
 
 export const metadata: Metadata = {
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 
 const CATALOGS: { value: CatalogType | ""; label: string }[] = [
   { value: "", label: "All" },
-  { value: "THE_POOJA_EDIT", label: "The Pooja Edit" },
-  { value: "THRIFT", label: "Thrift" },
+  { value: "THE_POOJA_EDIT", label: CATALOG_LABEL.THE_POOJA_EDIT },
+  { value: "THRIFT", label: CATALOG_LABEL.THRIFT },
 ];
 
 export default async function SearchPage({

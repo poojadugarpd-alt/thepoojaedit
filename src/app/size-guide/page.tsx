@@ -11,16 +11,16 @@ export const metadata: Metadata = {
 export default function SizeGuidePage() {
   return (
     <LegalPage eyebrow="Help" title="Size guide" draft>
-      <h2>The Pooja Edit (new apparel)</h2>
+      <h2>The Label (new apparel)</h2>
       <p>
         Pieces are cut to standard India sizing and generally run true to size.
         Where a piece runs small or is meant to be relaxed, it&rsquo;s noted on
         the product page under <strong>Fit &amp; length</strong>. Kurti and set
         lengths are listed there too.
       </p>
-      <h2>Thrift Store (pre-loved)</h2>
+      <h2>The Closet (pre-loved)</h2>
       <p>
-        Thrift pieces are one of one, so there is no size chart — go by the
+        Closet pieces are one of one, so there is no size chart — go by the
         <strong> measurements</strong> on each product page. They&rsquo;re taken
         flat by the seller, in inches unless stated otherwise. Compare them to a
         garment you already own that fits the way you like.

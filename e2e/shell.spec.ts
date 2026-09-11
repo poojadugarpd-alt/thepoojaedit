@@ -8,10 +8,8 @@ test.describe("application shell", () => {
       page.getByRole("heading", { level: 1, name: /one brand, two ways to shop/i }),
     ).toBeVisible();
 
-    await expect(
-      page.getByRole("link", { name: /shop the pooja edit/i }),
-    ).toBeVisible();
-    await expect(page.getByRole("link", { name: /shop thrift store/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /shop the label/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /shop the closet/i })).toBeVisible();
   });
 
   test("primary navigation reaches both catalogues", async ({ page }) => {
@@ -19,17 +17,32 @@ test.describe("application shell", () => {
 
     await page
       .getByRole("navigation", { name: "Primary" })
-      .getByRole("link", { name: "The Pooja Edit", exact: true })
+      .getByRole("link", { name: "Label", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/the-pooja-edit$/);
+    await expect(page).toHaveURL(/\/label$/);
     await expect(
-      page.getByRole("heading", { level: 1, name: "The Pooja Edit" }),
+      page.getByRole("heading", { level: 1, name: "The Label" }),
     ).toBeVisible();
 
-    await page.goto("/thrift");
+    await page.goto("/closet");
     await expect(
-      page.getByRole("heading", { level: 1, name: "Thrift Store" }),
+      page.getByRole("heading", { level: 1, name: "The Closet" }),
     ).toBeVisible();
+  });
+
+  test("old catalog URLs permanently redirect to the renamed ones (D-93)", async ({
+    request,
+  }) => {
+    const cases: [string, string][] = [
+      ["/the-pooja-edit", "/label"],
+      ["/thrift", "/closet"],
+      ["/thrift/vintage-denim-jacket", "/closet/vintage-denim-jacket"],
+    ];
+    for (const [from, to] of cases) {
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect([301, 308], `${from} status`).toContain(res.status());
+      expect(res.headers()["location"], `${from} location`).toContain(to);
+    }
   });
 
   test("skip link is the first focusable element", async ({ page }) => {

@@ -32,6 +32,18 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.behold.so" },
     ],
   },
+
+  // Storefront rename (D-93): /the-pooja-edit -> /label, /thrift -> /closet.
+  // Permanent so search engines and old links update; :path* covers PDPs and
+  // /collections/[slug] under each catalog.
+  async redirects() {
+    return [
+      { source: "/the-pooja-edit", destination: "/label", permanent: true },
+      { source: "/the-pooja-edit/:path*", destination: "/label/:path*", permanent: true },
+      { source: "/thrift", destination: "/closet", permanent: true },
+      { source: "/thrift/:path*", destination: "/closet/:path*", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -52,8 +52,8 @@ export default async function AdminAnalyticsPage() {
         </Card>
 
         <Card title="Revenue by catalogue (line-allocated)">
-          <p>The Pooja Edit {money(f.placed.byCatalogPaise.THE_POOJA_EDIT)}</p>
-          <p>Thrift {money(f.placed.byCatalogPaise.THRIFT)}</p>
+          <p>The Label {money(f.placed.byCatalogPaise.THE_POOJA_EDIT)}</p>
+          <p>The Closet {money(f.placed.byCatalogPaise.THRIFT)}</p>
         </Card>
 
         <Card title="Net revenue">

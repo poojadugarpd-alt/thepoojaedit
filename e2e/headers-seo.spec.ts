@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
 test("public catalog API is shared-cacheable; private surfaces are not", async ({
   request,
 }) => {
-  const api = await request.get("/api/catalog/the-pooja-edit/products?limit=1");
+  const api = await request.get("/api/catalog/label/products?limit=1");
   expect(api.ok()).toBeTruthy();
   const cc = api.headers()["cache-control"] ?? "";
   expect(cc).toMatch(/s-maxage|max-age/);
@@ -39,7 +39,7 @@ test("cart / checkout / admin are noindex", async ({ page }) => {
 });
 
 test("a PDP carries canonical, OG tags and Product JSON-LD", async ({ page }) => {
-  await page.goto("/the-pooja-edit");
+  await page.goto("/label");
   await page.locator("ul.grid > li a").first().click();
   await expect(page.locator('head link[rel="canonical"]')).toHaveCount(1);
   await expect(page.locator('head meta[property="og:title"]')).toHaveCount(1);

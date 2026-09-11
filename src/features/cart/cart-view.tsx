@@ -4,7 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 
-import { CATALOG_LABEL, productPath, type CatalogType } from "@/lib/catalog-routes";
+import {
+  CATALOG_LABEL,
+  productPath,
+  SEGMENT_BY_CATALOG,
+  type CatalogType,
+} from "@/lib/catalog-routes";
 import { formatPaiseINR } from "@/lib/money";
 
 import {
@@ -89,11 +94,11 @@ export function CartView() {
       <div className="border-t border-line py-16">
         <p className="u-h3">Your cart is empty.</p>
         <div className="mt-6 flex gap-6">
-          <Link href="/the-pooja-edit" className="u-textlink">
-            The Pooja Edit
+          <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-textlink">
+            {CATALOG_LABEL.THE_POOJA_EDIT}
           </Link>
-          <Link href="/thrift" className="u-textlink">
-            Thrift Store
+          <Link href={`/${SEGMENT_BY_CATALOG.THRIFT}`} className="u-textlink">
+            {CATALOG_LABEL.THRIFT}
           </Link>
         </div>
       </div>

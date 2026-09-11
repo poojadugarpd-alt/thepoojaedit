@@ -18,7 +18,7 @@ async function scan(page: import("@playwright/test").Page, opts?: { disable?: st
 test.use({ viewport: { width: 390, height: 844 } });
 
 test.describe("storefront a11y", () => {
-  for (const path of ["/", "/the-pooja-edit", "/thrift", "/cart", "/checkout"]) {
+  for (const path of ["/", "/label", "/closet", "/cart", "/checkout"]) {
     test(`no violations: ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("load");
@@ -31,7 +31,7 @@ test.describe("storefront a11y", () => {
   }
 
   test("no violations: a product detail page", async ({ page }) => {
-    await page.goto("/the-pooja-edit");
+    await page.goto("/label");
     await page.locator("ul.grid > li a").first().click();
     await page.waitForLoadState("load");
     const { violations } = await scan(page);

@@ -1,11 +1,12 @@
 import Link from "next/link";
 
 import { CartLink } from "@/features/cart/cart-link";
+import { CATALOG_LABEL_SHORT, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 
-const CATALOG_LINKS = [
-  { href: "/the-pooja-edit", label: "The Pooja Edit" },
-  { href: "/thrift", label: "Thrift Store" },
-];
+const CATALOG_LINKS = (["THE_POOJA_EDIT", "THRIFT"] as const).map((catalog) => ({
+  href: `/${SEGMENT_BY_CATALOG[catalog]}`,
+  label: CATALOG_LABEL_SHORT[catalog],
+}));
 
 // "Account" is hidden until the Supabase Auth UI is built — checkout is
 // guest-only for now and there is no /account route.
@@ -20,10 +21,13 @@ export function SiteHeader() {
       >
         <Link
           href="/"
-          aria-label="The Pooja Edit — home"
-          className="u-navlink shrink-0 !text-ink-strong"
+          aria-label="The Pooja Edit by Pooja Dugar — home"
+          className="u-navlink flex shrink-0 flex-col gap-0.5 !text-ink-strong"
         >
-          THE POOJA EDIT
+          <span>THE POOJA EDIT</span>
+          <span className="text-[0.625rem] font-normal normal-case tracking-normal text-ink-soft">
+            by Pooja Dugar
+          </span>
         </Link>
 
         <ul className="flex gap-x-6 gap-y-1">
