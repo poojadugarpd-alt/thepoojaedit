@@ -24,10 +24,11 @@ const POLICIES = {
           Pre-loved pieces are dispatched within about 2 working days of your
           order. Delivery time then depends on your location.
         </p>
-        <h2>Charges &amp; cash on delivery</h2>
+        <h2>Charges &amp; payment</h2>
         <p>
-          Shipping charges, any cash-on-delivery fee and serviceable pincodes
-          are shown at checkout before you pay. Tracking is via Shadowfax.
+          Shipping charges and serviceable pincodes are shown at checkout.
+          We currently accept online payment only (UPI / card / netbanking) —
+          cash on delivery isn&rsquo;t offered. Tracking is via Shadowfax.
         </p>
       </>
     ),

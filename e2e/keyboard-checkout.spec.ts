@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
  * Keyboard-only checkout (Phase 12, AC-16). The whole form must be reachable and
  * operable with Tab + typing + Enter — no pointer.
  */
-test("a customer can complete the COD checkout form with the keyboard only", async ({
+test("a customer can complete the checkout form with the keyboard only", async ({
   page,
 }) => {
   await page.goto("/the-pooja-edit");
@@ -35,8 +35,7 @@ test("a customer can complete the COD checkout form with the keyboard only", asy
   await page.getByLabel("PIN code").focus();
   await page.keyboard.type("302001");
 
-  // the online-payment radio is disabled (no keys) → COD is the reachable choice
-  await page.getByText("Cash on delivery").click();
+  // Online payment is the only method offered — no radio choice to make.
   await page.getByRole("button", { name: /review order/i }).focus();
   await expect(page.getByRole("button", { name: /review order/i })).toBeFocused();
   await page.keyboard.press("Enter");

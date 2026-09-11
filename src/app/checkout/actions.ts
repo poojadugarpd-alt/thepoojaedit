@@ -11,6 +11,7 @@ import {
 import { getCurrentCustomer } from "@/server/auth/current-customer";
 import {
   checkout,
+  CHECKOUT_COD_ENABLED,
   getQuote,
   guestScope,
   IdempotencyConflictError,
@@ -63,6 +64,9 @@ export async function prepareCheckoutAction(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request" };
   }
   const input = parsed.data;
+  if (input.paymentMethod === "COD" && !CHECKOUT_COD_ENABLED) {
+    return { ok: false, error: "Cash on delivery isn't offered — please pay online." };
+  }
   try {
     const quote = await getQuote({
       lines: input.lines,
@@ -129,8 +133,11 @@ export async function placeCheckoutAction(
   if (input.paymentMethod === "PREPAID_RAZORPAY" && !isPrepaidConfigured()) {
     return {
       ok: false,
-      error: "Card / UPI checkout isn't available right now. Please choose Cash on Delivery.",
+      error: "Card / UPI checkout isn't available right now. Please try again shortly.",
     };
+  }
+  if (input.paymentMethod === "COD" && !CHECKOUT_COD_ENABLED) {
+    return { ok: false, error: "Cash on delivery isn't offered — please pay online." };
   }
 
   const customer = await getCurrentCustomer();

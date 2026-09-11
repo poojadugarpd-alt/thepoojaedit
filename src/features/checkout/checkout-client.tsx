@@ -45,7 +45,13 @@ function field(a: AddressForm) {
   return { ...a, country: "IN" as const };
 }
 
-export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) {
+export function CheckoutClient({
+  prepaidEnabled,
+  codEnabled,
+}: {
+  prepaidEnabled: boolean;
+  codEnabled: boolean;
+}) {
   const router = useRouter();
   const lines = useCart((s) => s.lines);
   const hydrated = useCart((s) => s.hydrated);
@@ -53,7 +59,9 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
 
   const [addr, setAddr] = useState<AddressForm>(EMPTY_ADDRESS);
   const [email, setEmail] = useState("");
-  const [method, setMethod] = useState<Method>(prepaidEnabled ? "PREPAID_RAZORPAY" : "COD");
+  const [method, setMethod] = useState<Method>(
+    prepaidEnabled ? "PREPAID_RAZORPAY" : codEnabled ? "COD" : "PREPAID_RAZORPAY",
+  );
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -235,18 +243,20 @@ export function CheckoutClient({ prepaidEnabled }: { prepaidEnabled: boolean }) 
                     )}
                   </span>
                 </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="method"
-                    checked={method === "COD"}
-                    onChange={() => {
-                      setMethod("COD");
-                      setQuote(null);
-                    }}
-                  />
-                  <span>Cash on delivery</span>
-                </label>
+                {codEnabled && (
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="method"
+                      checked={method === "COD"}
+                      onChange={() => {
+                        setMethod("COD");
+                        setQuote(null);
+                      }}
+                    />
+                    <span>Cash on delivery</span>
+                  </label>
+                )}
               </div>
             </fieldset>
 

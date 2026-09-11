@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CheckoutClient } from "@/features/checkout/checkout-client";
+import { CHECKOUT_COD_ENABLED } from "@/server/checkout";
 import { isPrepaidConfigured } from "@/server/payments";
 
 export const metadata: Metadata = {
@@ -16,5 +17,10 @@ export const metadata: Metadata = {
  * paid.
  */
 export default function CheckoutPage() {
-  return <CheckoutClient prepaidEnabled={isPrepaidConfigured()} />;
+  return (
+    <CheckoutClient
+      prepaidEnabled={isPrepaidConfigured()}
+      codEnabled={CHECKOUT_COD_ENABLED}
+    />
+  );
 }
