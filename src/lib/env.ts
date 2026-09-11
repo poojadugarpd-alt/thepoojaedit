@@ -47,13 +47,15 @@ const ServerEnvSchema = z
     RAZORPAY_WEBHOOK_SECRET: optionalNonEmpty,
 
     // ── Shadowfax — wired in Phase 8 (master v1.1) ───────────────────────
+    // Plain Token auth only (Authorization: Token <token>) — no client-id
+    // header; the base URL switches staging/production on APP_ENV automatically
+    // (dale.staging.shadowfax.in vs dale.shadowfax.in). See shadowfax.ts.
     SHADOWFAX_API_TOKEN: optionalNonEmpty,
-    SHADOWFAX_CLIENT_ID: optionalNonEmpty,
     SHADOWFAX_WEBHOOK_TOKEN: optionalNonEmpty.describe(
       "Static token Shadowfax echoes on its callback, if the account configures one. Callback auth is weak by design; state is re-verified against the tracking API.",
     ),
     SHADOWFAX_API_BASE: optionalNonEmpty.describe(
-      "Override the Shadowfax API base URL (defaults to https://api.shadowfax.in).",
+      "Override the Shadowfax API base URL (defaults to the staging/production dale.*.shadowfax.in host picked by APP_ENV).",
     ),
 
     // ── WhatsApp (Meta Cloud API) — wired in Phase 10 ─────────────────────

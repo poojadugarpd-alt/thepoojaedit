@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isProduction } from "@/lib/app-env";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 
@@ -121,7 +122,7 @@ export type { RtoOutcome } from "./service";
 
 /** True when Shadowfax fulfilment can actually run in this environment. */
 export function isShippingConfigured(): boolean {
-  return Boolean(env.SHADOWFAX_API_TOKEN && env.SHADOWFAX_CLIENT_ID);
+  return Boolean(env.SHADOWFAX_API_TOKEN);
 }
 
 let cachedProvider: ShippingProvider | null = null;
@@ -132,8 +133,10 @@ export function getFulfilmentProvider(): ShippingProvider {
   if (!isShippingConfigured()) throw new ShippingNotConfiguredError();
   cachedProvider = new ShadowfaxProvider({
     apiToken: env.SHADOWFAX_API_TOKEN!,
-    clientId: env.SHADOWFAX_CLIENT_ID!,
     webhookToken: env.SHADOWFAX_WEBHOOK_TOKEN ?? null,
+    // APP_ENV, not NODE_ENV — a local/preview build must never call Shadowfax's
+    // production API by accident.
+    environment: isProduction ? "production" : "staging",
     apiBase: env.SHADOWFAX_API_BASE ?? undefined,
   });
   return cachedProvider;

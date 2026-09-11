@@ -20,51 +20,62 @@ import {
   type WebhookHint,
 } from "./port";
 
-const API_BASE = "https://api.shadowfax.in";
+// Confirmed 2026-09-11 against Shadowfax's live "Unified API for Forward
+// Integrations" docs (sfxunifiedapi.docs.apiary.io) — this is the real base URL
+// pair, not a guess. Two different environments, not an override switch on one
+// host.
+const STAGING_BASE = "https://dale.staging.shadowfax.in/api";
+const PRODUCTION_BASE = "https://dale.shadowfax.in/api";
 
 export interface ShadowfaxConfig {
   apiToken: string;
-  clientId: string;
   /** Static token Shadowfax echoes on its callback, if the account configures one. */
   webhookToken?: string | null;
+  /** Selects the staging or production base URL. Defaults to "staging" — never
+   *  guess your way into hitting production. Ignored when `apiBase` is set. */
+  environment?: "staging" | "production";
   apiBase?: string;
   fetchImpl?: typeof fetch;
-  /** Merchant pickup pincode, for serviceability + rate. */
-  pickupPostcode?: string;
-  /** Flat rate fallback when the account has no rate API enabled. */
+  /** Flat rate charged to the customer; Shadowfax's serviceability API returns
+   *  no price, only whether/how a pincode is served. */
   flatShippingPaise?: number;
   codFeePaise?: number;
 }
 
 /**
- * Shadowfax adapter (master §8, v1.1). Single last-mile carrier — `createShipment`
- * returns one AWB, no courier selection. All network access is confined here.
+ * Shadowfax adapter (master §8, v1.1) — the "Marketplace / seller pickup"
+ * integration: a Shadowfax rider collects each order from our registered
+ * address and delivers it, one AWB per shipment, no courier selection. All
+ * network access is confined here.
  *
- * Endpoint paths and payload field names below follow Shadowfax's documented
- * merchant API shape but MUST be confirmed against the live account before
- * go-live (docs/integration-setup.md); the normalisation layer and every caller
- * are written against the neutral port, so only this file changes if they differ.
+ * Endpoint paths, auth and payload shapes below are taken directly from
+ * Shadowfax's live "Unified API for Forward Integrations" documentation
+ * (sfxunifiedapi.docs.apiary.io, checked 2026-09-11) — not the placeholder
+ * shape this file originally shipped with. Two things the docs never describe
+ * a self-serve API for: fetching a printable shipping label, and reading COD
+ * remittance status — `fetchLabel`/`fetchCodRemittance` say so explicitly
+ * rather than guessing at an endpoint. The normalisation layer and every
+ * caller are written against the neutral port, so only this file changes if
+ * Shadowfax's shape moves again.
  */
 export class ShadowfaxProvider implements ShippingProvider {
   readonly name = "shadowfax";
   readonly enabled = true;
 
   private readonly apiToken: string;
-  private readonly clientId: string;
   private readonly webhookToken: string | null;
   private readonly apiBase: string;
   private readonly fetchImpl: typeof fetch;
-  private readonly pickupPostcode: string;
   private readonly flatShippingPaise: number;
   private readonly codFeePaise: number;
 
   constructor(config: ShadowfaxConfig) {
     this.apiToken = config.apiToken;
-    this.clientId = config.clientId;
     this.webhookToken = config.webhookToken ?? null;
-    this.apiBase = config.apiBase ?? API_BASE;
+    this.apiBase =
+      config.apiBase ??
+      (config.environment === "production" ? PRODUCTION_BASE : STAGING_BASE);
     this.fetchImpl = config.fetchImpl ?? fetch;
-    this.pickupPostcode = config.pickupPostcode ?? "";
     this.flatShippingPaise = config.flatShippingPaise ?? 8_000;
     this.codFeePaise = config.codFeePaise ?? 3_000;
   }
@@ -79,8 +90,9 @@ export class ShadowfaxProvider implements ShippingProvider {
       res = await this.fetchImpl(`${this.apiBase}${path}`, {
         method,
         headers: {
+          // Shadowfax uses plain Token auth — the literal word "Token" plus the
+          // key, no client-id header (docs: "Authentication").
           Authorization: `Token ${this.apiToken}`,
-          "X-Client-Id": this.clientId,
           ...(body ? { "Content-Type": "application/json" } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,
@@ -92,7 +104,9 @@ export class ShadowfaxProvider implements ShippingProvider {
     const json = text ? (JSON.parse(text) as unknown) : {};
     if (!res.ok) {
       const detail =
-        (json as { message?: string; detail?: string })?.message ??
+        (json as { message?: string; responseMsg?: string; detail?: string })
+          ?.message ??
+        (json as { responseMsg?: string })?.responseMsg ??
         (json as { detail?: string })?.detail ??
         text ??
         res.statusText;
@@ -103,29 +117,22 @@ export class ShadowfaxProvider implements ShippingProvider {
 
   // ── checkout-time ──────────────────────────────────────────────────────────
   async quote(req: ShippingQuoteRequest): Promise<ShippingQuote> {
+    // Shadowfax's serviceability endpoint answers "is this pincode served, and
+    // how" (service tiers like "Regular"/"Surface") — it carries no COD/prepaid
+    // split and no price, so those stay config-driven (flatShippingPaise /
+    // codFeePaise) rather than invented from a field the API doesn't return.
     let serviceable = true;
-    let codAllowed = req.paymentMethod !== "COD";
-    let etaDays: number | null = null;
     try {
-      const s = await this.call<{
-        serviceable?: boolean;
-        cod?: boolean;
-        prepaid?: boolean;
-        tat_days?: number;
-      }>("POST", "/api/v2/serviceability/", {
-        pickup_pincode: this.pickupPostcode,
-        drop_pincode: req.destinationPostcode,
-        payment_type: req.paymentMethod === "COD" ? "COD" : "PREPAID",
-      });
-      serviceable = s.serviceable ?? true;
-      codAllowed = req.paymentMethod === "COD" ? Boolean(s.cod) : true;
-      etaDays = s.tat_days ?? null;
+      const rows = await this.call<{ code: number; services: string[] }[]>(
+        "GET",
+        `/v1/clients/serviceability/?service=customer_delivery&pincodes=${encodeURIComponent(req.destinationPostcode)}`,
+      );
+      serviceable = rows.some((r) => String(r.code) === req.destinationPostcode);
     } catch (e) {
       // Serviceability lookups that error out should not silently block checkout;
       // fall back to "serviceable, no COD" and let reconciliation/ops catch it.
       if (e instanceof ShippingApiError && e.httpStatus >= 500) {
         serviceable = true;
-        codAllowed = false;
       } else {
         throw e;
       }
@@ -140,58 +147,82 @@ export class ShadowfaxProvider implements ShippingProvider {
         reason: "Delivery is not available to this PIN code.",
       };
     }
+    // Shadowfax's serviceability response carries no per-pincode COD/prepaid
+    // split — COD availability is an account-level contract term, not a
+    // per-request signal, so it's assumed on wherever the pincode is served.
+    const codAllowed = true;
     return {
       serviceable: true,
       shippingPaise: this.flatShippingPaise,
       codAllowed,
-      codFeePaise: req.paymentMethod === "COD" && codAllowed ? this.codFeePaise : 0,
-      ...(etaDays != null ? { etaDays } : {}),
-    } as ShippingQuote;
+      codFeePaise: req.paymentMethod === "COD" ? this.codFeePaise : 0,
+    };
   }
 
   // ── fulfilment ────────────────────────────────────────────────────────────
   async createShipment(input: CreateShipmentInput): Promise<CreatedShipment> {
+    const totalRupees = Math.round(input.invoiceValuePaise) / 100;
     const res = await this.call<{
-      sfx_order_id?: string;
-      order_id?: string;
-      awb_number?: string;
-      awb?: string;
-      status?: string;
-      label_url?: string;
-      tracking_url?: string;
-    }>("POST", "/api/v3/orders/", {
-      client_order_id: input.merchantReference,
-      payment_type: input.paymentMethod === "COD" ? "COD" : "PREPAID",
-      cod_amount: Math.round(input.codAmountPaise) / 100,
-      order_value: Math.round(input.invoiceValuePaise) / 100,
-      weight_grams: input.weightGrams,
-      ...(input.dimensionsMm
-        ? {
-            length_cm: input.dimensionsMm.length / 10,
-            breadth_cm: input.dimensionsMm.width / 10,
-            height_cm: input.dimensionsMm.height / 10,
-          }
-        : {}),
+      message?: string;
+      errors?: unknown;
+      data?: {
+        id?: number;
+        awb_number?: string;
+        status?: string;
+        status_display?: string;
+      };
+    }>("POST", "/v3/clients/orders/", {
+      order_type: "marketplace",
+      order_details: {
+        client_order_id: input.merchantReference,
+        actual_weight: input.weightGrams,
+        volumetric_weight: input.dimensionsMm
+          ? Math.round(
+              (input.dimensionsMm.length *
+                input.dimensionsMm.width *
+                input.dimensionsMm.height) /
+                5000 /
+                1000, // mm³ → cm³ (÷1000) → volumetric grams (÷5000 divisor)
+            )
+          : input.weightGrams,
+        product_value: totalRupees,
+        payment_mode: input.paymentMethod === "COD" ? "COD" : "Prepaid",
+        cod_amount: String(Math.round(input.codAmountPaise) / 100),
+        total_amount: totalRupees,
+        order_service: "regular",
+      },
+      customer_details: addressPayload(input.drop),
       pickup_details: addressPayload(input.pickup),
-      drop_details: addressPayload(input.drop),
-      items: input.items.map((i) => ({
-        name: i.descriptor,
-        sku: i.sku,
-        quantity: i.quantity,
+      // Return-to-seller destination for an RTO — same as pickup, since we have
+      // no separate warehouse/return address in the port today.
+      rts_details: addressPayload(input.pickup),
+      product_details: input.items.map((i) => ({
+        sku_id: i.sku,
+        sku_name: i.descriptor,
         price: Math.round(i.unitValuePaise) / 100,
+        category: "General",
+        additional_details: { quantity: i.quantity },
+        // hsn_code / gstin_number / taxes intentionally omitted: not wired to a
+        // real GST config yet (release-candidate blocker #5, owner-confirmed
+        // business/tax setup) — sending fabricated figures would be worse than
+        // omitting them.
       })),
     });
-    const providerShipmentId = res.sfx_order_id ?? res.order_id ?? "";
+    if (res.errors) {
+      throw new ShippingApiError(502, JSON.stringify(res.errors));
+    }
+    const awb = res.data?.awb_number ?? null;
+    const providerShipmentId = res.data?.id != null ? String(res.data.id) : awb;
     if (!providerShipmentId) {
-      throw new ShippingApiError(502, "create returned no order id");
+      throw new ShippingApiError(502, "create returned no order id / AWB");
     }
     return {
       providerShipmentId,
-      awb: res.awb_number ?? res.awb ?? null,
+      awb,
       courier: "Shadowfax",
-      trackingUrl: res.tracking_url ?? null,
-      labelUrl: res.label_url ?? null,
-      statusRaw: res.status ?? "PENDING",
+      trackingUrl: null, // only present on the tracking-detail response, not create
+      labelUrl: null, // Shadowfax's docs expose no self-serve label-download API
+      statusRaw: res.data?.status ?? "new",
       raw: res,
     };
   }
@@ -200,31 +231,33 @@ export class ShadowfaxProvider implements ShippingProvider {
     awb?: string | null;
     merchantReference?: string | null;
   }): Promise<TrackingSnapshot> {
-    const qs = ref.awb
-      ? `awb=${encodeURIComponent(ref.awb)}`
-      : `client_order_id=${encodeURIComponent(ref.merchantReference ?? "")}`;
+    if (!ref.awb) {
+      // The v4 tracking endpoint is keyed by AWB in the URL path — Shadowfax's
+      // docs show no client-order-id lookup for it.
+      throw new ShippingApiError(400, "fetchTracking requires an AWB");
+    }
     const res = await this.call<{
-      awb_number?: string;
-      current_status?: string;
-      status?: string;
-      scans?: {
+      order_details?: { status?: string; customer_track_url?: string };
+      tracking_details?: {
+        status_id?: string;
         status?: string;
-        status_code?: string;
         remarks?: string;
-        timestamp?: string;
-        updated_at?: string;
+        created?: string;
+        location?: string;
       }[];
-    }>("GET", `/api/v2/orders/track/?${qs}`);
-    const events: NormalizedTrackingEvent[] = (res.scans ?? []).map((s) => ({
-      externalEventId: null,
-      statusRaw: s.status_code ?? s.status ?? "UNKNOWN",
-      occurredAt: parseTs(s.timestamp ?? s.updated_at),
-      note: s.remarks ?? null,
-      raw: s,
-    }));
+    }>("GET", `/v4/clients/orders/${encodeURIComponent(ref.awb)}/track/`);
+    const events: NormalizedTrackingEvent[] = (res.tracking_details ?? []).map(
+      (s) => ({
+        externalEventId: null,
+        statusRaw: s.status_id ?? s.status ?? "UNKNOWN",
+        occurredAt: parseTs(s.created),
+        note: s.remarks ?? null,
+        raw: s,
+      }),
+    );
     return {
-      awb: res.awb_number ?? ref.awb ?? null,
-      statusRaw: res.current_status ?? res.status ?? "UNKNOWN",
+      awb: ref.awb,
+      statusRaw: res.order_details?.status ?? "UNKNOWN",
       events,
       raw: res,
     };
@@ -234,68 +267,38 @@ export class ShadowfaxProvider implements ShippingProvider {
     awb?: string | null;
     merchantReference: string;
   }): Promise<{ cancelled: boolean; raw: unknown }> {
-    const res = await this.call<{ success?: boolean; status?: string }>(
+    const requestId = ref.awb ?? ref.merchantReference;
+    const res = await this.call<{ responseMsg?: string; responseCode?: number }>(
       "POST",
-      "/api/v3/orders/cancel/",
-      ref.awb
-        ? { awb_number: ref.awb }
-        : { client_order_id: ref.merchantReference },
+      "/v3/clients/orders/cancel/",
+      { request_id: requestId, cancel_remarks: "Cancelled by merchant" },
     );
-    return { cancelled: res.success ?? res.status === "CANCELLED", raw: res };
+    // 200 = cancelled now; 304 = accepted, executes once the shipment reaches
+    // the next facility — either way the cancellation was accepted.
+    const cancelled = res.responseCode === 200 || res.responseCode === 304;
+    return { cancelled, raw: res };
   }
 
   async fetchLabel(ref: { awb: string }): Promise<LabelFile> {
-    let res: Response;
-    try {
-      res = await this.fetchImpl(
-        `${this.apiBase}/api/v2/orders/label/?awb=${encodeURIComponent(ref.awb)}`,
-        {
-          headers: {
-            Authorization: `Token ${this.apiToken}`,
-            "X-Client-Id": this.clientId,
-          },
-        },
-      );
-    } catch (e) {
-      throw new ShippingApiError(0, (e as Error).message);
-    }
-    if (!res.ok) throw new ShippingApiError(res.status, await res.text());
-    const bytes = Buffer.from(await res.arrayBuffer());
-    return {
-      contentType: res.headers.get("content-type") ?? "application/pdf",
-      bytes,
-    };
+    // Shadowfax's documented API has no self-serve "download this AWB's label"
+    // endpoint — labels are generated/printed from the Shadowfax360 dashboard.
+    // Throwing a clear, typed error here beats silently calling a made-up path.
+    throw new ShippingApiError(
+      501,
+      `Shadowfax has no documented label-download API; print the label for AWB ${ref.awb} from the Shadowfax360 dashboard.`,
+    );
   }
 
   async fetchCodRemittance(ref: {
     merchantReference?: string | null;
     awb?: string | null;
   }): Promise<CodRemittanceRecord | null> {
-    const qs = ref.awb
-      ? `awb=${encodeURIComponent(ref.awb)}`
-      : `client_order_id=${encodeURIComponent(ref.merchantReference ?? "")}`;
-    const res = await this.call<{
-      awb_number?: string;
-      client_order_id?: string;
-      collected_amount?: number;
-      remitted_amount?: number;
-      utr?: string;
-      collected_at?: string;
-      remitted_at?: string;
-    } | null>("GET", `/api/cod/remittance/?${qs}`);
-    if (!res) return null;
-    return {
-      merchantReference: res.client_order_id ?? ref.merchantReference ?? null,
-      awb: res.awb_number ?? ref.awb ?? null,
-      collectedPaise:
-        res.collected_amount != null ? Math.round(res.collected_amount * 100) : null,
-      remittedPaise:
-        res.remitted_amount != null ? Math.round(res.remitted_amount * 100) : null,
-      providerReference: res.utr ?? null,
-      collectedAt: parseTs(res.collected_at),
-      remittedAt: parseTs(res.remitted_at),
-      raw: res,
-    };
+    void ref;
+    // Same gap as fetchLabel: no documented self-serve remittance-lookup
+    // endpoint (COD remittance lives under the Shadowfax360 dashboard's Finance
+    // tab). Returning null is the port's existing "nothing to reconcile yet"
+    // signal, so this stays a safe no-op until that endpoint is confirmed.
+    return null;
   }
 
   // ── webhook (weak auth by design) ─────────────────────────────────────────
@@ -311,28 +314,27 @@ export class ShadowfaxProvider implements ShippingProvider {
       }
     }
     let body: {
-      client_order_id?: string;
+      order_id?: string;
       awb_number?: string;
-      awb?: string;
+      event?: string;
       status?: string;
-      status_code?: string;
-      timestamp?: string;
-      updated_at?: string;
+      event_timestamp?: string;
+      comments?: string;
     };
     try {
       body = JSON.parse(rawBody.toString("utf8"));
     } catch {
       throw new WebhookVerificationError("shadowfax callback body is not JSON");
     }
-    const statusRaw = (body.status_code ?? body.status ?? "UNKNOWN").toString();
-    const occurredAt = parseTs(body.timestamp ?? body.updated_at);
+    const statusRaw = (body.event ?? body.status ?? "UNKNOWN").toString();
+    const occurredAt = parseTs(body.event_timestamp);
     const fingerprint = createHash("sha256")
       .update(rawBody)
       .digest("hex")
       .slice(0, 40);
     return {
-      merchantReference: body.client_order_id ?? null,
-      awb: body.awb_number ?? body.awb ?? null,
+      merchantReference: body.order_id ?? null,
+      awb: body.awb_number ?? null,
       statusRaw,
       occurredAt,
       fingerprint,
@@ -353,11 +355,12 @@ function addressPayload(a: {
 }) {
   return {
     name: a.name,
-    phone: a.phone,
-    address: [a.line1, a.line2, a.landmark].filter(Boolean).join(", "),
+    contact: a.phone,
+    address_line_1: a.line1,
+    address_line_2: [a.line2, a.landmark].filter(Boolean).join(", ") || undefined,
     city: a.city,
     state: a.stateName,
-    pincode: a.postcode,
+    pincode: Number(a.postcode),
   };
 }
 

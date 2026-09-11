@@ -98,8 +98,8 @@ export function credentialHealth(): CredentialHealth[] {
     },
     {
       group: "Shadowfax (shipping)",
-      configured: has(env.SHADOWFAX_API_TOKEN) && has(env.SHADOWFAX_CLIENT_ID),
-      detail: "api token / client id" + (has(env.SHADOWFAX_WEBHOOK_TOKEN) ? " / callback token" : ""),
+      configured: has(env.SHADOWFAX_API_TOKEN),
+      detail: "api token" + (has(env.SHADOWFAX_WEBHOOK_TOKEN) ? " / callback token" : ""),
     },
     {
       group: "Resend (email)",
