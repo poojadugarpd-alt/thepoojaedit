@@ -23,10 +23,11 @@ describe("template rendering", () => {
 
   it("COD confirmation never says 'paid' or 'payment successful'", () => {
     for (const channel of ["EMAIL", "WHATSAPP"] as const) {
-      const r = renderTemplate("order_confirmation_cod", channel, orderVars) as unknown as Record<
-        string,
-        string
-      >;
+      const r = renderTemplate(
+        "order_confirmation_cod",
+        channel,
+        orderVars,
+      ) as unknown as Record<string, string>;
       const blob = JSON.stringify(r).toLowerCase();
       expect(blob).not.toContain("payment successful");
       expect(blob).not.toMatch(/\bpaid\b/);
@@ -48,7 +49,9 @@ describe("template rendering", () => {
       orderNumber: "X",
       reason: "stock issue",
     }) as { subject: string };
-    expect(new Set([shipped.subject, delivered.subject, cancelled.subject]).size).toBe(3);
+    expect(new Set([shipped.subject, delivered.subject, cancelled.subject]).size).toBe(
+      3,
+    );
   });
 
   it("rejects missing / wrong-typed variables", () => {
@@ -56,7 +59,10 @@ describe("template rendering", () => {
       renderTemplate("order_confirmation_prepaid", "EMAIL", { orderNumber: "X" }),
     ).toThrow(TemplateVariableError);
     expect(() =>
-      renderTemplate("refund_completed", "EMAIL", { orderNumber: "X", amountPaise: -1 }),
+      renderTemplate("refund_completed", "EMAIL", {
+        orderNumber: "X",
+        amountPaise: -1,
+      }),
     ).toThrow(TemplateVariableError);
   });
 
@@ -82,5 +88,15 @@ describe("template rendering", () => {
 
   it("every template is version 1 for now", () => {
     expect(templateVersion("order_confirmation_cod")).toBe(1);
+  });
+
+  it("email html carries the brand logo, with the text footer kept as a fallback", () => {
+    const r = renderTemplate("order_confirmation_prepaid", "EMAIL", orderVars) as {
+      html: string;
+    };
+    expect(r.html).toContain('<img src="');
+    expect(r.html).toContain("/brand/logo-maroon.png");
+    expect(r.html).toContain('alt="The Pooja Edit by Pooja Dugar"');
+    expect(r.html).toContain("The Pooja Edit — by Pooja Dugar");
   });
 });

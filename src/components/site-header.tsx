@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { HeaderLogo } from "@/components/brand/logo";
 import { CartLink } from "@/features/cart/cart-link";
 import { CATALOG_LABEL_SHORT, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 
@@ -17,20 +18,17 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40">
       <nav
         aria-label="Primary"
-        className="u-bar flex flex-wrap items-center gap-x-7 gap-y-2 px-4 py-4 sm:px-6 sm:py-5"
+        className="u-bar flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-4 sm:gap-x-7 sm:px-6 sm:py-5"
       >
         <Link
           href="/"
           aria-label="The Pooja Edit by Pooja Dugar — home"
-          className="u-navlink flex shrink-0 flex-col gap-0.5 !text-ink-strong"
+          className="flex min-h-11 shrink-0 items-center text-brand-maroon"
         >
-          <span>THE POOJA EDIT</span>
-          <span className="text-[0.625rem] font-normal normal-case tracking-normal text-ink-soft">
-            by Pooja Dugar
-          </span>
+          <HeaderLogo className="h-6 w-auto sm:h-10" />
         </Link>
 
-        <ul className="flex gap-x-6 gap-y-1">
+        <ul className="flex gap-x-4 gap-y-1 sm:gap-x-6">
           {CATALOG_LINKS.map((link) => (
             <li key={link.href}>
               <Link href={link.href} className="u-navlink">

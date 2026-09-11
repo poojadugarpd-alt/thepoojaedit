@@ -33,6 +33,12 @@
   --font-sans:
     "Helvetica Neue", Helvetica, var(--font-inter), Arial, "Segoe UI", Roboto,
     system-ui, sans-serif;
+
+  /* Logo & brand marks ONLY (D-96) — the wordmark, signature and favicon/app
+     icons. NOT site accent colours: buttons, links, text and the rest of the
+     UI stay on the white/sand/grey palette above. See design/DESIGN.md. */
+  --brand-maroon: #7a1f2b;
+  --brand-beige: #ede0cc;
 }
 
 @theme inline {
@@ -47,6 +53,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --radius-media: var(--radius-media);
+  /* Logo & brand marks ONLY — see the --brand-* definitions above. */
+  --color-brand-maroon: var(--brand-maroon);
+  --color-brand-beige: var(--brand-beige);
 }
 
 * {

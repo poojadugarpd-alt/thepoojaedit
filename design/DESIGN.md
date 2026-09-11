@@ -72,6 +72,14 @@ without colour vision.
 **No dark theme.** A design that commits to one warm light world; documented, not
 omitted.
 
+**Logo & brand colours (D-96).** `--brand-maroon: #7A1F2B` and
+`--brand-beige: #EDE0CC` exist for one purpose: the "The Pooja Edit" wordmark,
+signature and favicon/app icons (`src/components/brand/logo.tsx`, `src/app/icon.svg`,
+`public/brand/*`). They are **not** part of the site's own palette above — no
+button, link, price, status colour or text ever uses maroon or beige. If a
+screen needs an accent, it stays within `--ink-strong`/the semantic colours;
+the logo carries the only spot of colour on the site.
+
 ---
 
 ## 3. Typography tokens

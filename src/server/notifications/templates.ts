@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 
 import { formatPaiseINR } from "@/lib/money";
+import { publicEnv } from "@/lib/public-env";
 
 /**
  * Versioned notification template registry (master §8). The code here is the
@@ -19,7 +20,10 @@ import { formatPaiseINR } from "@/lib/money";
 export type NotifChannel = "EMAIL" | "WHATSAPP" | "IN_APP";
 
 export class TemplateVariableError extends Error {
-  constructor(readonly key: string, readonly issues: string) {
+  constructor(
+    readonly key: string,
+    readonly issues: string,
+  ) {
     super(`Notification "${key}": invalid variables — ${issues}`);
     this.name = "TemplateVariableError";
   }
@@ -64,7 +68,12 @@ const orderRef = z.object({
 });
 
 function emailShell(title: string, bodyHtml: string): string {
+  const logoUrl = new URL(
+    "/brand/logo-maroon.png",
+    publicEnv.NEXT_PUBLIC_SITE_URL,
+  ).toString();
   return `<!doctype html><html><body style="font-family:system-ui,Segoe UI,Roboto,sans-serif;color:#111;max-width:560px;margin:0 auto;padding:24px">
+<img src="${logoUrl}" width="200" alt="The Pooja Edit by Pooja Dugar" style="display:block;margin:0 0 20px">
 <h1 style="font-size:18px;margin:0 0 12px">${title}</h1>
 ${bodyHtml}
 <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
@@ -251,7 +260,10 @@ export const TEMPLATES = {
   admin_new_order: defineTemplate({
     version: 1,
     channels: ["IN_APP"],
-    schema: orderRef.extend({ paymentMethod: z.string(), totalPaise: z.number().int() }),
+    schema: orderRef.extend({
+      paymentMethod: z.string(),
+      totalPaise: z.number().int(),
+    }),
     inApp: (v) => ({
       type: "NEW_ORDER",
       title: `New order ${v.orderNumber}`,

@@ -64,3 +64,6 @@ design/research/raw/
 /*.pdf
 /*.docx
 /Google Keep*
+
+# Scratch exports from Claude's own logo-design work — not build output
+/Claude outputs/

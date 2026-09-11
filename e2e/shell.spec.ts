@@ -45,6 +45,30 @@ test.describe("application shell", () => {
     }
   });
 
+  test("brand logo and icons (D-96)", async ({ page, request }) => {
+    await page.goto("/");
+    await expect(
+      page.getByRole("link", { name: "The Pooja Edit by Pooja Dugar — home" }),
+    ).toBeVisible();
+
+    for (const path of [
+      "/favicon.ico",
+      "/icon.svg",
+      "/apple-icon.png",
+      "/manifest.webmanifest",
+    ]) {
+      const res = await request.get(path);
+      expect(res.status(), path).toBe(200);
+    }
+
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.goto("/");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(false);
+  });
+
   test("skip link is the first focusable element", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");

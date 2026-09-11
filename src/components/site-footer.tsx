@@ -1,9 +1,13 @@
 import Link from "next/link";
 
+import { FullLogo } from "@/components/brand/logo";
 import { CATALOG_LABEL, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 
 const SHOP_LINKS = [
-  { href: `/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`, label: CATALOG_LABEL.THE_POOJA_EDIT },
+  {
+    href: `/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`,
+    label: CATALOG_LABEL.THE_POOJA_EDIT,
+  },
   { href: `/${SEGMENT_BY_CATALOG.THRIFT}`, label: CATALOG_LABEL.THRIFT },
   { href: "/search", label: "Search" },
 ];
@@ -31,7 +35,13 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-line bg-fill">
       <div className="u-page py-16 sm:py-20">
-        <p className="u-h2">The Pooja Edit</p>
+        <div
+          role="img"
+          aria-label="The Pooja Edit — by Pooja Dugar"
+          className="w-60 max-w-full text-brand-maroon"
+        >
+          <FullLogo className="h-auto w-full" />
+        </div>
         <p className="u-lead mt-3">Realistic, wearable clothes by Pooja Dugar.</p>
 
         <nav
@@ -59,8 +69,8 @@ export function SiteFooter() {
 
         <div className="mt-14 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-ink-soft">
-            © {new Date().getFullYear()} The Pooja Edit. All prices in INR, inclusive
-            of taxes where applicable.
+            © {new Date().getFullYear()} The Pooja Edit. All prices in INR, inclusive of
+            taxes where applicable.
           </p>
           <a
             href="https://www.instagram.com/poojadugar_/"
