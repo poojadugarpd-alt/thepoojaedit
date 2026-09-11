@@ -34,6 +34,11 @@ pages, responsive layout. `/admin/more` is a new lightweight index page (list of
   shipment / issue invoice / refund / cancel, each opening a confirm sheet), Shipment
   (AWB, tracking, reconcile, COD sync, label — shown as unavailable per #25), Timeline,
   Payments, Returns, Contact & address, Notes, Admin activity.
+- **Serviceability checker** (new, decision #2) — a small tool on the Orders list
+  screen (e.g. a "Check a pincode" row above the search field): enter a 6-digit
+  pincode, call the existing `checkServiceability`, show served/not-served. Read-only,
+  no order created or modified, no new backend logic — just a UI over an existing
+  service function that today only checkout calls.
 - **Products list** — filter sheet (catalogue, status, search), card per product
   (photo thumbnail, title, catalogue, status, variant/image counts, from-price).
 - **Product edit** — two distinct forms selected by the product's catalogue (already
@@ -124,27 +129,21 @@ All three added to `.env.example` with empty values and a comment, and to
 `docs/integration-setup.md`'s variable-groups table — no values recorded anywhere in
 the repo, matching how every other secret in this project is documented.
 
-## 6. Decisions needed before/while building (Stage 2)
+## 6. Decisions (resolved 2026-09-11, before Stage 2)
 
-1. **Invoice-PDF 404 (matrix #21)** — real fix needed, not a mobile-only concern. Two
-   options: (a) add an admin-authorized branch to the existing
-   `/order/[orderNumber]/invoice` route, or (b) a separate
-   `/admin/orders/[orderNumber]/invoice` route using `requireAdmin()`, leaving the
-   customer-facing route untouched. I'd default to (b) — keeps the customer route's
-   security model (token/ownership only) simple and auditable, and matches the label
-   route's existing pattern (`/admin/shipments/[id]/label`). Confirm before Stage 2.
-2. **Admin shipping serviceability check** — master §10 lists it as admin scope; no
-   such tool exists today (storefront-only). Add a small "Check a pincode" tool
-   (Shadowfax `checkServiceability`, read-only, no order side-effects) to the Orders or
-   a Shipping section? Or leave it storefront-only and drop it from scope? Needs your
-   call — I won't build it without confirmation.
-3. **Low-stock push threshold** — confirmed to already exist (function-matrix
-   correction). Proceed with a low-stock push notification using the existing
-   `lowStockThreshold` per variant, batched to avoid a flood if many SKUs cross at
-   once (once per variant per day, not once per stock movement) — confirm the batching
-   rule is acceptable, or propose your own.
-4. **Settings JSON editor on mobile** — plan keeps the raw-JSON field (no behaviour
-   change) but wants confirmation that a plain, well-sized `<textarea>` (monospace,
-   16px+, generous height, no autofocus-triggered zoom) is an acceptable mobile
-   treatment, versus building per-key structured forms (bigger scope, real new UI per
-   settings key, and would need to know every key's shape up front).
+1. **Invoice-PDF 404 (matrix #21)** — **resolved: new route.** A separate
+   `/admin/orders/[orderNumber]/invoice` route using `requireAdmin()`, matching the
+   existing label-route pattern (`/admin/shipments/[id]/label`). The customer-facing
+   `/order/[orderNumber]/invoice` route is untouched — its security model (guest
+   token / customer ownership only) stays exactly as-is. The admin order-detail page's
+   "invoice PDF" link is repointed to the new route.
+2. **Admin shipping serviceability check** — **resolved: build it.** A small,
+   read-only "check a pincode" tool using the existing Shadowfax
+   `checkServiceability`, no order side-effects. Placed in the Orders area (see §2).
+3. **Low-stock push batching** — **resolved: once per variant per day.** A SKU already
+   notified about today won't push again until tomorrow, even if it drops further in
+   the meantime. Implemented as a dedupe key of `low-stock-push:<variantId>:<YYYY-MM-DD>`
+   alongside the existing `runOnce`/`SideEffectExecution` pattern.
+4. **Settings JSON editor on mobile** — **resolved: keep JSON, resize for mobile.** Same
+   textarea and data shape; only the sizing/keyboard treatment changes (monospace,
+   16px+ to avoid iOS zoom, generous height). No new per-key structured forms.
