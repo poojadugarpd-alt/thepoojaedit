@@ -36,15 +36,15 @@ function LoginForm() {
   }
 
   return (
-    <div className="u-page py-16 sm:py-24">
+    <div className="u-page py-10 sm:py-14">
       <div className="max-w-sm">
         <p className="u-eyebrow">The Pooja Edit</p>
-        <h1 className="u-h2 mt-4">Sign in</h1>
+        <h1 className="u-h2 mt-3">Sign in</h1>
         <p className="mt-3 text-[0.95rem] text-ink">
           For store staff. Customers don&rsquo;t need an account to shop.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-4">
+        <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
             <span className="u-label u-label--muted">Email</span>
             <input

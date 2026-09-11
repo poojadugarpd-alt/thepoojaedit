@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* The site (including admin) is light-only by design — color-scheme: light
+   only below. Tailwind's default `dark:` variant follows the OS setting
+   regardless, so admin's ~112 `dark:` classes were rendering (invisible)
+   dark-mode styles on macOS/etc in dark mode. Scoping `dark:` to a `.dark`
+   class we never set turns it off everywhere until a real dark theme is
+   built. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ------------------------------------------------------------------ *
  *  Pooja Edit — Rhode-cut design system
  *  One warm ink on white. Size is the emphasis, not weight or colour.

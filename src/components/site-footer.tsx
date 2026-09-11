@@ -62,6 +62,16 @@ export function SiteFooter() {
                     </Link>
                   </li>
                 ))}
+                {col.heading === "Studio" && (
+                  <li>
+                    <Link
+                      href="/auth/login"
+                      className="text-xs text-ink-soft hover:text-ink"
+                    >
+                      Staff sign in
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
           ))}
