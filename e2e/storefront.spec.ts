@@ -95,7 +95,13 @@ test.describe("sold thrift (AC-02)", () => {
   });
 });
 
-test("skip link is the first focusable element on the storefront", async ({ page }) => {
+test("skip link is the first focusable element on the storefront", async ({
+  page,
+  browserName,
+}) => {
+  // Same WebKit default-keyboard-behaviour caveat as e2e/shell.spec.ts's
+  // identical test — see that file for the full explanation.
+  test.skip(browserName === "webkit", "WebKit excludes links from Tab order by default");
   await page.goto("/label");
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: /skip to main content/i })).toBeFocused();

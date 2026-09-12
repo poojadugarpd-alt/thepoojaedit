@@ -64,9 +64,17 @@ export function Poll({
             setOn(e.target.checked);
             delayRef.current = baseMs;
           }}
+          // The visible text is hidden below sm to keep the mobile top row
+          // compact — aria-label keeps an accessible name regardless, since
+          // a wrapping <label> loses display:none content from its
+          // accessible-name computation (axe: "label" rule, caught by the
+          // a11y suite at the 390px viewport it runs at).
+          aria-label={label}
           className="h-4 w-4"
         />
-        <span className="hidden sm:inline">{label}</span>
+        <span className="hidden sm:inline" aria-hidden="true">
+          {label}
+        </span>
       </label>
       <button
         type="button"
