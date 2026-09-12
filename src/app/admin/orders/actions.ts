@@ -10,6 +10,7 @@ import { renderAndStoreInvoicePdf, issueInvoiceForOrder } from "@/server/invoice
 import { cancelOrder, confirmCodOrder } from "@/server/orders/lifecycle";
 import { requestRefundNow } from "@/server/refunds";
 import {
+  checkPincodeServiceabilityNow,
   createShipmentForOrderNow,
   isShippingConfigured,
   reconcileShipmentNow,
@@ -189,6 +190,32 @@ export async function addOrderNoteAction(
     });
     revalidate(orderNumber);
     return { ok: true, message: "Note added to the timeline." };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Read-only pincode check (admin-PWA decision #2). No order is touched. */
+export async function checkServiceabilityAction(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const postcode = str(form.get("postcode"));
+  if (!/^\d{6}$/.test(postcode)) {
+    return { ok: false, message: "Enter a 6-digit PIN code." };
+  }
+  if (!isShippingConfigured()) {
+    return { ok: false, message: "Shadowfax is not configured in this environment." };
+  }
+  try {
+    const r = await checkPincodeServiceabilityNow(postcode);
+    return {
+      ok: true,
+      message: r.serviceable
+        ? `${postcode} is serviceable.`
+        : `${postcode} is not serviceable${r.reason ? ` — ${r.reason}` : ""}.`,
+    };
   } catch (e) {
     return fail(e);
   }

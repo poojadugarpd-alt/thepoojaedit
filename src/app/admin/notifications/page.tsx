@@ -23,22 +23,22 @@ export default async function AdminNotificationsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Notifications</h1>
+        <h1 className="text-xl font-semibold text-ink-strong">Notifications</h1>
         <Poll />
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold">Failed ({failed.length})</h2>
+        <h2 className="text-sm font-semibold text-ink-strong">Failed ({failed.length})</h2>
         {failed.length === 0 ? (
-          <p className="text-xs text-black/45">None.</p>
+          <p className="text-xs text-ink-soft">None.</p>
         ) : (
           <ul className="mt-2 space-y-2 text-xs">
             {failed.map((d) => (
-              <li key={d.id} className="rounded border border-rose-500/20 p-2">
-                <p>
+              <li key={d.id} className="rounded border border-stop/30 bg-stop-bg/40 p-2">
+                <p className="text-ink">
                   {d.channel} · {d.templateKey} v{d.templateVersion} · {d.recipient}
                 </p>
-                <p className="text-rose-600">{d.lastError}</p>
+                <p className="text-stop">{d.lastError}</p>
                 <ActionForm action={retryNotificationAction} submitLabel="Retry" compact>
                   <input type="hidden" name="deliveryId" value={d.id} />
                 </ActionForm>
@@ -49,12 +49,33 @@ export default async function AdminNotificationsPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold">Recent</h2>
-        <table className="mt-2 w-full text-xs">
+        <h2 className="text-sm font-semibold text-ink-strong">Recent</h2>
+
+        {/* Mobile: card list */}
+        <ul className="mt-2 space-y-2 text-xs sm:hidden">
+          {recent.map((d) => (
+            <li key={d.id} className="rounded border border-line p-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-medium text-ink-strong">{d.channel}</span>
+                <Pill value={d.status} />
+              </div>
+              <p className="mt-0.5 text-ink-soft">
+                {d.templateKey} · {d.recipient}
+              </p>
+              <p className="text-ink-soft">{ts(d.queuedAt)}</p>
+            </li>
+          ))}
+          {recent.length === 0 && (
+            <li className="py-4 text-center text-ink-soft">No deliveries yet.</li>
+          )}
+        </ul>
+
+        {/* Desktop: table */}
+        <table className="mt-2 hidden w-full text-xs sm:table">
           <tbody>
             {recent.map((d) => (
-              <tr key={d.id} className="border-b border-black/10 dark:border-white/10">
-                <td className="py-1">{ts(d.queuedAt)}</td>
+              <tr key={d.id} className="border-b border-line/60">
+                <td className="py-1 text-ink-soft">{ts(d.queuedAt)}</td>
                 <td className="py-1">{d.channel}</td>
                 <td className="py-1">{d.templateKey}</td>
                 <td className="py-1">{d.recipient}</td>

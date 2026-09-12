@@ -11,7 +11,7 @@ function Submit({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
+      className="min-h-11 rounded bg-foreground px-4 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
     >
       {pending ? "Working…" : label}
     </button>
@@ -38,15 +38,13 @@ export function ActionForm({
       <div className={`flex items-center gap-3 ${compact ? "" : "pt-1"}`}>
         <Submit label={submitLabel} />
         {state.message && (
-          <span
-            className={`text-sm ${state.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600"}`}
-          >
+          <span className={`text-sm ${state.ok ? "text-ok" : "text-stop"}`}>
             {state.message}
           </span>
         )}
       </div>
       {state.errors && state.errors.length > 0 && (
-        <ul className="list-inside list-disc text-sm text-rose-600">
+        <ul className="list-inside list-disc text-sm text-stop">
           {state.errors.map((e, i) => (
             <li key={i}>{e}</li>
           ))}
@@ -78,7 +76,7 @@ export function Field({
     <div>
       <label htmlFor={id} className="block text-xs font-medium">
         {label}
-        {required && <span className="text-rose-600"> *</span>}
+        {required && <span className="text-stop"> *</span>}
       </label>
       <input
         id={id}
@@ -87,11 +85,9 @@ export function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue ?? undefined}
-        className="mt-1 w-full rounded border border-black/20 bg-transparent px-2 py-1.5 text-sm dark:border-white/25"
+        className="mt-1 min-h-11 w-full rounded border border-line bg-transparent px-2 py-1.5 text-base sm:text-sm"
       />
-      {hint && (
-        <p className="mt-0.5 text-[11px] text-black/45 dark:text-white/45">{hint}</p>
-      )}
+      {hint && <p className="mt-0.5 text-[11px] text-ink-soft">{hint}</p>}
     </div>
   );
 }
@@ -118,7 +114,7 @@ export function TextArea({
         name={name}
         rows={rows}
         defaultValue={defaultValue ?? undefined}
-        className="mt-1 w-full rounded border border-black/20 bg-transparent px-2 py-1.5 font-mono text-xs dark:border-white/25"
+        className="mt-1 w-full rounded border border-line bg-transparent px-2 py-1.5 font-mono text-base sm:text-xs"
       />
     </div>
   );

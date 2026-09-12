@@ -47,29 +47,150 @@ export default async function AdminOrderDetail({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold">Order {order.orderNumber}</h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-xl font-semibold text-ink-strong">Order {order.orderNumber}</h1>
         <Pill value={order.orderStatus} />
         <Pill value={order.paymentStatus} />
         <Pill value={order.fulfillmentStatus} />
-        <span className="text-xs text-black/45 dark:text-white/45">
+        <span className="w-full text-xs text-ink-soft sm:w-auto">
           {order.paymentMethod === "COD" ? "Cash on delivery" : "Prepaid"} · placed{" "}
           {ts(order.placedAt)}
         </span>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* left: facts */}
+        {/* Mobile: contact/actions/notes/activity come first (order-first) —
+            that's what staff open an order to do. Desktop keeps the original
+            2-column layout (facts left, actions right, lg:order-none). */}
+        <div className="order-first space-y-4 lg:order-none">
+          <Section title="Contact & address">
+            <p className="text-sm">{order.contactPhone}</p>
+            {order.contactEmail && <p className="text-sm text-ink-soft">{order.contactEmail}</p>}
+            {order.addresses.map((a) => (
+              <p key={a.id} className="mt-1 text-xs text-ink-soft">
+                <span className="font-medium">{a.type}</span> — {a.name}, {a.line1}, {a.city},{" "}
+                {a.stateName} {a.postcode}
+              </p>
+            ))}
+            {order.customer && (
+              <p className="mt-1 text-xs">
+                <Link href={`/admin/customers/${order.customer.id}`} className="underline">
+                  customer record
+                </Link>
+              </p>
+            )}
+          </Section>
+
+          <Section title="Actions">
+            <div className="space-y-3">
+              {order.orderStatus === "PENDING_CONFIRMATION" && order.paymentMethod === "COD" && (
+                <ActionForm action={confirmCodAction} submitLabel="Confirm COD order">
+                  {hidden}
+                  <p className="text-xs text-ink-soft">
+                    Confirms the order at {money(order.totalPaise)}, payable on delivery.
+                  </p>
+                </ActionForm>
+              )}
+
+              {["CONFIRMED"].includes(order.orderStatus) &&
+                order.fulfillmentStatus === "UNFULFILLED" && (
+                  <ActionForm action={createShipmentAction} submitLabel="Create shipment">
+                    {hidden}
+                    {!isShippingConfigured() && (
+                      <p className="text-xs text-wait">
+                        Shadowfax not configured in this environment.
+                      </p>
+                    )}
+                  </ActionForm>
+                )}
+
+              {!order.invoices.length &&
+                ["CONFIRMED", "COMPLETED"].includes(order.orderStatus) && (
+                  <ActionForm action={generateInvoiceAction} submitLabel="Issue invoice">
+                    {hidden}
+                  </ActionForm>
+                )}
+              {order.invoices.map((inv) => (
+                <a
+                  key={inv.id}
+                  href={`/admin/orders/${order.orderNumber}/invoice`}
+                  className="flex min-h-11 items-center text-sm underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  invoice {inv.financialYear}/{inv.number} PDF
+                </a>
+              ))}
+
+              {refundable > 0 && (
+                <ActionForm action={refundOrderAction} submitLabel="Refund">
+                  {hidden}
+                  <p className="text-xs text-ink-soft">up to {money(refundable)} refundable</p>
+                  <input
+                    name="amountRupees"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    placeholder="amount (₹)"
+                    className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+                  />
+                  <input
+                    name="reason"
+                    placeholder="reason"
+                    className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+                  />
+                </ActionForm>
+              )}
+
+              {!["CANCELLED", "COMPLETED"].includes(order.orderStatus) &&
+                order.fulfillmentStatus === "UNFULFILLED" && (
+                  <ActionForm action={cancelOrderAction} submitLabel="Cancel order">
+                    {hidden}
+                    <input
+                      name="reason"
+                      placeholder="cancellation reason"
+                      className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+                    />
+                  </ActionForm>
+                )}
+            </div>
+          </Section>
+
+          <Section title="Add a note">
+            <ActionForm action={addOrderNoteAction} submitLabel="Add note">
+              {hidden}
+              <textarea
+                name="note"
+                rows={2}
+                className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+              />
+            </ActionForm>
+          </Section>
+
+          <Section title="Admin activity">
+            <ul className="space-y-1 text-xs text-ink-soft">
+              {activity.map((a) => (
+                <li key={a.id}>
+                  {a.action} · {a.adminUser.email} · {ts(a.createdAt)}
+                  {a.reason ? ` — ${a.reason}` : ""}
+                </li>
+              ))}
+              {activity.length === 0 && <li>none</li>}
+            </ul>
+          </Section>
+        </div>
+
+        {/* facts */}
         <div className="space-y-6 lg:col-span-2">
           <Section title="Items">
             <table className="w-full text-sm">
               <tbody>
                 {order.items.map((i) => (
-                  <tr key={i.id} className="border-b border-black/10 dark:border-white/10">
+                  <tr key={i.id} className="border-b border-line/60">
                     <td className="py-1.5">
                       {i.title}
                       {i.size ? ` · ${i.size}` : ""}
-                      <span className="block text-[11px] text-black/45">
+                      <span className="block text-[11px] text-ink-soft">
                         {CATALOG_LABEL[i.catalog]} · {i.sku} · qty {i.quantity}
                       </span>
                     </td>
@@ -94,12 +215,10 @@ export default async function AdminOrderDetail({
             <ol className="space-y-1.5 text-xs">
               {order.events.map((e) => (
                 <li key={e.id} className="flex gap-2">
-                  <span className="w-32 shrink-0 text-black/40 dark:text-white/40">
-                    {ts(e.createdAt)}
-                  </span>
+                  <span className="w-32 shrink-0 text-ink-soft">{ts(e.createdAt)}</span>
                   <span>
                     <span className="font-medium">{e.type}</span>
-                    {e.actor ? <span className="text-black/45"> · {e.actor}</span> : null}
+                    {e.actor ? <span className="text-ink-soft"> · {e.actor}</span> : null}
                   </span>
                 </li>
               ))}
@@ -108,12 +227,12 @@ export default async function AdminOrderDetail({
 
           <Section title="Payments">
             {order.paymentAttempts.length === 0 ? (
-              <p className="text-xs text-black/45">No prepaid attempts.</p>
+              <p className="text-xs text-ink-soft">No prepaid attempts.</p>
             ) : (
               <table className="w-full text-xs">
                 <tbody>
                   {order.paymentAttempts.map((a) => (
-                    <tr key={a.id} className="border-b border-black/10 dark:border-white/10">
+                    <tr key={a.id} className="border-b border-line/60">
                       <td className="py-1">{a.provider}</td>
                       <td className="py-1">
                         <Pill value={a.status} />
@@ -137,14 +256,19 @@ export default async function AdminOrderDetail({
                   <Row
                     k="Track"
                     v={
-                      <a href={shipment.trackingUrl} className="underline" target="_blank" rel="noreferrer">
+                      <a
+                        href={shipment.trackingUrl}
+                        className="underline"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         carrier site
                       </a>
                     }
                   />
                 )}
               </dl>
-              <ol className="mt-2 space-y-0.5 text-[11px] text-black/55 dark:text-white/55">
+              <ol className="mt-2 space-y-0.5 text-[11px] text-ink-soft">
                 {shipment.events.slice(-8).map((ev) => (
                   <li key={ev.id}>
                     {(ev.statusNormalized ?? ev.statusRaw ?? "").replaceAll("_", " ")} —{" "}
@@ -163,7 +287,7 @@ export default async function AdminOrderDetail({
                   ))}
                 </p>
               )}
-              <div className="mt-2 flex gap-3">
+              <div className="mt-3 flex flex-wrap gap-3">
                 <ActionForm action={reconcileShipmentAction} submitLabel="Reconcile tracking" compact>
                   {hidden}
                   <input type="hidden" name="shipmentId" value={shipment.id} />
@@ -176,11 +300,12 @@ export default async function AdminOrderDetail({
                 )}
                 <a
                   href={`/admin/shipments/${shipment.id}/label`}
-                  className="text-xs underline"
+                  className="flex min-h-11 items-center text-xs text-ink-soft underline"
                   target="_blank"
                   rel="noreferrer"
+                  title="Shadowfax has no self-serve label download API"
                 >
-                  label PDF
+                  label PDF (not available from Shadowfax)
                 </a>
               </div>
             </Section>
@@ -201,123 +326,6 @@ export default async function AdminOrderDetail({
             </Section>
           )}
         </div>
-
-        {/* right: guarded actions */}
-        <div className="space-y-4">
-          <Section title="Contact & address">
-            <p className="text-xs">{order.contactPhone}</p>
-            {order.contactEmail && <p className="text-xs text-black/50">{order.contactEmail}</p>}
-            {order.addresses.map((a) => (
-              <p key={a.id} className="mt-1 text-[11px] text-black/55 dark:text-white/55">
-                <span className="font-medium">{a.type}</span> — {a.name}, {a.line1},{" "}
-                {a.city}, {a.stateName} {a.postcode}
-              </p>
-            ))}
-            {order.customer && (
-              <p className="mt-1 text-[11px]">
-                <Link href={`/admin/customers/${order.customer.id}`} className="underline">
-                  customer record
-                </Link>
-              </p>
-            )}
-          </Section>
-
-          <Section title="Actions">
-            <div className="space-y-3">
-              {order.orderStatus === "PENDING_CONFIRMATION" && order.paymentMethod === "COD" && (
-                <ActionForm action={confirmCodAction} submitLabel="Confirm COD order" compact>
-                  {hidden}
-                </ActionForm>
-              )}
-
-              {["CONFIRMED"].includes(order.orderStatus) &&
-                order.fulfillmentStatus === "UNFULFILLED" && (
-                  <ActionForm action={createShipmentAction} submitLabel="Create shipment" compact>
-                    {hidden}
-                    {!isShippingConfigured() && (
-                      <p className="text-[11px] text-amber-700 dark:text-amber-300">
-                        Shadowfax not configured in this environment.
-                      </p>
-                    )}
-                  </ActionForm>
-                )}
-
-              {!order.invoices.length &&
-                ["CONFIRMED", "COMPLETED"].includes(order.orderStatus) && (
-                  <ActionForm action={generateInvoiceAction} submitLabel="Issue invoice" compact>
-                    {hidden}
-                  </ActionForm>
-                )}
-              {order.invoices.map((inv) => (
-                <a
-                  key={inv.id}
-                  href={`/order/${order.orderNumber}/invoice`}
-                  className="block text-xs underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  invoice {inv.financialYear}/{inv.number} PDF
-                </a>
-              ))}
-
-              {refundable > 0 && (
-                <ActionForm action={refundOrderAction} submitLabel="Refund" compact>
-                  {hidden}
-                  <p className="text-[11px] text-black/45">
-                    up to {money(refundable)} refundable
-                  </p>
-                  <input
-                    name="amountRupees"
-                    type="number"
-                    step="0.01"
-                    placeholder="amount (₹)"
-                    className="w-full rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
-                  />
-                  <input
-                    name="reason"
-                    placeholder="reason"
-                    className="w-full rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
-                  />
-                </ActionForm>
-              )}
-
-              {!["CANCELLED", "COMPLETED"].includes(order.orderStatus) &&
-                order.fulfillmentStatus === "UNFULFILLED" && (
-                  <ActionForm action={cancelOrderAction} submitLabel="Cancel order" compact>
-                    {hidden}
-                    <input
-                      name="reason"
-                      placeholder="cancellation reason"
-                      className="w-full rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
-                    />
-                  </ActionForm>
-                )}
-            </div>
-          </Section>
-
-          <Section title="Add a note">
-            <ActionForm action={addOrderNoteAction} submitLabel="Add note" compact>
-              {hidden}
-              <textarea
-                name="note"
-                rows={2}
-                className="w-full rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
-              />
-            </ActionForm>
-          </Section>
-
-          <Section title="Admin activity">
-            <ul className="space-y-0.5 text-[11px] text-black/55 dark:text-white/55">
-              {activity.map((a) => (
-                <li key={a.id}>
-                  {a.action} · {a.adminUser.email} · {ts(a.createdAt)}
-                  {a.reason ? ` — ${a.reason}` : ""}
-                </li>
-              ))}
-              {activity.length === 0 && <li>none</li>}
-            </ul>
-          </Section>
-        </div>
       </div>
     </div>
   );
@@ -325,8 +333,8 @@ export default async function AdminOrderDetail({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded border border-black/10 p-3 dark:border-white/15">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/50 dark:text-white/50">
+    <section className="rounded border border-line p-3">
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
         {title}
       </h2>
       {children}
@@ -336,8 +344,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ k, v, strong }: { k: string; v: React.ReactNode; strong?: boolean }) {
   return (
-    <div className={`flex justify-between ${strong ? "border-t border-black/15 pt-1 font-semibold dark:border-white/20" : ""}`}>
-      <dt className="text-black/55 dark:text-white/55">{k}</dt>
+    <div className={`flex justify-between ${strong ? "border-t border-line pt-1 font-semibold" : ""}`}>
+      <dt className="text-ink-soft">{k}</dt>
       <dd>{v}</dd>
     </div>
   );

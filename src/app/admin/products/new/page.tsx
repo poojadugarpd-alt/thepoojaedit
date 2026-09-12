@@ -7,15 +7,15 @@ export const metadata = { title: "New product" };
 export default function NewProduct() {
   return (
     <div className="max-w-md">
-      <h1 className="text-xl font-semibold">New product</h1>
-      <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+      <h1 className="text-xl font-semibold text-ink-strong">New product</h1>
+      <p className="mt-2 text-sm text-ink-soft">
         Creates a draft. Add variants, images and (for thrift) details, then publish.
       </p>
       <div className="mt-6">
         <ActionForm action={createProductAction} submitLabel="Create draft">
           <fieldset>
             <legend className="text-xs font-medium">Catalogue *</legend>
-            <label className="mt-1 flex items-center gap-2 text-sm">
+            <label className="mt-1 flex min-h-11 items-center gap-2 text-sm">
               <input
                 type="radio"
                 name="catalog"
@@ -24,7 +24,7 @@ export default function NewProduct() {
               />
               The Label (new apparel)
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex min-h-11 items-center gap-2 text-sm">
               <input type="radio" name="catalog" value="THRIFT" />
               The Closet (pre-loved, one of one)
             </label>

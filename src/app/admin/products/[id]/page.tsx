@@ -3,12 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm, Field, TextArea } from "@/features/admin/action-form";
+import { ImageUploader } from "@/features/admin/image-uploader";
+import { Pill } from "@/features/admin/format";
 import { prisma } from "@/lib/db";
 import { CATALOG_LABEL, productPath } from "@/lib/catalog-routes";
 import { getAdminProduct, validateForPublication } from "@/server/catalog/admin";
 
 import {
   deleteImageAction,
+  reorderImageAction,
   setPrimaryImageAction,
   statusAction,
   thriftDetailsAction,
@@ -43,22 +46,17 @@ export default async function EditProduct({
   return (
     <div className="max-w-3xl space-y-10">
       <header>
-        <Link
-          href="/admin/products"
-          className="text-xs text-black/50 hover:underline dark:text-white/50"
-        >
+        <Link href="/admin/products" className="text-xs text-ink-soft hover:underline">
           ← All products
         </Link>
-        <h1 className="mt-1 text-xl font-semibold">{p.title}</h1>
-        <p className="text-sm text-black/55 dark:text-white/55">
-          {CATALOG_LABEL[p.catalog]} · {p.slug} ·{" "}
-          <span
-            className={
-              p.status === "PUBLISHED" ? "text-emerald-700 dark:text-emerald-400" : ""
-            }
-          >
-            {p.status}
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-semibold text-ink-strong">{p.title}</h1>
+          <span className="rounded border border-line px-1.5 py-0.5 text-[11px] text-ink-soft">
+            {isThrift ? "Closet" : "Label"}
           </span>
+        </div>
+        <p className="text-sm text-ink-soft">
+          {CATALOG_LABEL[p.catalog]} · {p.slug} · <Pill value={p.status} />
           {p.status === "PUBLISHED" && (
             <>
               {" · "}
@@ -76,21 +74,21 @@ export default async function EditProduct({
 
       {/* ── Publication ── */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">Publication</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+          Publication
+        </h2>
         <ul className="mt-2 text-sm">
           {check.errors.length === 0 ? (
-            <li className="text-emerald-700 dark:text-emerald-400">
-              Ready to publish.
-            </li>
+            <li className="text-ok">Ready to publish.</li>
           ) : (
             check.errors.map((e, i) => (
-              <li key={i} className="text-rose-600">
+              <li key={i} className="text-stop">
                 • {e}
               </li>
             ))
           )}
         </ul>
-        <div className="mt-3 flex gap-3">
+        <div className="mt-3 flex flex-wrap gap-3">
           {p.status !== "PUBLISHED" && (
             <ActionForm
               action={statusAction.bind(null, id, "PUBLISH")}
@@ -123,7 +121,9 @@ export default async function EditProduct({
 
       {/* ── Core fields ── */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">Details</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+          Details
+        </h2>
         <div className="mt-3">
           <ActionForm
             action={updateProductAction.bind(null, id)}
@@ -156,7 +156,7 @@ export default async function EditProduct({
 
       {/* ── Variants ── */}
       <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
           Variants ({p.variants.length})
         </h2>
         <div className="mt-3 space-y-4">
@@ -165,7 +165,7 @@ export default async function EditProduct({
               key={v.id}
               action={upsertVariantAction.bind(null, id)}
               submitLabel="Update variant"
-              className="rounded border border-black/10 p-3 dark:border-white/15"
+              className="rounded border border-line p-3"
               compact
             >
               <input type="hidden" name="id" value={v.id} />
@@ -198,7 +198,7 @@ export default async function EditProduct({
                   type="number"
                   defaultValue={v.lowStockThreshold}
                 />
-                <label className="flex items-end gap-1 text-xs">
+                <label className="flex min-h-11 items-center gap-1 text-xs">
                   <input type="checkbox" name="isActive" defaultChecked={v.isActive} />{" "}
                   active
                 </label>
@@ -210,7 +210,7 @@ export default async function EditProduct({
             <ActionForm
               action={upsertVariantAction.bind(null, id)}
               submitLabel="Add variant"
-              className="rounded border border-dashed border-black/20 p-3 dark:border-white/25"
+              className="rounded border border-dashed border-line p-3"
               compact
             >
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -220,7 +220,7 @@ export default async function EditProduct({
                 <Field label="Price (paise)" name="pricePaise" type="number" required />
                 <Field label="Compare-at (paise)" name="compareAtPaise" type="number" />
                 <Field label="On hand" name="onHandQty" type="number" />
-                <label className="flex items-end gap-1 text-xs">
+                <label className="flex min-h-11 items-center gap-1 text-xs">
                   <input type="checkbox" name="isActive" defaultChecked /> active
                 </label>
               </div>
@@ -230,24 +230,28 @@ export default async function EditProduct({
       </section>
 
       {/* ── Images ── */}
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
           Images ({p.images.length})
         </h2>
-        <p className="mt-1 text-xs text-black/45 dark:text-white/45">
-          Signed uploads need Supabase Storage (Phase 3 deferred). Existing images are
-          from the legacy import.
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-3">
-          {p.images.map((im) => (
-            <li key={im.id} className="w-28">
-              <div className="relative h-36 w-28 overflow-hidden rounded bg-black/5 dark:bg-white/10">
+
+        <ImageUploader
+          productId={id}
+          isThrift={isThrift}
+          defaultAltPrefix={p.title}
+          hasExistingImages={p.images.length > 0}
+        />
+
+        <ul className="flex flex-wrap gap-3">
+          {p.images.map((im, i) => (
+            <li key={im.id} className="w-32">
+              <div className="relative h-40 w-32 overflow-hidden rounded bg-line/40">
                 {im.publicUrl && (
                   <Image
                     src={im.publicUrl}
                     alt={im.altText}
                     fill
-                    sizes="112px"
+                    sizes="128px"
                     className="object-cover"
                   />
                 )}
@@ -256,8 +260,21 @@ export default async function EditProduct({
                     primary
                   </span>
                 )}
+                {im.type === "FLAW" && (
+                  <span className="absolute right-1 top-1 rounded bg-wait-bg px-1 text-[10px] text-wait">
+                    flaw
+                  </span>
+                )}
               </div>
-              <div className="mt-1 flex gap-2 text-[11px]">
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                <ActionForm action={reorderImageAction.bind(null, id)} submitLabel="↑" compact>
+                  <input type="hidden" name="imageId" value={im.id} />
+                  <input type="hidden" name="direction" value="up" />
+                </ActionForm>
+                <ActionForm action={reorderImageAction.bind(null, id)} submitLabel="↓" compact>
+                  <input type="hidden" name="imageId" value={im.id} />
+                  <input type="hidden" name="direction" value="down" />
+                </ActionForm>
                 {!im.isPrimary && (
                   <ActionForm
                     action={setPrimaryImageAction.bind(null, id)}
@@ -275,6 +292,9 @@ export default async function EditProduct({
                   <input type="hidden" name="imageId" value={im.id} />
                 </ActionForm>
               </div>
+              <p className="mt-0.5 truncate text-[11px] text-ink-soft" title={im.altText}>
+                {i + 1}. {im.altText}
+              </p>
             </li>
           ))}
         </ul>
@@ -283,7 +303,7 @@ export default async function EditProduct({
       {/* ── Thrift details ── */}
       {isThrift && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
             Thrift details
           </h2>
           <div className="mt-3">
@@ -303,7 +323,7 @@ export default async function EditProduct({
                     id="f-conditionGrade"
                     name="conditionGrade"
                     defaultValue={p.thriftDetails?.conditionGrade ?? "GOOD"}
-                    className="mt-1 w-full rounded border border-black/20 bg-transparent px-2 py-1.5 text-sm dark:border-white/25"
+                    className="mt-1 min-h-11 w-full rounded border border-line bg-transparent px-2 py-1.5 text-base sm:text-sm"
                   >
                     {CONDITIONS.map((c) => (
                       <option key={c} value={c}>
@@ -312,7 +332,7 @@ export default async function EditProduct({
                     ))}
                   </select>
                 </div>
-                <label className="flex items-end gap-2 text-xs">
+                <label className="flex min-h-11 items-end gap-2 text-xs">
                   <input
                     type="checkbox"
                     name="isOneOfOne"
@@ -387,8 +407,10 @@ export default async function EditProduct({
       {/* ── Collections ── */}
       {p.collections.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide">Collections</h2>
-          <ul className="mt-2 text-sm text-black/60 dark:text-white/60">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+            Collections
+          </h2>
+          <ul className="mt-2 text-sm text-ink-soft">
             {p.collections.map((pc) => (
               <li key={pc.collectionId}>
                 {pc.collection.name} {pc.collection.isActive ? "" : "(inactive)"}

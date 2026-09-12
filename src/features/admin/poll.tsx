@@ -55,8 +55,8 @@ export function Poll({
   }, [on, router, baseMs, maxMs]);
 
   return (
-    <div className="flex items-center gap-2 text-[11px] text-black/50 dark:text-white/50">
-      <label className="flex items-center gap-1">
+    <div className="flex items-center gap-2 text-[11px] text-ink-soft">
+      <label className="flex min-h-11 items-center gap-1.5">
         <input
           type="checkbox"
           checked={on}
@@ -64,8 +64,9 @@ export function Poll({
             setOn(e.target.checked);
             delayRef.current = baseMs;
           }}
+          className="h-4 w-4"
         />
-        {label}
+        <span className="hidden sm:inline">{label}</span>
       </label>
       <button
         type="button"
@@ -74,11 +75,11 @@ export function Poll({
           router.refresh();
           setLastAt(Date.now());
         }}
-        className="underline"
+        className="flex min-h-11 items-center underline"
       >
         refresh now
       </button>
-      {lastAt && <span>· {new Date(lastAt).toLocaleTimeString("en-IN")}</span>}
+      {lastAt && <span className="hidden sm:inline">· {new Date(lastAt).toLocaleTimeString("en-IN")}</span>}
     </div>
   );
 }

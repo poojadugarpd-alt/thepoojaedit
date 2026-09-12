@@ -47,6 +47,17 @@
      UI stay on the white/sand/grey palette above. See design/DESIGN.md. */
   --brand-maroon: #7a1f2b;
   --brand-beige: #ede0cc;
+
+  /* Semantic status colours (design/DESIGN.md §2) — icon + label + colour,
+     never colour alone. Formalised here for the admin PWA (D-100); the
+     storefront's own status chips can adopt these later without a token
+     rename. */
+  --ok: #2f5233;
+  --ok-bg: #e4ede2;
+  --wait: #7a5a1e;
+  --wait-bg: #f3e7cf;
+  --stop: #8a3320;
+  --stop-bg: #f0dfda;
 }
 
 @theme inline {
@@ -64,6 +75,22 @@
   /* Logo & brand marks ONLY — see the --brand-* definitions above. */
   --color-brand-maroon: var(--brand-maroon);
   --color-brand-beige: var(--brand-beige);
+  /* Semantic status colours — see the --ok/--wait/--stop definitions above. */
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-wait: var(--wait);
+  --color-wait-bg: var(--wait-bg);
+  --color-stop: var(--stop);
+  --color-stop-bg: var(--stop-bg);
+}
+
+/* Safe-area padding utilities (admin PWA — iPhone home indicator / notch).
+   Requires <meta name="viewport" content="viewport-fit=cover"> (admin layout). */
+.u-safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.u-safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
 * {

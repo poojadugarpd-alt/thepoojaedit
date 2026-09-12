@@ -177,3 +177,23 @@ export function syncCodRemittanceNow(shipmentId: string) {
 export function getShipmentLabelNow(shipmentId: string) {
   return getShipmentLabel(prisma, getFulfilmentProvider(), { shipmentId });
 }
+
+/**
+ * Admin-only pincode lookup (admin-PWA decision #2 — master §10 lists
+ * "serviceability" as admin scope, but nothing called it before this). Reuses
+ * the exact same `quote()` path checkout uses — no separate serviceability
+ * endpoint exists on the port, so this is a thin wrapper with a synthetic
+ * minimal request, not a duplicate implementation. The synthetic order value
+ * and item weight never reach anything besides this one read-only check.
+ */
+export async function checkPincodeServiceabilityNow(
+  postcode: string,
+): Promise<{ serviceable: boolean; reason?: string }> {
+  const quote = await getQuoteProvider().quote({
+    destinationPostcode: postcode,
+    items: [{ weightGrams: 400, quantity: 1 }],
+    paymentMethod: "COD",
+    orderValuePaise: 100000,
+  });
+  return { serviceable: quote.serviceable, reason: quote.reason };
+}

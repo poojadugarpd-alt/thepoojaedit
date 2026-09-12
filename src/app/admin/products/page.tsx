@@ -4,6 +4,8 @@ import { formatPaiseINR } from "@/lib/money";
 import { prisma } from "@/lib/db";
 import type { CatalogType } from "@/lib/catalog-routes";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
+import { Pill } from "@/features/admin/format";
+import { Sheet } from "@/features/admin/sheet";
 import { listAdminProducts, type ProductStatusFilter } from "@/server/catalog/admin";
 
 const STATUSES: ProductStatusFilter[] = ["ALL", "DRAFT", "PUBLISHED", "ARCHIVED"];
@@ -52,58 +54,136 @@ export default async function AdminProducts({
     return s ? `/admin/products?${s}` : "/admin/products";
   };
 
-  return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Products ({total})</h1>
-        <Link
-          href="/admin/products/new"
-          className="rounded bg-foreground px-3 py-1.5 text-sm font-semibold text-background"
-        >
-          New product
-        </Link>
-      </div>
+  const activeFilterCount = (catalog ? 1 : 0) + (status !== "ALL" ? 1 : 0);
 
-      <form method="get" className="mt-4 flex flex-wrap gap-2 text-sm">
-        <select
-          aria-label="Filter by catalogue"
-          name="catalog"
-          defaultValue={catalog ?? ""}
-          className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
-        >
-          <option value="">All catalogues</option>
-          <option value="THE_POOJA_EDIT">The Label (new apparel)</option>
-          <option value="THRIFT">The Closet (pre-loved)</option>
-        </select>
-        <select
-          aria-label="Filter by status"
-          name="status"
-          defaultValue={status}
-          className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="title / slug / brand"
-          className="rounded border border-black/20 bg-transparent px-2 py-1 dark:border-white/25"
-        />
+  // A full, independent <form> — rendered inline on desktop and again inside
+  // the mobile filter sheet — never nested inside the search form below
+  // (nesting forms is invalid HTML and browsers silently mis-handle it).
+  const filterFields = (
+    <form method="get" className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      {q && <input type="hidden" name="q" value={q} />}
+      <select
+        aria-label="Filter by catalogue"
+        name="catalog"
+        defaultValue={catalog ?? ""}
+        className="min-h-11 rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+      >
+        <option value="">All catalogues</option>
+        <option value="THE_POOJA_EDIT">The Label (new apparel)</option>
+        <option value="THRIFT">The Closet (pre-loved)</option>
+      </select>
+      <select
+        aria-label="Filter by status"
+        name="status"
+        defaultValue={status}
+        className="min-h-11 rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+      >
+        {STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+      <div className="flex gap-3">
         <button
           type="submit"
-          className="rounded border border-black/25 px-3 py-1 dark:border-white/30"
+          className="min-h-11 flex-1 rounded bg-foreground px-3 text-sm font-semibold text-background sm:flex-none sm:bg-transparent sm:font-normal sm:text-ink sm:border sm:border-line"
         >
           Filter
         </button>
-      </form>
+        {activeFilterCount > 0 && (
+          <Link
+            href="/admin/products"
+            className="flex min-h-11 items-center px-3 text-ink-soft underline"
+          >
+            Clear
+          </Link>
+        )}
+      </div>
+    </form>
+  );
 
-      <table className="mt-4 w-full text-sm">
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-xl font-semibold text-ink-strong">Products ({total})</h1>
+        <Link
+          href="/admin/products/new"
+          className="flex min-h-11 items-center rounded bg-foreground px-3 text-sm font-semibold text-background"
+        >
+          New
+        </Link>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <form method="get" className="flex min-w-0 flex-1 items-center gap-2">
+          {catalog && <input type="hidden" name="catalog" value={catalog} />}
+          {status !== "ALL" && <input type="hidden" name="status" value={status} />}
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="title / slug / brand"
+            className="min-h-11 min-w-0 flex-1 rounded border border-line bg-transparent px-2 py-1 text-base sm:max-w-xs sm:text-sm"
+          />
+          <button className="min-h-11 rounded border border-line px-3 text-sm">Search</button>
+        </form>
+
+        {/* Desktop: inline filter form. Mobile: same fields, inside a sheet. */}
+        <div className="hidden sm:block">{filterFields}</div>
+        <Sheet
+          title="Filter products"
+          trigger={`Filters${activeFilterCount ? ` (${activeFilterCount})` : ""}`}
+        >
+          {filterFields}
+        </Sheet>
+      </div>
+
+      {/* Mobile: card list */}
+      <ul className="mt-4 space-y-2 sm:hidden">
+        {items.map((p) => (
+          <li key={p.id} className="rounded border border-line p-3">
+            <Link href={`/admin/products/${p.id}`} className="block">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-ink-strong">{p.title}</p>
+                  <p className="text-[11px] text-ink-soft">
+                    {CATALOG_LABEL[p.catalog]} · {p.slug}
+                  </p>
+                </div>
+                <Pill value={p.status} />
+              </div>
+              <dl className="mt-2 flex gap-4 text-xs text-ink-soft">
+                <div>
+                  <dt className="inline">Variants </dt>
+                  <dd className="inline font-medium text-ink">{p.variantCount}</dd>
+                </div>
+                <div>
+                  <dt className="inline">Images </dt>
+                  <dd className="inline font-medium text-ink">{p.imageCount}</dd>
+                </div>
+                <div>
+                  <dt className="inline">From </dt>
+                  <dd className="inline font-medium text-ink">
+                    {p.fromPricePaise != null ? formatPaiseINR(p.fromPricePaise) : "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline">Avail. </dt>
+                  <dd className="inline font-medium text-ink">{p.available}</dd>
+                </div>
+              </dl>
+            </Link>
+          </li>
+        ))}
+        {items.length === 0 && (
+          <li className="py-6 text-center text-sm text-ink-soft">No products match.</li>
+        )}
+      </ul>
+
+      {/* Desktop: table */}
+      <table className="mt-4 hidden w-full text-sm sm:table">
         <thead>
-          <tr className="border-b border-black/15 text-left dark:border-white/20">
+          <tr className="border-b border-line text-left">
             <th className="py-2 font-medium">Title</th>
             <th className="py-2 font-medium">Catalogue</th>
             <th className="py-2 font-medium">Status</th>
@@ -115,7 +195,7 @@ export default async function AdminProducts({
         </thead>
         <tbody>
           {items.map((p) => (
-            <tr key={p.id} className="border-b border-black/10 dark:border-white/10">
+            <tr key={p.id} className="border-b border-line/60">
               <td className="py-2">
                 <Link
                   href={`/admin/products/${p.id}`}
@@ -123,23 +203,11 @@ export default async function AdminProducts({
                 >
                   {p.title}
                 </Link>
-                <div className="text-[11px] text-black/45 dark:text-white/45">
-                  {p.slug}
-                </div>
+                <div className="text-[11px] text-ink-soft">{p.slug}</div>
               </td>
               <td className="py-2">{CATALOG_LABEL[p.catalog]}</td>
               <td className="py-2">
-                <span
-                  className={
-                    p.status === "PUBLISHED"
-                      ? "text-emerald-700 dark:text-emerald-400"
-                      : p.status === "ARCHIVED"
-                        ? "text-black/40 dark:text-white/40"
-                        : ""
-                  }
-                >
-                  {p.status}
-                </span>
+                <Pill value={p.status} />
               </td>
               <td className="py-2">{p.variantCount}</td>
               <td className="py-2">{p.imageCount}</td>
@@ -151,10 +219,7 @@ export default async function AdminProducts({
           ))}
           {items.length === 0 && (
             <tr>
-              <td
-                colSpan={7}
-                className="py-8 text-center text-black/50 dark:text-white/50"
-              >
+              <td colSpan={7} className="py-8 text-center text-ink-soft">
                 No products match.
               </td>
             </tr>
@@ -163,17 +228,23 @@ export default async function AdminProducts({
       </table>
 
       {pages > 1 && (
-        <div className="mt-4 flex gap-3 text-sm">
+        <div className="mt-4 flex items-center gap-3 text-sm">
           {page > 1 && (
-            <Link href={qs({ page: String(page - 1) })} className="underline">
+            <Link
+              href={qs({ page: String(page - 1) })}
+              className="flex min-h-11 items-center underline"
+            >
               ← Previous
             </Link>
           )}
-          <span className="text-black/50 dark:text-white/50">
+          <span className="text-ink-soft">
             Page {page} of {pages}
           </span>
           {page < pages && (
-            <Link href={qs({ page: String(page + 1) })} className="underline">
+            <Link
+              href={qs({ page: String(page + 1) })}
+              className="flex min-h-11 items-center underline"
+            >
               Next →
             </Link>
           )}

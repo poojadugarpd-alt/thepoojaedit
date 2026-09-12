@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import type { CatalogType, ConditionGrade } from "@/generated/prisma";
+import type { CatalogType, ConditionGrade, ImageType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
+import { createSupabaseStoragePort } from "@/lib/storage";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {
   ValidationError,
@@ -15,6 +16,12 @@ import {
   upsertThriftDetails,
   upsertVariant,
 } from "@/server/catalog/admin";
+import {
+  ImageValidationError,
+  confirmProductImageUpload,
+  requestProductImageUpload,
+  type UploadTicket,
+} from "@/server/catalog/product-images";
 
 export type ActionState = { ok: boolean; message?: string; errors?: string[] };
 
@@ -215,4 +222,123 @@ export async function thriftDetailsAction(
   }
   revalidatePath(`/admin/products/${productId}`);
   return { ok: true, message: "Thrift details saved." };
+}
+
+// ── Image upload (called directly from client JS, not through <form action>,
+// so these return plain result objects rather than ActionState). ──
+
+export type UploadTicketResult =
+  | ({ ok: true } & UploadTicket)
+  | { ok: false; message: string };
+
+/** Step 1: ask for a short-lived URL the browser uploads the file bytes to. */
+export async function requestImageUploadAction(
+  productId: string,
+  contentType: string,
+): Promise<UploadTicketResult> {
+  const admin = await requireAdmin();
+  try {
+    const storage = await createSupabaseStoragePort();
+    const ticket = await requestProductImageUpload(
+      { db: prisma, storage, admin },
+      { productId, contentType },
+    );
+    return { ok: true, ...ticket };
+  } catch (e) {
+    return {
+      ok: false,
+      message:
+        e instanceof ImageValidationError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Could not start the upload.",
+    };
+  }
+}
+
+export type ConfirmImageResult =
+  | { ok: true; imageId: string }
+  | { ok: false; message: string };
+
+/** Step 2: once the PUT to the signed URL succeeds, register the row. */
+export async function confirmImageUploadAction(
+  productId: string,
+  input: {
+    imageId: string;
+    path: string;
+    contentType: string;
+    altText: string;
+    type: ImageType;
+    isPrimary: boolean;
+    width: number | null;
+    height: number | null;
+  },
+): Promise<ConfirmImageResult> {
+  const admin = await requireAdmin();
+  try {
+    const storage = await createSupabaseStoragePort();
+    const image = await confirmProductImageUpload(
+      { db: prisma, storage, admin },
+      { productId, ...input },
+    );
+    await prisma.adminActivityLog.create({
+      data: {
+        adminUserId: admin.id,
+        action: "image.upload",
+        entityType: "ProductImage",
+        entityId: image.id,
+      },
+    });
+  } catch (e) {
+    return {
+      ok: false,
+      message:
+        e instanceof ImageValidationError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Could not save the uploaded image.",
+    };
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true, imageId: input.imageId };
+}
+
+/** Swap sort position with the previous/next image — the mobile reorder control. */
+export async function reorderImageAction(
+  productId: string,
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const imageId = str(form.get("imageId"));
+  const direction = str(form.get("direction"));
+  try {
+    const images = await prisma.productImage.findMany({
+      where: { productId },
+      orderBy: { sortPosition: "asc" },
+    });
+    const idx = images.findIndex((im) => im.id === imageId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= images.length) {
+      return { ok: true }; // already at an end — silently a no-op
+    }
+    const a = images[idx];
+    const b = images[swapIdx];
+    await prisma.$transaction([
+      prisma.productImage.update({
+        where: { id: a.id },
+        data: { sortPosition: b.sortPosition },
+      }),
+      prisma.productImage.update({
+        where: { id: b.id },
+        data: { sortPosition: a.sortPosition },
+      }),
+    ]);
+  } catch (e) {
+    return handle(e);
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true };
 }

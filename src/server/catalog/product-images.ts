@@ -163,16 +163,40 @@ export async function confirmProductImageUpload(
     height: input.height,
   });
 
-  return deps.db.productImage.create({
-    data: {
-      productId: input.productId,
-      bucket: PRODUCT_IMAGE_BUCKET,
-      path: input.path,
-      altText: input.altText,
-      type: input.type ?? "GALLERY",
-      isPrimary: input.isPrimary ?? false,
-      widthPx: input.width ?? null,
-      heightPx: input.height ?? null,
-    },
-  });
+  const isPrimary = input.isPrimary ?? false;
+  const [{ _max }, [existing]] = await Promise.all([
+    deps.db.productImage.aggregate({
+      where: { productId: input.productId },
+      _max: { sortPosition: true },
+    }),
+    deps.db.productImage.findMany({ where: { productId: input.productId }, take: 1 }),
+  ]);
+  // First image for a product is the primary by default, regardless of what
+  // the caller asked for — a product should never end up with zero primary
+  // images just because nobody checked the box.
+  const makePrimary = isPrimary || !existing;
+
+  const createData = {
+    productId: input.productId,
+    bucket: PRODUCT_IMAGE_BUCKET,
+    path: input.path,
+    altText: input.altText,
+    type: makePrimary ? ("PRIMARY" as const) : (input.type ?? "GALLERY"),
+    isPrimary: makePrimary,
+    sortPosition: (_max.sortPosition ?? -1) + 1,
+    widthPx: input.width ?? null,
+    heightPx: input.height ?? null,
+  };
+
+  if (!makePrimary) {
+    return deps.db.productImage.create({ data: createData });
+  }
+  const [, created] = await deps.db.$transaction([
+    deps.db.productImage.updateMany({
+      where: { productId: input.productId },
+      data: { isPrimary: false },
+    }),
+    deps.db.productImage.create({ data: createData }),
+  ]);
+  return created;
 }

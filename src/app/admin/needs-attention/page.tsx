@@ -25,15 +25,15 @@ export default async function NeedsAttentionPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Needs Attention</h1>
+        <h1 className="text-xl font-semibold text-ink-strong">Needs Attention</h1>
         <Poll baseMs={12_000} />
       </div>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-black/55 dark:text-white/55">Nothing open. 🎉</p>
+        <p className="text-sm text-ink-soft">Nothing open. 🎉</p>
       ) : (
         <>
-          <p className="text-xs text-black/50 dark:text-white/50">
+          <p className="text-xs text-ink-soft">
             {tasks.length} open. A task clears only when its condition is gone — bulk
             resolve skips any that are still active or need a decision, and reports
             each skip.
@@ -47,13 +47,13 @@ export default async function NeedsAttentionPage() {
               node: (
                 <div>
                   <p>
-                    <span className="font-medium">{t.type.replaceAll("_", " ")}</span>{" "}
-                    <span className="text-[11px] text-black/45 dark:text-white/45">
-                      {t.dedupeKey}
-                    </span>
+                    <span className="font-medium text-ink-strong">
+                      {t.type.replaceAll("_", " ")}
+                    </span>{" "}
+                    <span className="text-[11px] text-ink-soft">{t.dedupeKey}</span>
                   </p>
-                  <p className="text-xs text-black/60 dark:text-white/60">{t.reason}</p>
-                  <p className="text-[11px] text-black/40 dark:text-white/40">
+                  <p className="text-xs text-ink">{t.reason}</p>
+                  <p className="text-[11px] text-ink-soft">
                     since {ts(t.createdAt)}
                     {entityHref(t) && (
                       <>
@@ -70,13 +70,13 @@ export default async function NeedsAttentionPage() {
           />
 
           <details className="text-sm">
-            <summary className="cursor-pointer text-xs text-black/50 dark:text-white/50">
+            <summary className="cursor-pointer text-xs text-ink-soft">
               Resolve one with an override reason
             </summary>
             <ul className="mt-2 space-y-3">
               {tasks.map((t) => (
-                <li key={t.id} className="rounded border border-black/10 p-2 dark:border-white/15">
-                  <p className="text-xs">
+                <li key={t.id} className="rounded border border-line p-2">
+                  <p className="text-xs text-ink-strong">
                     <span className="font-medium">{t.type}</span> · {t.dedupeKey}
                   </p>
                   <ActionForm action={resolveTaskAction} submitLabel="Resolve" compact>
@@ -84,9 +84,9 @@ export default async function NeedsAttentionPage() {
                     <input
                       name="reason"
                       placeholder="reason"
-                      className="w-full rounded border border-black/20 bg-transparent px-2 py-1 text-xs dark:border-white/25"
+                      className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-xs"
                     />
-                    <label className="flex items-center gap-1 text-[11px]">
+                    <label className="flex min-h-11 items-center gap-1 text-[11px]">
                       <input type="checkbox" name="force" value="1" /> override — I
                       have verified this is handled
                     </label>
