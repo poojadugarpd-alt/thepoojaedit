@@ -102,6 +102,30 @@ No unresolved **critical security, overselling, money, migration or data-loss** 
 | 7 | **Vercel project + isolated preview environment — ◐ prod deploy live, custom domain not yet cut over** | AC-17 (isolated preview deploy), AC-18 drills | Vercel project exists (`thepoojaedit`), production deployments are live and building green. **`thepoojaedit.in` currently still serves the owner's existing, real Shopify store** (`CNAME → shops.myshopify.com`) — intentional, confirmed with the owner 2026-09-11: the domain stays on Shopify until this build is ready, then gets repointed as the go-live cutover step. Until that DNS change, the Vercel app is only reachable at its (Vercel-Authentication-protected) `*.vercel.app` URLs — gates blocker 6 above. Isolated preview environment + Node 22 scoping still to verify. |
 | 8 | **Phase 13 operational drills** | AC-18 | backup/restore rehearsal in an isolated environment; budget alerts on paid-capable providers; rollback rehearsal; launch-config sign-off |
 
+## 5a. Admin PWA (separate effort, 2026-09-12) — two more deploy-time actions
+
+Not one of the 8 launch blockers above (this extends the existing admin
+console rather than gating the storefront), but two items land as real
+deploy steps whenever this branch is deployed, tracked here so they aren't
+missed at launch time:
+
+- **New migration** (`20260912114320_admin_push`, purely additive — two new
+  tables, `AdminPushSubscription`/`AdminNotificationPreference`, nothing
+  altered or dropped on any existing table) needs `prisma migrate deploy`
+  run against the **production** Supabase `DATABASE_URL` — this repo has no
+  automated migrate-on-deploy step (confirmed: `next build` only, no
+  `vercel.json` build-command override), so this is a manual action, same
+  as every other migration so far.
+- **`NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`**
+  need adding to Vercel's env vars (all 3 environments) — currently only in
+  local `.env.local`. Until both of the above are done, the admin PWA itself
+  (install, mobile UI, offline page) works in production exactly as today;
+  only push notifications stay silently unconfigured (`sendAdminPush`
+  no-ops, same as any other unconfigured channel — see D-102).
+
+Full detail: `docs/admin-pwa-plan.md`, `docs/admin-pwa-setup.md`,
+`docs/admin-pwa-verification.md`, decisions D-99 through D-103.
+
 ## 6. Residual (non-blocking) polish
 
 - `color-contrast` on dense admin data tables (muted palette) — recorded, deferred.
