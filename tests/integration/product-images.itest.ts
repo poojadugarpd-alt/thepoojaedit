@@ -36,6 +36,7 @@ function fakeStorage(present = true): StoragePort {
     async createSignedDownloadUrl(_b, path) {
       return `https://fake/download/${path}`;
     },
+    async deleteObjects() {},
   };
 }
 

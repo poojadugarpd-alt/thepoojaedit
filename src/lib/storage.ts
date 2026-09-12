@@ -34,6 +34,9 @@ export interface StoragePort {
     path: string,
     expiresInSeconds: number,
   ): Promise<string>;
+
+  /** Permanently remove one or more objects (product delete, master §9). */
+  deleteObjects(bucket: string, paths: string[]): Promise<void>;
 }
 
 /** Live implementation over Supabase Storage. Exercised end-to-end from Phase 4. */
@@ -74,6 +77,12 @@ export async function createSupabaseStoragePort(): Promise<StoragePort> {
         .createSignedUrl(path, expiresInSeconds);
       if (error || !data) throw error ?? new Error("createSignedUrl failed");
       return data.signedUrl;
+    },
+
+    async deleteObjects(bucket, paths) {
+      if (paths.length === 0) return;
+      const { error } = await supabase.storage.from(bucket).remove(paths);
+      if (error) throw error;
     },
   };
 }

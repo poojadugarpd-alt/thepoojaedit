@@ -3,11 +3,15 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { AdminUser, PrismaClient } from "../../src/generated/prisma";
+import type { StoragePort } from "../../src/lib/storage";
+import { adjustStock } from "../../src/server/inventory/adjust";
 import {
+  ProductHasHistoryError,
   ValidationError,
   addProductToCollection,
   createCollection,
   createProduct,
+  deleteProduct,
   listAdminProducts,
   publishProduct,
   updateProduct,
@@ -16,6 +20,26 @@ import {
   validateForPublication,
 } from "../../src/server/catalog/admin";
 import { makeClient, resetDb } from "./helpers";
+
+/** Records what was asked to be deleted, deletes nothing for real. */
+function fakeStorage(): StoragePort & { deleted: { bucket: string; paths: string[] }[] } {
+  const deleted: { bucket: string; paths: string[] }[] = [];
+  return {
+    deleted,
+    async createSignedUploadUrl(bucket, path) {
+      return { signedUrl: `https://fake/${bucket}/${path}`, token: "tok", path };
+    },
+    async statObject() {
+      return { exists: true, size: 1000, contentType: "image/webp" };
+    },
+    async createSignedDownloadUrl(_b, path) {
+      return `https://fake/download/${path}`;
+    },
+    async deleteObjects(bucket, paths) {
+      deleted.push({ bucket, paths });
+    },
+  };
+}
 
 let db: PrismaClient;
 let admin: AdminUser;
@@ -68,6 +92,36 @@ describe("createProduct", () => {
     });
     expect(logs.length).toBe(2);
     expect(logs[0].adminUserId).toBe(admin.id);
+  });
+
+  // Owner feedback (2026-09-13): the admin UI no longer submits a slug at
+  // all — createProduct must generate and unique one from the title.
+  it("auto-generates a slug from the title when none is given, and suffixes -2/-3 on collision", async () => {
+    const first = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Marigold Cotton Kurta",
+    });
+    expect(first.slug).toBe("marigold-cotton-kurta");
+
+    const second = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Marigold Cotton Kurta",
+    });
+    expect(second.slug).toBe("marigold-cotton-kurta-2");
+
+    const third = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Marigold Cotton Kurta",
+    });
+    expect(third.slug).toBe("marigold-cotton-kurta-3");
+
+    // Same title in the OTHER catalogue doesn't need a suffix — slugs are
+    // unique per catalogue, not globally.
+    const otherCatalogue = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Marigold Cotton Kurta",
+    });
+    expect(otherCatalogue.slug).toBe("marigold-cotton-kurta");
   });
 });
 
@@ -235,6 +289,43 @@ describe("upsertVariant — thrift one-of-one", () => {
   });
 });
 
+// Owner feedback (2026-09-13): a Closet (one-of-one) piece has no size run
+// to key a SKU off, so it's generated, not typed; Label keeps a real,
+// required SKU.
+describe("upsertVariant — SKU generation (owner feedback)", () => {
+  it("generates a stable CLO-###### SKU for a Closet variant created with none", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Windcheater",
+    });
+    const created = await upsertVariant(db, admin, p.id, { pricePaise: 90000, onHandQty: 1 });
+    expect(created.sku).toMatch(/^CLO-\d{6}$/);
+
+    // Updating without a SKU keeps the one already generated — stable.
+    const updated = await upsertVariant(db, admin, p.id, {
+      id: created.id,
+      pricePaise: 95000,
+      onHandQty: 1,
+    });
+    expect(updated.sku).toBe(created.sku);
+  });
+
+  it("two Closet variants created back to back get different generated SKUs", async () => {
+    const a = await createProduct(db, admin, { catalog: "THRIFT", title: "A" });
+    const b = await createProduct(db, admin, { catalog: "THRIFT", title: "B" });
+    const va = await upsertVariant(db, admin, a.id, { pricePaise: 10000, onHandQty: 1 });
+    const vb = await upsertVariant(db, admin, b.id, { pricePaise: 10000, onHandQty: 1 });
+    expect(va.sku).not.toBe(vb.sku);
+  });
+
+  it("a Label variant still requires an explicit SKU", async () => {
+    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Kurta" });
+    await expect(
+      upsertVariant(db, admin, p.id, { pricePaise: 199900, onHandQty: 5 }),
+    ).rejects.toThrow(/sku is required/i);
+  });
+});
+
 describe("collections never cross catalogues (AC-01)", () => {
   it("rejects adding a THE_POOJA_EDIT product to a THRIFT collection", async () => {
     const col = await createCollection(db, admin, {
@@ -328,5 +419,106 @@ describe("listAdminProducts pagination + primary image (speed audit)", () => {
     });
     const { items: bareItems } = await listAdminProducts(db, { q: "no-photo" });
     expect(bareItems.find((i) => i.id === bare.id)?.primaryImage).toBeNull();
+  });
+});
+
+// Owner feedback (2026-09-13): real delete only when the product has never
+// appeared on an order — otherwise "Hide from shop" (archive) is the only
+// option. Both paths covered.
+describe("deleteProduct", () => {
+  it("deletes a product that has never appeared on an order, removes its images from storage, and audits", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Never sold",
+    });
+    await upsertVariant(db, admin, p.id, { sku: "NS-1", pricePaise: 50000, onHandQty: 3 });
+    await db.productImage.create({
+      data: {
+        productId: p.id,
+        bucket: "product-images",
+        path: `${p.id}/photo.jpg`,
+        publicUrl: "https://example.invalid/photo.jpg",
+        altText: "photo",
+        isPrimary: true,
+      },
+    });
+
+    const storage = fakeStorage();
+    await deleteProduct(db, storage, admin, p.id);
+
+    expect(await db.product.findUnique({ where: { id: p.id } })).toBeNull();
+    expect(await db.productVariant.findMany({ where: { productId: p.id } })).toHaveLength(0);
+    expect(storage.deleted).toEqual([
+      { bucket: "product-images", paths: [`${p.id}/photo.jpg`] },
+    ]);
+    const logs = await db.adminActivityLog.findMany({
+      where: { action: "product.delete", entityId: p.id },
+    });
+    expect(logs).toHaveLength(1);
+    expect(logs[0].adminUserId).toBe(admin.id);
+  });
+
+  it("refuses to delete a product with an order line, and leaves it untouched", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Has an order",
+    });
+    const v = await upsertVariant(db, admin, p.id, {
+      sku: "HO-1",
+      pricePaise: 50000,
+      onHandQty: 3,
+    });
+    const order = await db.order.create({
+      data: {
+        orderNumber: `PE-${randomUUID().slice(0, 10)}`,
+        contactPhone: "+919812345678",
+        paymentMethod: "PREPAID_RAZORPAY",
+        subtotalPaise: 50000,
+        totalPaise: 50000,
+      },
+    });
+    await db.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: p.id,
+        variantId: v.id,
+        catalog: "THE_POOJA_EDIT",
+        sku: v.sku,
+        title: p.title,
+        quantity: 1,
+        unitPricePaise: 50000,
+        taxableValuePaise: 50000,
+        totalPaise: 50000,
+        returnPolicySnapshot: {},
+      },
+    });
+
+    await expect(deleteProduct(db, fakeStorage(), admin, p.id)).rejects.toBeInstanceOf(
+      ProductHasHistoryError,
+    );
+    expect(await db.product.findUnique({ where: { id: p.id } })).not.toBeNull();
+  });
+
+  it("refuses to delete a product whose variant has an inventory transaction (a correction, not just an order)", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Stock corrected once",
+    });
+    const v = await upsertVariant(db, admin, p.id, {
+      sku: "SC-1",
+      pricePaise: 50000,
+      onHandQty: 3,
+    });
+    await adjustStock(db, {
+      variantId: v.id,
+      delta: 2,
+      reason: "recount",
+      adminUserId: admin.id,
+    });
+
+    await expect(deleteProduct(db, fakeStorage(), admin, p.id)).rejects.toThrow(
+      /on past orders/i,
+    );
+    expect(await db.product.findUnique({ where: { id: p.id } })).not.toBeNull();
   });
 });

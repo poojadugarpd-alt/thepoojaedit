@@ -9,7 +9,11 @@ import type {
   ProductVariant,
 } from "@/generated/prisma";
 import { Prisma } from "@/generated/prisma";
+import type { StoragePort } from "@/lib/storage";
 import { auditLog } from "@/server/admin/audit";
+
+import { generateClosetSku } from "./sku";
+import { generateUniqueSlug } from "./slug";
 
 /**
  * Catalog write operations (master §4, §10). Every function takes the acting
@@ -137,7 +141,11 @@ export async function createProduct(
   admin: AdminUser,
   input: {
     catalog: CatalogType;
-    slug: string;
+    /** Omit to auto-generate from `title` (owner feedback, 2026-09-13 — the
+     *  admin UI no longer asks for one). Pass an explicit value only for
+     *  scripted/seed callers that need a specific slug; it is still
+     *  validated and uniqueness-checked exactly as before. */
+    slug?: string;
     title: string;
     description?: string;
     brand?: string | null;
@@ -145,15 +153,21 @@ export async function createProduct(
     categoryId?: string | null;
   },
 ): Promise<Product> {
-  assertSlug(input.slug);
-  const clash = await db.product.findUnique({
-    where: { catalog_slug: { catalog: input.catalog, slug: input.slug } },
-    select: { id: true },
-  });
-  if (clash) {
-    throw new ValidationError(
-      `A product with slug "${input.slug}" already exists in this catalogue.`,
-    );
+  let slug: string;
+  if (input.slug) {
+    assertSlug(input.slug);
+    const clash = await db.product.findUnique({
+      where: { catalog_slug: { catalog: input.catalog, slug: input.slug } },
+      select: { id: true },
+    });
+    if (clash) {
+      throw new ValidationError(
+        `A product with slug "${input.slug}" already exists in this catalogue.`,
+      );
+    }
+    slug = input.slug;
+  } else {
+    slug = await generateUniqueSlug(db, input.catalog, input.title);
   }
   if (input.categoryId)
     await assertCategoryInCatalog(db, input.categoryId, input.catalog);
@@ -161,7 +175,7 @@ export async function createProduct(
   const product = await db.product.create({
     data: {
       catalog: input.catalog,
-      slug: input.slug,
+      slug,
       title: input.title,
       description: input.description ?? "",
       brand: input.brand ?? null,
@@ -315,6 +329,99 @@ export async function setProductStatus(
   return after;
 }
 
+/** Thrown when a delete is refused because the product has real order history. */
+export class ProductHasHistoryError extends ValidationError {
+  constructor() {
+    super("This product is on past orders, so it can't be deleted.");
+    this.name = "ProductHasHistoryError";
+  }
+}
+
+/**
+ * A real, permanent delete — distinct from `setProductStatus(..., "ARCHIVED")`
+ * ("Hide from shop" in the UI), which is what every product with any order
+ * history must use instead (owner feedback, 2026-09-13). Allowed only when
+ * the product has **never** appeared on an order: no `OrderItem` referencing
+ * it or any of its variants, no `InventoryReservation`, no
+ * `InventoryTransaction` — checked explicitly here so the refusal is a clean
+ * message, not a raw foreign-key error (both `InventoryReservation.variant`
+ * and `InventoryTransaction.variant` are `onDelete: Restrict` in the schema,
+ * so Postgres would refuse the cascade anyway; this check is what turns that
+ * into "This product is on past orders" instead of a 500).
+ *
+ * Storage objects are removed before the DB row — `ProductImage` rows
+ * themselves cascade-delete with the product (`onDelete: Cascade`), so if
+ * this were ordered the other way a failed Storage call could leave the DB
+ * row gone with the file still billed and orphaned; deleting the files
+ * first and the row second means a failure here just leaves the row (and
+ * files) in place to retry, never a silent leak.
+ */
+export async function deleteProduct(
+  db: PrismaClient,
+  storage: StoragePort,
+  admin: AdminUser,
+  id: string,
+): Promise<void> {
+  const product = await db.product.findUniqueOrThrow({
+    where: { id },
+    include: { variants: true, images: true },
+  });
+  const variantIds = product.variants.map((v) => v.id);
+
+  const [orderItemCount, reservationCount, transactionCount] = await Promise.all([
+    db.orderItem.count({
+      where: {
+        OR: [
+          { productId: id },
+          ...(variantIds.length ? [{ variantId: { in: variantIds } }] : []),
+        ],
+      },
+    }),
+    variantIds.length
+      ? db.inventoryReservation.count({ where: { variantId: { in: variantIds } } })
+      : 0,
+    variantIds.length
+      ? db.inventoryTransaction.count({ where: { variantId: { in: variantIds } } })
+      : 0,
+  ]);
+  if (orderItemCount > 0 || reservationCount > 0 || transactionCount > 0) {
+    throw new ProductHasHistoryError();
+  }
+
+  if (product.images.length > 0) {
+    // All product images share one bucket (product-images.ts's
+    // PRODUCT_IMAGE_BUCKET) — grouping defensively rather than assuming it,
+    // in case that ever changes.
+    const byBucket = new Map<string, string[]>();
+    for (const img of product.images) {
+      const paths = byBucket.get(img.bucket) ?? [];
+      paths.push(img.path);
+      byBucket.set(img.bucket, paths);
+    }
+    for (const [bucket, paths] of byBucket) {
+      await storage.deleteObjects(bucket, paths);
+    }
+  }
+
+  // Cascades ProductVariant / ProductImage / ThriftDetails / ProductCollection
+  // rows (all `onDelete: Cascade` on their `product` relation).
+  await db.product.delete({ where: { id } });
+
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: "product.delete",
+    entityType: "Product",
+    entityId: id,
+    before: {
+      catalog: product.catalog,
+      slug: product.slug,
+      title: product.title,
+      variantCount: product.variants.length,
+      imageCount: product.images.length,
+    },
+  });
+}
+
 // ─────────────────────────── Variants ───────────────────────────
 
 export async function upsertVariant(
@@ -323,7 +430,10 @@ export async function upsertVariant(
   productId: string,
   input: {
     id?: string;
-    sku: string;
+    /** Omit/empty for a THRIFT (Closet) variant — generated automatically
+     *  (owner feedback, 2026-09-13: a one-of-one piece has no size run to
+     *  key a SKU off). Required for THE_POOJA_EDIT (Label). */
+    sku?: string;
     size?: string | null;
     color?: string | null;
     pricePaise: number;
@@ -351,9 +461,25 @@ export async function upsertVariant(
     }
   }
 
+  const submittedSku = input.sku?.trim();
+  let sku: string;
+  if (submittedSku) {
+    sku = submittedSku;
+  } else if (input.id) {
+    // Update with no SKU submitted (the Closet form doesn't render the
+    // field at all) — keep whatever this variant already has.
+    const existing = product.variants.find((v) => v.id === input.id);
+    if (!existing) throw new ValidationError("Variant not found.");
+    sku = existing.sku;
+  } else if (product.catalog === "THRIFT") {
+    sku = await generateClosetSku(db);
+  } else {
+    throw new ValidationError("SKU is required.");
+  }
+
   const data = {
     productId,
-    sku: input.sku,
+    sku,
     size: input.size ?? null,
     color: input.color ?? null,
     pricePaise: input.pricePaise,

@@ -29,7 +29,6 @@ export default function NewProduct() {
               The Closet (pre-loved, one of one)
             </label>
           </fieldset>
-          <Field label="Slug" name="slug" required hint="lowercase, digits, hyphens" />
           <Field label="Title" name="title" required />
         </ActionForm>
       </div>

@@ -10,6 +10,7 @@ import { requireAdmin } from "@/server/auth/require-admin";
 import {
   ValidationError,
   createProduct,
+  deleteProduct,
   publishProduct,
   setProductStatus,
   updateProduct,
@@ -48,8 +49,9 @@ export async function createProductAction(
   try {
     const p = await createProduct(prisma, admin, {
       catalog: str(form.get("catalog")) as CatalogType,
-      slug: str(form.get("slug")),
       title: str(form.get("title")),
+      // No slug field on this form (owner feedback, 2026-09-13) —
+      // createProduct generates and uniques one from the title.
     });
     id = p.id;
   } catch (e) {
@@ -111,6 +113,27 @@ export async function statusAction(
   revalidatePath(`/admin/products/${productId}`);
   revalidatePath("/admin/products");
   return { ok: true, message: `Status changed.` };
+}
+
+// Every field the delete needs (productId) is already bound via
+// `.bind(null, id)` at the call site — nothing else to read from the form,
+// unlike every other action here.
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export async function deleteProductAction(
+  productId: string,
+  _prev: ActionState,
+  _form: FormData,
+): Promise<ActionState> {
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+  const admin = await requireAdmin();
+  try {
+    const storage = await createSupabaseStoragePort();
+    await deleteProduct(prisma, storage, admin, productId);
+  } catch (e) {
+    return handle(e);
+  }
+  revalidatePath("/admin/products");
+  redirect("/admin/products");
 }
 
 export async function upsertVariantAction(

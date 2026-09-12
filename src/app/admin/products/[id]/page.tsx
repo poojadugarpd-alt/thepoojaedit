@@ -5,15 +5,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActionForm, Field, TextArea } from "@/features/admin/action-form";
+import { DeleteProductConfirm } from "@/features/admin/delete-product-confirm";
 import { ImageUploader } from "@/features/admin/image-uploader";
+import { LabelSkuFields } from "@/features/admin/label-sku-fields";
 import { Pill } from "@/features/admin/format";
 import { prisma } from "@/lib/db";
 import { CATALOG_LABEL, productPath } from "@/lib/catalog-routes";
 import { timed } from "@/lib/perf";
+import { publicEnv } from "@/lib/public-env";
 import { getAdminProduct, validateForPublication } from "@/server/catalog/admin";
 
 import {
   deleteImageAction,
+  deleteProductAction,
   reorderImageAction,
   setPrimaryImageAction,
   statusAction,
@@ -55,6 +59,7 @@ export default async function EditProduct({
 
   const isThrift = p.catalog === "THRIFT";
   const check = validateForPublication(p);
+  const publicSiteUrl = publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
 
   return (
     <div className="max-w-3xl space-y-10">
@@ -121,9 +126,12 @@ export default async function EditProduct({
             </ActionForm>
           )}
           {p.status !== "ARCHIVED" && (
+            // "Hide from shop" in the interface (owner feedback, 2026-09-13)
+            // — the ARCHIVED status underneath, action name and audit log
+            // entry are unchanged, this is a label-only rename.
             <ActionForm
               action={statusAction.bind(null, id, "ARCHIVE")}
-              submitLabel="Archive"
+              submitLabel="Hide from shop"
               compact
             >
               <input type="hidden" name="reason" value="admin archive" />
@@ -142,7 +150,6 @@ export default async function EditProduct({
             action={updateProductAction.bind(null, id)}
             submitLabel="Save details"
           >
-            <Field label="Slug" name="slug" defaultValue={p.slug} required />
             <Field label="Title" name="title" defaultValue={p.title} required />
             <TextArea
               label="Description"
@@ -162,6 +169,32 @@ export default async function EditProduct({
                 defaultValue={p.metaDescription}
               />
             </div>
+
+            {/* Collapsed by default — the slug is an implementation detail
+                of the URL, not something to surface next to Title (owner
+                feedback, 2026-09-13: "what is a slug?"). Still part of this
+                same form/save action, so saving Details never has to choose
+                between updating this and everything else. */}
+            <details className="rounded border border-line p-3">
+              <summary className="cursor-pointer text-xs font-medium text-ink-strong">
+                Advanced: Web address
+              </summary>
+              <div className="mt-3 space-y-2">
+                <p className="text-xs text-ink-soft">
+                  Currently:{" "}
+                  <span className="font-mono">
+                    {publicSiteUrl}
+                    {productPath(p.catalog, p.slug)}
+                  </span>
+                </p>
+                <Field label="Web address (slug)" name="slug" defaultValue={p.slug} required />
+                <p className="text-xs text-stop">
+                  Changing this breaks any link to this product already shared —
+                  only change it if you know that&rsquo;s what you want.
+                </p>
+              </div>
+            </details>
+
             <Field label="Reason (audit)" name="reason" placeholder="why this change" />
           </ActionForm>
         </div>
@@ -182,8 +215,17 @@ export default async function EditProduct({
               compact
             >
               <input type="hidden" name="id" value={v.id} />
+              {/* Closet SKUs are auto-generated and stable — shown, not
+                  editable, and never submitted (no `name`, so upsertVariant
+                  sees it as omitted and keeps the existing value). Label
+                  SKUs stay a real, required, editable field. */}
+              {isThrift ? (
+                <p className="text-xs text-ink-soft sm:col-span-4">
+                  SKU <span className="font-mono text-ink">{v.sku}</span>
+                </p>
+              ) : null}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Field label="SKU" name="sku" defaultValue={v.sku} required />
+                {!isThrift && <Field label="SKU" name="sku" defaultValue={v.sku} required />}
                 <Field label="Size" name="size" defaultValue={v.size} />
                 <Field label="Color" name="color" defaultValue={v.color} />
                 <Field
@@ -226,9 +268,17 @@ export default async function EditProduct({
               className="rounded border border-dashed border-line p-3"
               compact
             >
+              {isThrift && (
+                <p className="text-xs text-ink-soft">
+                  SKU is generated automatically once you save (e.g. CLO-000123).
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                <Field label="SKU" name="sku" required />
-                <Field label="Size" name="size" />
+                {isThrift ? (
+                  <Field label="Size" name="size" />
+                ) : (
+                  <LabelSkuFields productTitle={p.title} />
+                )}
                 <Field label="Color" name="color" />
                 <Field label="Price (paise)" name="pricePaise" type="number" required />
                 <Field label="Compare-at (paise)" name="compareAtPaise" type="number" />
@@ -432,6 +482,27 @@ export default async function EditProduct({
           </ul>
         </section>
       )}
+
+      {/* ── Delete — bottom of the screen, destructive styling, never in the
+          list rows where it could be tapped by accident (owner feedback,
+          2026-09-13). Only ever offered here; deleteProductAction itself
+          re-enforces the "never on past orders" rule server-side regardless
+          of what this page renders. */}
+      <section className="border-t border-line pt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-stop">
+          Delete
+        </h2>
+        <p className="mt-1 text-xs text-ink-soft">
+          Only possible if this product has never appeared on an order. If it has,
+          use &ldquo;Hide from shop&rdquo; above instead.
+        </p>
+        <div className="mt-3">
+          <DeleteProductConfirm
+            productTitle={p.title}
+            deleteAction={deleteProductAction.bind(null, id)}
+          />
+        </div>
+      </section>
     </div>
   );
 }
