@@ -16,6 +16,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | WhatsApp | `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `META_APP_SECRET` | Approved templates only; template names in `src/server/notifications/templates.ts` (`order_confirmed_prepaid`, `order_received_cod`, `shipment_dispatched`, `out_for_delivery`, `order_delivered`, `delivery_failed`, `order_cancelled`, `refund_completed`) |
 | Email | `RESEND_API_KEY`, `EMAIL_FROM` (verified sender), `RESEND_WEBHOOK_SECRET` (Svix `whsec_…`, required for the delivery callback) | — |
 | Jobs | `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY` | — |
+| Web Push | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Admin PWA Stage 4. Self-generated keypair — no external account |
 | Instagram | `BEHOLD_FEED_ID` | Optional. Behold.so feed id; homepage strip falls back to a curated product strip when unset |
 | Monitoring | Sentry DSN, server-only Sentry auth token (if source maps uploaded), `LOG_LEVEL` | — |
 | Business | Legal name, GSTIN, supplier state/address, invoice series, contact details, policy text — editable nonsecret settings may live in Postgres (`StoreSettings`) | Owner-confirmed before live |
@@ -35,6 +36,7 @@ Legend: ☐ not started · ◐ partial · ☑ done · ⛔ blocked
 | Sentry | 1 | N/A | ☐ | Project + DSN; server auth token only if uploading source maps. |
 | Behold.so (Instagram feed) | 4 (storefront) | N/A — free tier | ☐ | **Code slice done (D-84)** — `src/server/instagram/behold.ts` + `src/features/instagram/instagram-strip.tsx`; homepage falls back to a curated product strip when unset/unreachable. **To go live:** at behold.so, connect the @poojadugar_ **Professional** Instagram account → create a feed → copy the id from `feeds.behold.so/<id>` → set `BEHOLD_FEED_ID`. No webhook, no secret, no consent gate. Free tier = 1 feed, a few refreshes/day. Post-launch, can be swapped for the first-party Meta Graph API (`instagram_business_basic`) once the WhatsApp Meta app + Business Verification exist. |
 | Vercel | 12 | Preview environment isolated from prod | ☐ | Project, env var scoping (dev/preview/prod), Node 22 runtime setting. |
+| Web Push (VAPID) | Admin PWA Stage 4 | N/A — no test/live distinction | ☑ | **No provider account exists to sign up with** — a VAPID keypair is self-issued (RFC 8292), generated once with `web-push generate-vapid-keys()`. Generated this stage; `VAPID_PRIVATE_KEY` lives only in `.env.local` (never committed) and needs adding to Vercel's env vars (all 3 environments) before push works in any deployed environment. |
 
 ## Callback / webhook URLs (to register when each phase lands)
 

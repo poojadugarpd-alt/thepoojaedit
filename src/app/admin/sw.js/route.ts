@@ -31,7 +31,7 @@ export function GET() {
 // the Cache Storage bucket, so a bump makes `activate` throw away every
 // entry from the previous version instead of trying to reconcile them.
 const SW_SOURCE = String.raw`
-const CACHE_VERSION = "admin-sw-v1";
+const CACHE_VERSION = "admin-sw-v2";
 const OFFLINE_URL = "/admin/offline.html";
 
 // Everything precached is genuinely static and non-personal: the offline
@@ -113,4 +113,48 @@ self.addEventListener("fetch", (event) => {
     ),
   );
 });
+
+// Admin PWA Stage 4 — Web Push. The payload is exactly what sendAdminPush
+// (src/server/notifications/push.ts) sent: { title, body, url }. Nothing
+// here reaches back into the network or a cache — it only has whatever the
+// push service delivered, kept deliberately minimal (a short title/body, no
+// order contents, no customer data) since it also has to fit on a lock
+// screen.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    // Not JSON — show nothing rather than guess at a shape.
+  }
+  const title = data.title || "Pooja Admin";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/brand/admin-icon-192.png",
+      badge: "/brand/admin-icon-192.png",
+      data: { url: data.url || "/admin" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/admin";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url === url && "focus" in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    }),
+  );
+});
+
+// NOT handled: 'pushsubscriptionchange' (fired if the browser rotates or
+// expires a subscription on its own). A Service Worker can't easily call a
+// Next.js Server Action, and this event is rare in practice over this
+// project's timeframe — known gap, not an oversight. Today's actual pruning
+// path is sendAdminPush deleting a subscription once the push service
+// reports it gone (404/410) on an actual send attempt.
 `;

@@ -310,6 +310,47 @@ model AdminUser {
   activityLogs          AdminActivityLog[]
   customerNotes         CustomerNote[]
   returnRequests        ReturnRequest[]
+  pushSubscriptions     AdminPushSubscription[]
+  notificationPreference AdminNotificationPreference?
+}
+
+/**
+ * One row per installed device (admin PWA Stage 4). A phone re-subscribing
+ * (e.g. after clearing site data) gets a new `endpoint` — old rows are
+ * pruned when the push service reports the endpoint gone (404/410), not
+ * inferred any other way.
+ */
+model AdminPushSubscription {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  adminUserId String   @db.Uuid
+  admin       AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  endpoint    String   @unique
+  p256dh      String
+  auth        String
+  userAgent   String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  lastSeenAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([adminUserId])
+}
+
+/**
+ * One row per admin, created lazily on first read with every field
+ * defaulting to true — existing behaviour (get everything) holds until
+ * someone opens Settings and turns something off.
+ */
+model AdminNotificationPreference {
+  id              String   @id @default(uuid(7)) @db.Uuid
+  adminUserId     String   @unique @db.Uuid
+  admin           AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  newPaidOrder    Boolean  @default(true)
+  codConfirmation Boolean  @default(true)
+  paymentIssue    Boolean  @default(true)
+  shipmentFailure Boolean  @default(true)
+  ndrRto          Boolean  @default(true)
+  jobExhausted    Boolean  @default(true)
+  lowStock        Boolean  @default(true)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 }
 
 // ─────────────────────────── Catalog ────────────────────────────

@@ -1,21 +1,59 @@
 import { prisma } from "@/lib/db";
 import { ActionForm } from "@/features/admin/action-form";
 import { ts } from "@/features/admin/format";
+import { PushSettings } from "@/features/admin/push-settings";
 import { credentialHealth, listSettings } from "@/server/admin";
+import { requireAdmin } from "@/server/auth/require-admin";
+import { getNotificationPreference, type PushPreferenceField } from "@/server/notifications/push";
 
-import { updateSettingAction } from "./actions";
+import { updateNotificationPreferenceAction, updateSettingAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+const PREFERENCE_LABELS: Record<PushPreferenceField, string> = {
+  newPaidOrder: "A paid order comes in",
+  codConfirmation: "A COD order needs confirming",
+  paymentIssue: "A payment needs review",
+  shipmentFailure: "A shipment fails to create or ship",
+  ndrRto: "A delivery fails or a return is inbound",
+  jobExhausted: "A background job is failing",
+  lowStock: "Something drops to low stock",
+};
+
 export default async function AdminSettingsPage() {
-  const [settings, health] = await Promise.all([
+  const admin = await requireAdmin();
+  const [settings, health, preference] = await Promise.all([
     listSettings(prisma),
     Promise.resolve(credentialHealth()),
+    getNotificationPreference(prisma, admin.id),
   ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-ink-strong">Settings</h1>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-ink-strong">Notifications</h2>
+        <p className="text-xs text-ink-soft">
+          Push alerts go to every iPhone you&rsquo;ve installed Pooja Admin on — turned
+          on/off per device below, and per category for your account.
+        </p>
+        <PushSettings />
+        <ActionForm
+          action={updateNotificationPreferenceAction}
+          submitLabel="Save preferences"
+          compact
+        >
+          <div className="space-y-1">
+            {(Object.keys(PREFERENCE_LABELS) as PushPreferenceField[]).map((field) => (
+              <label key={field} className="flex min-h-11 items-center gap-2 text-sm">
+                <input type="checkbox" name={field} defaultChecked={preference[field]} />
+                {PREFERENCE_LABELS[field]}
+              </label>
+            ))}
+          </div>
+        </ActionForm>
+      </section>
 
       <section>
         <h2 className="text-sm font-semibold text-ink-strong">Credential health</h2>

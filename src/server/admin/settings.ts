@@ -116,5 +116,13 @@ export function credentialHealth(): CredentialHealth[] {
       configured: has(env.INNGEST_EVENT_KEY) && has(env.INNGEST_SIGNING_KEY),
       detail: "event key / signing key",
     },
+    {
+      group: "Web Push (admin phone alerts)",
+      configured:
+        has(publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY) &&
+        has(env.VAPID_PRIVATE_KEY) &&
+        has(env.VAPID_SUBJECT),
+      detail: "self-generated VAPID keypair — no external account",
+    },
   ];
 }

@@ -111,12 +111,16 @@ export default async function AdminOrderDetail({
                   </ActionForm>
                 )}
               {order.invoices.map((inv) => (
+                // Plain navigation, no target="_blank" — inside an installed
+                // iOS PWA there is no browser "tab" to open a new one in;
+                // iOS hands PDFs to its own Quick Look viewer regardless of
+                // target, which briefly leaves the standalone app (expected
+                // iOS behaviour, not something a web app can avoid) and a
+                // real back gesture returns to the order.
                 <a
                   key={inv.id}
                   href={`/admin/orders/${order.orderNumber}/invoice`}
                   className="flex min-h-11 items-center text-sm underline"
-                  target="_blank"
-                  rel="noreferrer"
                 >
                   invoice {inv.financialYear}/{inv.number} PDF
                 </a>

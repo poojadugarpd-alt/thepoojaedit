@@ -3,6 +3,15 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { PrismaClient } from "../../src/generated/prisma";
+import { openOperationalTask } from "../../src/server/events/operational-tasks";
+import {
+  getNotificationPreference,
+  isPushConfigured,
+  sendAdminPush,
+  subscribeAdminPush,
+  unsubscribeAdminPush,
+  updateNotificationPreference,
+} from "../../src/server/notifications/push";
 import {
   applyDeliveryCallback,
   notifyForDomainEvent,
@@ -295,5 +304,99 @@ describe("event → notification mapping (AC-07/14)", () => {
     const statuses = res.results.map((r) => r.status);
     expect(statuses).toContain("skipped"); // email (no address)
     expect(statuses.filter((s) => s === "sent").length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// Admin PWA Stage 4 — Web Push. VAPID keys are unset in this test env
+// (vitest.integration.config.mts doesn't forward them), so `isPushConfigured()`
+// is false throughout and `sendAdminPush` always short-circuits before ever
+// calling the real web-push library against a fixture endpoint — this suite
+// proves the DB-facing plumbing (subscribe/preference/dedupe wiring), not
+// delivery itself.
+describe("admin push subscriptions + preferences", () => {
+  async function seedAdmin() {
+    return db.adminUser.create({
+      data: { authUserId: randomUUID(), email: `${randomUUID()}@x.com`, role: "OWNER" },
+    });
+  }
+
+  it("VAPID is not configured in the test environment", () => {
+    expect(isPushConfigured()).toBe(false);
+  });
+
+  it("subscribing twice on the same endpoint upserts, not duplicates", async () => {
+    const admin = await seedAdmin();
+    const endpoint = `https://push.example/${randomUUID()}`;
+    await subscribeAdminPush(db, {
+      adminUserId: admin.id,
+      subscription: { endpoint, keys: { p256dh: "p1", auth: "a1" } },
+    });
+    await subscribeAdminPush(db, {
+      adminUserId: admin.id,
+      subscription: { endpoint, keys: { p256dh: "p2", auth: "a2" } },
+    });
+    const rows = await db.adminPushSubscription.findMany({ where: { endpoint } });
+    expect(rows).toHaveLength(1);
+  });
+
+  it("unsubscribe removes the row", async () => {
+    const admin = await seedAdmin();
+    const endpoint = `https://push.example/${randomUUID()}`;
+    await subscribeAdminPush(db, {
+      adminUserId: admin.id,
+      subscription: { endpoint, keys: { p256dh: "p", auth: "a" } },
+    });
+    await unsubscribeAdminPush(db, endpoint);
+    expect(await db.adminPushSubscription.count({ where: { endpoint } })).toBe(0);
+  });
+
+  it("preference defaults to all-on, lazily created on first read", async () => {
+    const admin = await seedAdmin();
+    expect(await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } })).toBe(
+      0,
+    );
+    const pref = await getNotificationPreference(db, admin.id);
+    expect(pref.lowStock).toBe(true);
+    expect(pref.newPaidOrder).toBe(true);
+    expect(await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } })).toBe(
+      1,
+    );
+  });
+
+  it("updating a preference persists and leaves others untouched", async () => {
+    const admin = await seedAdmin();
+    await getNotificationPreference(db, admin.id); // lazily create the row
+    await updateNotificationPreference(db, admin.id, { lowStock: false });
+    const pref = await getNotificationPreference(db, admin.id);
+    expect(pref.lowStock).toBe(false);
+    expect(pref.shipmentFailure).toBe(true);
+  });
+
+  it("sendAdminPush is a documented no-op when VAPID is unconfigured", async () => {
+    const admin = await seedAdmin();
+    await subscribeAdminPush(db, {
+      adminUserId: admin.id,
+      subscription: { endpoint: `https://push.example/${randomUUID()}`, keys: { p256dh: "p", auth: "a" } },
+    });
+    const outcome = await sendAdminPush(db, {
+      dedupeKey: `test:${randomUUID()}`,
+      preferenceField: "lowStock",
+      title: "t",
+      body: "b",
+    });
+    expect(outcome).toEqual({ attempted: false, sent: 0, pruned: 0 });
+  });
+
+  it("openOperationalTask never throws when push is unconfigured (LOW_STOCK path)", async () => {
+    await expect(
+      openOperationalTask(db, {
+        dedupeKey: `low-stock:${randomUUID()}`,
+        type: "LOW_STOCK",
+        entityType: "ProductVariant",
+        entityId: randomUUID(),
+        priority: 3,
+        reason: "available 0 ≤ threshold 2",
+      }),
+    ).resolves.toMatchObject({ status: "OPEN" });
   });
 });

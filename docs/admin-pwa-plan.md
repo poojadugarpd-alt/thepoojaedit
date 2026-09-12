@@ -97,9 +97,18 @@ model AdminNotificationPreference {
 ```
 
 One subscription row per device (a phone re-subscribing gets a new `endpoint`, old
-rows are pruned on 404/410 from the push service or on logout — brief §7a). One
-preference row per admin, defaulting all-on so existing behaviour (get everything)
-holds until someone opens Settings and turns something off.
+rows are pruned on 404/410 from the push service). One preference row per admin,
+defaulting all-on so existing behaviour (get everything) holds until someone opens
+Settings and turns something off.
+
+**Built in Stage 4, one change from this plan**: pruning "on logout" (as originally
+sketched above) is deliberately NOT implemented — a push subscription is a
+per-device thing, not a per-session one. Signing out and back in on the same phone
+should not require re-enabling push; the subscription is scoped to the admin's
+account (cascades on `AdminUser` delete) and stays live across sign-in/out. The
+only two ways a subscription goes away are the push service reporting it gone
+(404/410, handled automatically by `sendAdminPush`) or the admin explicitly
+turning it off in Settings.
 
 Migration file: `prisma/migrations/<timestamp>_admin_push/migration.sql`, reviewed
 before applying, applied to local embedded Postgres first (`npm run db:migrate`),

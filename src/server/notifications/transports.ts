@@ -4,6 +4,8 @@ import type { PrismaClient } from "@/generated/prisma";
 import { env } from "@/lib/env";
 import { publicEnv } from "@/lib/public-env";
 
+import { sendAdminPush, type PushPreferenceField } from "./push";
+
 /**
  * Notification transports (master §8). Each returns a provider message id on
  * acceptance — which is NOT proof of delivery; only a status callback advances a
@@ -125,6 +127,17 @@ export function metaWhatsAppTransport(): WhatsAppTransport {
   };
 }
 
+// Only the two "good/needs-a-reply-soon" in-app types that have no
+// corresponding OperationalTask push it to a phone (admin PWA Stage 4) — the
+// NDR / shipment-failure / low-stock / payment-review / job-failure
+// categories are pushed from `openOperationalTask` instead (below), from the
+// same real occurrence that also opens the task. Pushing from both places
+// would double-notify the same event.
+const IN_APP_PUSH_PREFERENCE: Partial<Record<string, PushPreferenceField>> = {
+  NEW_ORDER: "newPaidOrder",
+  PENDING_COD: "codConfirmation",
+};
+
 // ── always-on: in-app admin notifications ─────────────────────────────────
 export function dbInAppTransport(db: PrismaClient): InAppTransport {
   return {
@@ -139,6 +152,21 @@ export function dbInAppTransport(db: PrismaClient): InAppTransport {
           priority: msg.priority,
         },
       });
+
+      const preferenceField = IN_APP_PUSH_PREFERENCE[msg.type];
+      if (preferenceField) {
+        // The in-app row above is already committed — a push hiccup (a DB
+        // blip inside sendAdminPush, say) must never turn a successful
+        // in-app delivery into a reported failure.
+        await sendAdminPush(db, {
+          dedupeKey: `admin-notification:${row.id}`,
+          preferenceField,
+          title: msg.title,
+          body: msg.message,
+          path: msg.entityType === "Order" ? `/admin/orders?q=${msg.entityId}` : "/admin",
+        }).catch(() => {});
+      }
+
       return { providerMessageId: row.id };
     },
   };

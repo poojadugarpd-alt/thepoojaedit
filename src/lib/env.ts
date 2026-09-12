@@ -75,6 +75,15 @@ const ServerEnvSchema = z
     INNGEST_EVENT_KEY: optionalNonEmpty,
     INNGEST_SIGNING_KEY: optionalNonEmpty,
 
+    // ── Web Push (admin PWA Stage 4) — self-generated VAPID keypair, no
+    // external account/signup needed, unlike every other provider above.
+    VAPID_PRIVATE_KEY: optionalNonEmpty.describe(
+      "Server-only half of the VAPID keypair that signs push messages. Generated once with web-push's generateVAPIDKeys(), never sent to the browser.",
+    ),
+    VAPID_SUBJECT: optionalNonEmpty.describe(
+      "mailto: address or https: URL identifying the sender, required by the Web Push protocol (RFC 8292).",
+    ),
+
     // ── Instagram strip (Behold.so JSON feed) — optional ────────────────
     BEHOLD_FEED_ID: optionalNonEmpty.describe(
       "Behold.so feed id (feeds.behold.so/<id>). When unset or unreachable the homepage falls back to a curated product strip.",

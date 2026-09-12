@@ -35,6 +35,13 @@ const PublicEnvSchema = z.object({
     .min(1)
     .optional()
     .describe("Razorpay key id (test or live). Wired in Phase 7."),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Public half of the VAPID keypair — passed to pushManager.subscribe() as the applicationServerKey. Admin PWA Stage 4.",
+    ),
 });
 
 const parsed = PublicEnvSchema.safeParse({
@@ -44,6 +51,7 @@ const parsed = PublicEnvSchema.safeParse({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
 });
 
 if (!parsed.success) {

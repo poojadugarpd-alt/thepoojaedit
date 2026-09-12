@@ -25,7 +25,7 @@ const ITEMS = [
 export default function AdminMorePage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">More</h1>
+      <h1 className="text-xl font-semibold text-ink-strong">More</h1>
 
       <ul className="divide-y divide-line rounded-[10px] border border-line">
         {ITEMS.map((item) => (
