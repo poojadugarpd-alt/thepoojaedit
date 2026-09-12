@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 import { AnnouncementTicker } from "@/components/announcement-ticker";
 import { EnvironmentBanner } from "@/components/environment-banner";
+import { RouteChrome } from "@/components/route-chrome";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SkipLink } from "@/components/skip-link";
@@ -36,13 +37,19 @@ export default function RootLayout({
         className={`${inter.variable} flex min-h-dvh flex-col antialiased`}
       >
         <SkipLink />
-        <EnvironmentBanner />
-        <AnnouncementTicker />
-        <SiteHeader />
+        <RouteChrome
+          storefront={
+            <>
+              <EnvironmentBanner />
+              <AnnouncementTicker />
+              <SiteHeader />
+            </>
+          }
+        />
         <main id="main-content" className="flex-1 focus:outline-none" tabIndex={-1}>
           {children}
         </main>
-        <SiteFooter />
+        <RouteChrome storefront={<SiteFooter />} />
       </body>
     </html>
   );
