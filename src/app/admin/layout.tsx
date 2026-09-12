@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 
 import { MobileNav } from "@/features/admin/mobile-nav";
+import { RegisterServiceWorker } from "@/features/admin/register-sw";
 import { APP_ENV, APP_ENV_LABEL } from "@/lib/app-env";
 import { AuthenticationError, AuthorizationError } from "@/server/auth/errors";
 import { requireAdmin } from "@/server/auth/require-admin";
@@ -9,7 +10,29 @@ import { requireAdmin } from "@/server/auth/require-admin";
 export const metadata: Metadata = {
   title: { default: "Admin", template: "%s · Admin · The Pooja Edit" },
   robots: { index: false, follow: false },
-  // manifest + appleWebApp land in Stage 3 (installable PWA) — not yet.
+  // NOT `manifest: "/admin/manifest.webmanifest"` here — empirically, Next
+  // only honours the `manifest` metadata field from the ROOT layout; a
+  // child segment's own value is silently dropped (unlike every other
+  // field, which does override per segment — `icons` below proves that).
+  // The admin manifest link is rendered directly as JSX further down
+  // instead, which React 19 hoists into <head> on its own.
+  //
+  // `icons.apple` is set explicitly rather than relying on the `apple-icon.png`
+  // file-naming convention: that convention does NOT reliably override per
+  // segment (verified empirically — a src/app/admin/apple-icon.png produced
+  // its own static route but the /admin page's rendered <head> still linked
+  // the root icon). WebKit gives apple-touch-icon precedence over the
+  // manifest's own icons (webkit.org/blog/13878), so this is the
+  // load-bearing icon for "Add to Home Screen" on iOS, not the manifest.
+  icons: {
+    icon: "/brand/admin-icon-512.png",
+    apple: "/brand/admin-apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Pooja Admin",
+  },
 };
 
 // viewport-fit=cover so env(safe-area-inset-*) resolves under the iPhone home
@@ -18,6 +41,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Matches the fixed top bar's bg-ground (#ffffff) — iOS colours the status
+  // bar / task switcher chrome from this, not from the manifest's
+  // background_color, once running standalone.
+  themeColor: "#ffffff",
 };
 
 const NAV = [
@@ -35,6 +62,11 @@ const NAV = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // React 19 hoists a <link> rendered anywhere in the tree into <head> —
+  // this is how /admin gets its own manifest link (see the `metadata`
+  // comment above for why the Metadata API's `manifest` field can't do it).
+  const adminManifestLink = <link rel="manifest" href="/admin/manifest.webmanifest" />;
+
   let adminEmail: string;
   try {
     adminEmail = (await requireAdmin()).email;
@@ -42,6 +74,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     const denied = e instanceof AuthenticationError || e instanceof AuthorizationError;
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        {adminManifestLink}
         <h1 className="text-xl font-semibold">Admin access required</h1>
         <p className="mt-3 text-sm text-ink-soft">
           {denied
@@ -62,6 +95,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="mx-auto flex max-w-6xl gap-8 px-4 py-4 sm:py-8">
+      {adminManifestLink}
       {/* Mobile top bar — brand + env only; navigation is the bottom tab bar. */}
       <div className="u-safe-top fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-line bg-ground px-4 py-3 sm:hidden">
         <div>
@@ -115,6 +149,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="min-w-0 flex-1 pt-14 pb-20 sm:pt-0 sm:pb-0">{children}</main>
 
       <MobileNav />
+      <RegisterServiceWorker />
     </div>
   );
 }
