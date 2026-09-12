@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { prisma } from "@/lib/db";
 import { money } from "@/features/admin/format";
+import { timed } from "@/lib/perf";
 import { getOverview } from "@/server/analytics";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ const TYPE_HREF: Record<string, string> = {
 };
 
 export default async function AdminOverview() {
-  const o = await getOverview(prisma);
+  const o = await timed("admin:overview", () => getOverview(prisma));
   const f = o.financial;
 
   return (

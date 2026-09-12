@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { ActionForm } from "@/features/admin/action-form";
 import { ts } from "@/features/admin/format";
+import { timed } from "@/lib/perf";
 import { listVariantLedger } from "@/server/inventory/adjust";
 
 import { adjustStockAction } from "./actions";
@@ -14,21 +15,28 @@ type SP = Promise<{ q?: string; variant?: string }>;
 
 export default async function AdminInventoryPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
-  const variants = await prisma.productVariant.findMany({
-    where: sp.q
-      ? {
-          OR: [
-            { sku: { contains: sp.q, mode: "insensitive" } },
-            { product: { title: { contains: sp.q, mode: "insensitive" } } },
-          ],
-        }
-      : undefined,
-    orderBy: [{ product: { title: "asc" } }, { sku: "asc" }],
-    take: 60,
-    include: { product: { select: { title: true, catalog: true } } },
-  });
-
-  const ledger = sp.variant ? await listVariantLedger(prisma, sp.variant, 40) : [];
+  // Fixed waterfall (speed audit, 2026-09-13): the ledger only needs
+  // `sp.variant` from the URL, never the variant list's own result, so the
+  // two queries were independent — the previous sequential await cost a
+  // whole extra Tokyo round trip on every ledger view for nothing.
+  const [variants, ledger] = await timed("admin:inventory", () =>
+    Promise.all([
+      prisma.productVariant.findMany({
+        where: sp.q
+          ? {
+              OR: [
+                { sku: { contains: sp.q, mode: "insensitive" } },
+                { product: { title: { contains: sp.q, mode: "insensitive" } } },
+              ],
+            }
+          : undefined,
+        orderBy: [{ product: { title: "asc" } }, { sku: "asc" }],
+        take: 60,
+        include: { product: { select: { title: true, catalog: true } } },
+      }),
+      sp.variant ? listVariantLedger(prisma, sp.variant, 40) : Promise.resolve([]),
+    ]),
+  );
   const ledgerFor = variants.find((v) => v.id === sp.variant);
 
   return (

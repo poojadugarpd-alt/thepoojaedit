@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { ActionForm } from "@/features/admin/action-form";
 import { money, Pill, ts } from "@/features/admin/format";
+import { timed } from "@/lib/perf";
 import { getAdminOrder, listActivity } from "@/server/admin";
 import { isShippingConfigured } from "@/server/shipping";
 
@@ -27,14 +28,19 @@ export default async function AdminOrderDetail({
   params: Promise<{ orderNumber: string }>;
 }) {
   const { orderNumber } = await params;
-  const order = await getAdminOrder(prisma, orderNumber);
+  const order = await timed("admin:order-detail (main)", () =>
+    getAdminOrder(prisma, orderNumber),
+  );
   if (!order) notFound();
 
-  const activity = await listActivity(prisma, {
-    entityType: "Order",
-    entityId: order.id,
-    limit: 20,
-  });
+  // Genuinely sequential, not a fixable waterfall: activity is keyed by
+  // order.id (the UUID), which only exists once the order itself resolves —
+  // there is no cheaper way to learn it first. Measured and reported as its
+  // own step rather than folded into the query above, so the report shows
+  // it honestly instead of hiding it inside one bracket.
+  const activity = await timed("admin:order-detail (activity, depends on order.id)", () =>
+    listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
+  );
   const shipment = order.shipments[0];
   const hidden = <input type="hidden" name="orderNumber" value={order.orderNumber} />;
   const capturedPaise = order.paymentAttempts

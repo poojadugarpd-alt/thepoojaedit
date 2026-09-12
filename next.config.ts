@@ -13,6 +13,20 @@ const nextConfig: NextConfig = {
   // `pino` / `pino-pretty` are Node libraries — don't try to bundle them.
   serverExternalPackages: ["pino", "pino-pretty"],
 
+  // Speed audit (2026-09-13): every admin route is `force-dynamic`, which
+  // defaults the client Router Cache's `dynamic` staleTime to 0 — tapping
+  // "back" to a list you just came from refetches it from Tokyo every time,
+  // even with nothing changed. 30s lets a plain back-navigation reuse what's
+  // already in memory instead. This is NOT a staleness risk for a real
+  // change: every mutating admin action already calls `revalidatePath`,
+  // which invalidates this same cache immediately — a save/refund/status
+  // change is visible instantly regardless of this window. Storefront pages
+  // are unaffected (this key has no `static` override, so that default is
+  // untouched).
+  experimental: {
+    staleTimes: { dynamic: 30 },
+  },
+
   // Bounded image hosts (master §9). The Supabase Storage host is added when a
   // project exists. The three below are the legacy source CDNs, used only by the
   // migration-draft dev dataset (migration/scripts/import-to-dev-db.mjs) so the

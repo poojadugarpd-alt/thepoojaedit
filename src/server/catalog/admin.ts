@@ -56,30 +56,42 @@ export async function listAdminProducts(
       : {}),
   };
   const take = Math.min(Math.max(opts.take ?? 30, 1), 100);
-  const [rows, total] = await Promise.all([
-    db.product.findMany({
-      where,
-      orderBy: [{ updatedAt: "desc" }],
-      skip: opts.skip ?? 0,
-      take,
-      include: {
-        _count: { select: { variants: true, images: true } },
-        variants: { select: { pricePaise: true, onHandQty: true, reservedQty: true } },
+  // Speed audit (2026-09-13): a single query, over-fetching by one row to
+  // learn "is there a next page" cheaply — no separate `db.product.count()`.
+  // The exact total was only ever used to draw "Page X of Y"; the UI now
+  // shows "Page X" with Previous/Next instead, so nothing needs it. Also
+  // dropped `_count.select.variants` (redundant — `variants.length` is the
+  // same number, from data already being fetched) and fetches only the
+  // primary image (one row, not the full gallery) for the list thumbnail.
+  const rows = await db.product.findMany({
+    where,
+    orderBy: [{ updatedAt: "desc" }],
+    skip: opts.skip ?? 0,
+    take: take + 1,
+    include: {
+      _count: { select: { images: true } },
+      variants: { select: { pricePaise: true, onHandQty: true, reservedQty: true } },
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { publicUrl: true, altText: true },
       },
-    }),
-    db.product.count({ where }),
-  ]);
+    },
+  });
+  const hasMore = rows.length > take;
+  const page = hasMore ? rows.slice(0, take) : rows;
   return {
-    total,
+    hasMore,
     take,
-    items: rows.map((p) => ({
+    items: page.map((p) => ({
       id: p.id,
       catalog: p.catalog,
       slug: p.slug,
       title: p.title,
       status: p.status,
-      variantCount: p._count.variants,
+      variantCount: p.variants.length,
       imageCount: p._count.images,
+      primaryImage: p.images[0] ?? null,
       fromPricePaise: p.variants.length
         ? Math.min(...p.variants.map((v) => v.pricePaise))
         : null,

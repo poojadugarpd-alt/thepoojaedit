@@ -18,17 +18,48 @@ import { requireEnv } from "./env";
 function createPrismaClient(): PrismaClient {
   const adapter = new PrismaPg({
     connectionString: requireEnv("DATABASE_URL"),
-    max: 5,
+    // Raised from 5 (speed audit, 2026-09-13): a single admin page can fan
+    // out past 5 queries in one request (the order-detail page's
+    // findUnique+include measured 18) — with a 5-connection ceiling, the
+    // extras queue for a free connection instead of running concurrently,
+    // each queued query then also paying a full Tokyo round trip serially.
+    // 10 is a conservative bump, well under what Supabase's free-tier
+    // Supavisor transaction-pooler allows per project; worth watching the
+    // pooler's connection-count graph after this change, not assumed safe
+    // forever if traffic grows.
+    max: 10,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,
     // Supavisor's transaction pooler does not support session-level prepared
     // statements; the pg adapter uses unnamed statements, which is compatible.
   });
 
-  return new PrismaClient({
+  const dev = process.env.NODE_ENV === "development";
+  const client = new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    log: dev
+      ? [{ emit: "event", level: "query" }, "warn", "error"]
+      : ["error"],
   });
+
+  // Dev-only query-timing log (admin speed audit, 2026-09-13) — one line per
+  // round trip to Postgres, so bracketing a page's data-fetch with
+  // `timed()` (src/lib/perf.ts) shows both the count and each query's own
+  // duration in between. Never attached outside development; adds no
+  // overhead and no PII exposure in production.
+  if (dev) {
+    // Prisma 7's generated types don't include the event-emitter overloads
+    // for the driver-adapter client; the event shape itself is unchanged.
+    (client as unknown as { $on(event: "query", cb: (e: { query: string; duration: number }) => void): void }).$on(
+      "query",
+      (e) => {
+        const compact = e.query.replace(/\s+/g, " ").slice(0, 100);
+        console.log(`  ↳ ${e.duration}ms  ${compact}`);
+      },
+    );
+  }
+
+  return client;
 }
 
 const globalForPrisma = globalThis as unknown as {

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { formatPaiseINR } from "@/lib/money";
@@ -6,9 +7,36 @@ import type { CatalogType } from "@/lib/catalog-routes";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { Pill } from "@/features/admin/format";
 import { Sheet } from "@/features/admin/sheet";
+import { timed } from "@/lib/perf";
 import { listAdminProducts, type ProductStatusFilter } from "@/server/catalog/admin";
 
 const STATUSES: ProductStatusFilter[] = ["ALL", "DRAFT", "PUBLISHED", "ARCHIVED"];
+
+// 56px, 4:5 — small enough to be free, big enough to recognize the item at a
+// glance. A flat line-colour square stands in when a product has no primary
+// image yet, rather than a broken/empty <img>.
+function Thumb({ url, alt }: { url: string | null; alt: string }) {
+  if (!url) {
+    return (
+      <div
+        aria-hidden="true"
+        className="h-14 w-[45px] shrink-0 rounded bg-fill"
+      />
+    );
+  }
+  return (
+    <div className="relative h-14 w-[45px] shrink-0 overflow-hidden rounded bg-fill">
+      <Image
+        src={url}
+        alt={alt}
+        fill
+        sizes="45px"
+        loading="lazy"
+        className="object-cover"
+      />
+    </div>
+  );
+}
 
 export default async function AdminProducts({
   searchParams,
@@ -32,14 +60,11 @@ export default async function AdminProducts({
   const page = Math.max(1, Number(sp.page) || 1);
   const take = 30;
 
-  const { items, total } = await listAdminProducts(prisma, {
-    catalog,
-    status,
-    q,
-    skip: (page - 1) * take,
-    take,
-  });
-  const pages = Math.ceil(total / take);
+  // No exact COUNT — the only past use for it was "Page X of Y"; Previous /
+  // Next (shown only when there's really another page) needs just `hasMore`.
+  const { items, hasMore } = await timed("admin:products-list", () =>
+    listAdminProducts(prisma, { catalog, status, q, skip: (page - 1) * take, take }),
+  );
 
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
@@ -106,7 +131,7 @@ export default async function AdminProducts({
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold text-ink-strong">Products ({total})</h1>
+        <h1 className="text-xl font-semibold text-ink-strong">Products</h1>
         <Link
           href="/admin/products/new"
           className="flex min-h-11 items-center rounded bg-foreground px-3 text-sm font-semibold text-background"
@@ -142,36 +167,39 @@ export default async function AdminProducts({
       <ul className="mt-4 space-y-2 sm:hidden">
         {items.map((p) => (
           <li key={p.id} className="rounded border border-line p-3">
-            <Link href={`/admin/products/${p.id}`} className="block">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-ink-strong">{p.title}</p>
-                  <p className="text-[11px] text-ink-soft">
-                    {CATALOG_LABEL[p.catalog]} · {p.slug}
-                  </p>
+            <Link href={`/admin/products/${p.id}`} className="flex gap-3">
+              <Thumb url={p.primaryImage?.publicUrl ?? null} alt={p.primaryImage?.altText ?? ""} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-ink-strong">{p.title}</p>
+                    <p className="text-[11px] text-ink-soft">
+                      {CATALOG_LABEL[p.catalog]} · {p.slug}
+                    </p>
+                  </div>
+                  <Pill value={p.status} />
                 </div>
-                <Pill value={p.status} />
+                <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
+                  <div>
+                    <dt className="inline">Variants </dt>
+                    <dd className="inline font-medium text-ink">{p.variantCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline">Images </dt>
+                    <dd className="inline font-medium text-ink">{p.imageCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline">From </dt>
+                    <dd className="inline font-medium text-ink">
+                      {p.fromPricePaise != null ? formatPaiseINR(p.fromPricePaise) : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="inline">Avail. </dt>
+                    <dd className="inline font-medium text-ink">{p.available}</dd>
+                  </div>
+                </dl>
               </div>
-              <dl className="mt-2 flex gap-4 text-xs text-ink-soft">
-                <div>
-                  <dt className="inline">Variants </dt>
-                  <dd className="inline font-medium text-ink">{p.variantCount}</dd>
-                </div>
-                <div>
-                  <dt className="inline">Images </dt>
-                  <dd className="inline font-medium text-ink">{p.imageCount}</dd>
-                </div>
-                <div>
-                  <dt className="inline">From </dt>
-                  <dd className="inline font-medium text-ink">
-                    {p.fromPricePaise != null ? formatPaiseINR(p.fromPricePaise) : "—"}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="inline">Avail. </dt>
-                  <dd className="inline font-medium text-ink">{p.available}</dd>
-                </div>
-              </dl>
             </Link>
           </li>
         ))}
@@ -184,6 +212,7 @@ export default async function AdminProducts({
       <table className="mt-4 hidden w-full text-sm sm:table">
         <thead>
           <tr className="border-b border-line text-left">
+            <th className="py-2 font-medium" aria-label="Photo" />
             <th className="py-2 font-medium">Title</th>
             <th className="py-2 font-medium">Catalogue</th>
             <th className="py-2 font-medium">Status</th>
@@ -196,6 +225,14 @@ export default async function AdminProducts({
         <tbody>
           {items.map((p) => (
             <tr key={p.id} className="border-b border-line/60">
+              <td className="py-2 pr-2">
+                <Link href={`/admin/products/${p.id}`}>
+                  <Thumb
+                    url={p.primaryImage?.publicUrl ?? null}
+                    alt={p.primaryImage?.altText ?? ""}
+                  />
+                </Link>
+              </td>
               <td className="py-2">
                 <Link
                   href={`/admin/products/${p.id}`}
@@ -219,7 +256,7 @@ export default async function AdminProducts({
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={7} className="py-8 text-center text-ink-soft">
+              <td colSpan={8} className="py-8 text-center text-ink-soft">
                 No products match.
               </td>
             </tr>
@@ -227,7 +264,7 @@ export default async function AdminProducts({
         </tbody>
       </table>
 
-      {pages > 1 && (
+      {(page > 1 || hasMore) && (
         <div className="mt-4 flex items-center gap-3 text-sm">
           {page > 1 && (
             <Link
@@ -237,10 +274,8 @@ export default async function AdminProducts({
               ← Previous
             </Link>
           )}
-          <span className="text-ink-soft">
-            Page {page} of {pages}
-          </span>
-          {page < pages && (
+          <span className="text-ink-soft">Page {page}</span>
+          {hasMore && (
             <Link
               href={qs({ page: String(page + 1) })}
               className="flex min-h-11 items-center underline"

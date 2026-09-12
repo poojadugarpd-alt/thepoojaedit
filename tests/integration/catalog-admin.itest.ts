@@ -8,6 +8,7 @@ import {
   addProductToCollection,
   createCollection,
   createProduct,
+  listAdminProducts,
   publishProduct,
   updateProduct,
   upsertThriftDetails,
@@ -262,5 +263,70 @@ describe("collections never cross catalogues (AC-01)", () => {
     });
     expect(members).toHaveLength(1);
     expect(members[0].position).toBe(0);
+  });
+});
+
+// Speed audit (2026-09-13): listAdminProducts moved from an exact
+// db.product.count() to an over-fetch-by-one "hasMore" — this covers that
+// the cheaper pagination still reports boundaries correctly, and that the
+// list carries only the primary image (not the whole gallery).
+describe("listAdminProducts pagination + primary image (speed audit)", () => {
+  it("hasMore is false on the last page and true when there's another", async () => {
+    for (let i = 0; i < 3; i++) {
+      await createProduct(db, admin, {
+        catalog: "THE_POOJA_EDIT",
+        slug: `page-item-${i}`,
+        title: `Page item ${i}`,
+      });
+    }
+    const firstPage = await listAdminProducts(db, { take: 2, skip: 0 });
+    expect(firstPage.items).toHaveLength(2);
+    expect(firstPage.hasMore).toBe(true);
+
+    const secondPage = await listAdminProducts(db, { take: 2, skip: 2 });
+    expect(secondPage.items).toHaveLength(1);
+    expect(secondPage.hasMore).toBe(false);
+  });
+
+  it("carries only the primary image, and null when there is none", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      slug: "with-photo",
+      title: "With photo",
+    });
+    await db.productImage.createMany({
+      data: [
+        {
+          productId: p.id,
+          bucket: "product-images",
+          path: `${p.id}/gallery.jpg`,
+          publicUrl: "https://example.invalid/gallery.jpg",
+          altText: "gallery",
+          isPrimary: false,
+        },
+        {
+          productId: p.id,
+          bucket: "product-images",
+          path: `${p.id}/primary.jpg`,
+          publicUrl: "https://example.invalid/primary.jpg",
+          altText: "primary",
+          isPrimary: true,
+        },
+      ],
+    });
+    const { items } = await listAdminProducts(db, { q: "with-photo" });
+    expect(items[0].primaryImage).toEqual({
+      publicUrl: "https://example.invalid/primary.jpg",
+      altText: "primary",
+    });
+    expect(items[0].imageCount).toBe(2);
+
+    const bare = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      slug: "no-photo",
+      title: "No photo",
+    });
+    const { items: bareItems } = await listAdminProducts(db, { q: "no-photo" });
+    expect(bareItems.find((i) => i.id === bare.id)?.primaryImage).toBeNull();
   });
 });

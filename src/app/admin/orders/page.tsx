@@ -5,6 +5,7 @@ import { ActionForm } from "@/features/admin/action-form";
 import { money, Pill, ts } from "@/features/admin/format";
 import { Poll } from "@/features/admin/poll";
 import { Sheet } from "@/features/admin/sheet";
+import { timed } from "@/lib/perf";
 import { listOrders, orderStatusCounts } from "@/server/admin";
 
 import { checkServiceabilityAction } from "./actions";
@@ -34,10 +35,9 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     cursor: sp.cursor,
     limit: 25,
   };
-  const [page, counts] = await Promise.all([
-    listOrders(prisma, filter),
-    orderStatusCounts(prisma),
-  ]);
+  const [page, counts] = await timed("admin:orders-list", () =>
+    Promise.all([listOrders(prisma, filter), orderStatusCounts(prisma)]),
+  );
 
   const qs = (over: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
