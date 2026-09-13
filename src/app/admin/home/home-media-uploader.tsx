@@ -46,9 +46,15 @@ function uploadWithProgress(
 export function HomeMediaUploader({
   slot,
   currentKind,
+  emptyLabel = "Upload a photo or video",
+  revertLabel = "Use the automatic photo instead",
 }: {
   slot: HomeMediaSlotName;
   currentKind: "auto" | "image" | "video";
+  /** Button text when nothing custom is set yet. */
+  emptyLabel?: string;
+  /** Link text to clear a custom upload back to `"auto"`. */
+  revertLabel?: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -135,7 +141,7 @@ export function HomeMediaUploader({
             : status === "saving"
               ? "Saving…"
               : currentKind === "auto"
-                ? "Upload a photo or video"
+                ? emptyLabel
                 : "Replace"}
         </button>
         {currentKind !== "auto" && (
@@ -145,7 +151,7 @@ export function HomeMediaUploader({
             disabled={busy}
             className="min-h-11 text-sm text-ink-soft underline disabled:opacity-50"
           >
-            Use the automatic photo instead
+            {revertLabel}
           </button>
         )}
       </div>

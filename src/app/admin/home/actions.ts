@@ -159,7 +159,7 @@ export async function toggleHomeSectionAction(
 // written to `home.content`. Called directly from client JS (image-uploader
 // pattern), not a <form action>.
 
-export type HomeMediaSlotName = "editorial" | "labelBlock" | "closetBlock";
+export type HomeMediaSlotName = "editorial" | "editorialMobile" | "labelBlock" | "closetBlock";
 
 export type HomeMediaUploadTicketResult =
   | { ok: true; mediaId: string; bucket: string; path: string; signedUrl: string; token: string }

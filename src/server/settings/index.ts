@@ -152,14 +152,26 @@ export interface HomeMediaSlot {
   alt?: string;
 }
 
+/**
+ * `editorialMobile` is a phone-only override for the big image/video band
+ * (owner follow-up, 2026-09-13 — a video shot for the wide desktop band
+ * looks cropped, "even worse on mobile", since the band renders at a
+ * different aspect ratio below the `sm` breakpoint). `"auto"` here means
+ * something different from every other slot: not "pick a rail photo", but
+ * "no phone-specific override — show the desktop `editorial` asset,
+ * cropped for the phone shape", i.e. today's unchanged behaviour. Resolving
+ * it is `page.tsx`'s job (`resolveMobileOverride`), not `getHomeContent`'s.
+ */
 export interface HomeMedia {
   editorial: HomeMediaSlot;
+  editorialMobile: HomeMediaSlot;
   labelBlock: HomeMediaSlot;
   closetBlock: HomeMediaSlot;
 }
 
 export const DEFAULT_HOME_MEDIA: HomeMedia = {
   editorial: { kind: "auto" },
+  editorialMobile: { kind: "auto" },
   labelBlock: { kind: "auto" },
   closetBlock: { kind: "auto" },
 };
@@ -282,6 +294,7 @@ export async function getHomeContent(db: PrismaClient): Promise<HomeContent> {
     newsletter: merge(DEFAULT_HOME_CONTENT.newsletter, v?.newsletter),
     media: {
       editorial: mergeMediaSlot(DEFAULT_HOME_MEDIA.editorial, v?.media?.editorial),
+      editorialMobile: mergeMediaSlot(DEFAULT_HOME_MEDIA.editorialMobile, v?.media?.editorialMobile),
       labelBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.labelBlock, v?.media?.labelBlock),
       closetBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.closetBlock, v?.media?.closetBlock),
     },

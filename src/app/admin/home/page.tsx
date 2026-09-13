@@ -141,8 +141,42 @@ export default async function AdminHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
             Big image
           </h2>
-          <HomeMediaPreview slot={c.media.editorial} />
-          <HomeMediaUploader slot="editorial" currentKind={c.media.editorial.kind} />
+          <p className="text-xs text-ink-soft">
+            This band changes shape by screen size — wide on a laptop, tall on a
+            phone — so one photo or video rarely frames perfectly on both. Upload
+            the desktop version below; add a phone-specific version underneath it
+            only if the crop cuts off something important.
+          </p>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-ink-strong">
+              Desktop / default — shoot or crop to <strong>16:9</strong> (e.g. 1920×1080px).
+              This is what every visitor sees unless a phone-specific version is set below.
+            </p>
+            <HomeMediaPreview slot={c.media.editorial} aspectClassName="aspect-[16/9]" />
+            <HomeMediaUploader slot="editorial" currentKind={c.media.editorial.kind} />
+          </div>
+
+          <div className="space-y-2 border-t border-line pt-3">
+            <p className="text-xs font-medium text-ink-strong">
+              Phone version (optional) — shoot or crop to <strong>4:5</strong> (e.g.
+              1080×1350px, the same ratio Instagram uses for a portrait post).
+            </p>
+            <HomeMediaPreview
+              slot={c.media.editorialMobile}
+              aspectClassName="aspect-[4/5]"
+              autoText="No phone-specific version — phones show the desktop photo/video
+                above, cropped to fit. Upload one below only if that crop loses
+                something you need visible."
+            />
+            <HomeMediaUploader
+              slot="editorialMobile"
+              currentKind={c.media.editorialMobile.kind}
+              emptyLabel="Upload a phone version"
+              revertLabel="Remove — use the desktop version on phones too"
+            />
+          </div>
+
           <Field
             label="Link label under the photo"
             name="editorial.linkLabel"

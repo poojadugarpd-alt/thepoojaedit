@@ -89,6 +89,20 @@ function resolveMedia(
   return null;
 }
 
+/** `home.media.editorialMobile`'s own `"auto"` means "no phone-specific
+ * override" (not "pick a rail photo" — that's the desktop slot's job), so
+ * this resolves to `null` rather than falling back to anything: `null` here
+ * means the phone just shows the desktop asset, cropped, exactly as before
+ * this override existed (owner follow-up, 2026-09-13 — a video framed for
+ * the wide desktop band "looks cropped, even worse on mobile"). */
+function resolveMobileOverride(slot: HomeMediaSlot): ResolvedMedia {
+  if (slot.kind === "image" && slot.url) return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
+  if (slot.kind === "video" && slot.url) {
+    return { kind: "video", url: slot.url, posterUrl: slot.posterUrl, alt: slot.alt ?? "" };
+  }
+  return null;
+}
+
 /** Fills a fixed aspect-ratio box with either an image or an autoplaying,
  * muted, looping video — the one place this home page renders either. */
 function MediaFill({
@@ -168,6 +182,7 @@ export default async function HomePage() {
 
   const editAutoPick = pickImage(editItems);
   const editorial = resolveMedia(home.media.editorial, editAutoPick ?? pickImage(thriftItems));
+  const editorialMobile = resolveMobileOverride(home.media.editorialMobile);
   const skipSlug = editorial?.kind === "auto" ? editorial.product.slug : undefined;
   const labelMedia = resolveMedia(home.media.labelBlock, pickImage(editItems, skipSlug));
   const closetMedia = resolveMedia(home.media.closetBlock, pickImage(thriftItems, skipSlug));
@@ -194,14 +209,14 @@ export default async function HomePage() {
       <section key="editorial" className="u-page pb-4">
         {editorial.kind === "auto" ? (
           <Link href={productPath(editorial.product.catalog, editorial.product.slug)} className="group block">
-            <EditorialFrame media={editorial} />
+            <EditorialMedia editorial={editorial} mobile={editorialMobile} />
             <div className="mt-4 flex items-center justify-between gap-4">
               <p className="u-label">{editorial.product.title}</p>
               <span className="u-textlink">{home.editorial.linkLabel}</span>
             </div>
           </Link>
         ) : (
-          <EditorialFrame media={editorial} />
+          <EditorialMedia editorial={editorial} mobile={editorialMobile} />
         )}
       </section>
     ),
@@ -299,11 +314,51 @@ export default async function HomePage() {
   );
 }
 
-function EditorialFrame({ media }: { media: Exclude<ResolvedMedia, null> }) {
+function EditorialFrame({
+  media,
+  aspectClassName = "aspect-[4/5] sm:aspect-[16/9]",
+  sizes = "(max-width: 1440px) 100vw, 1440px",
+}: {
+  media: Exclude<ResolvedMedia, null>;
+  aspectClassName?: string;
+  sizes?: string;
+}) {
   return (
-    <div className="u-media relative aspect-[4/5] w-full sm:aspect-[16/10]">
-      <MediaFill media={media} priority sizes="(max-width: 1440px) 100vw, 1440px" />
+    <div className={`u-media relative w-full ${aspectClassName}`}>
+      <MediaFill media={media} priority sizes={sizes} />
     </div>
+  );
+}
+
+/**
+ * Renders one editorial band, or two — a phone-only one and a desktop-only
+ * one — when a phone-specific override is set. Two `<video>`s never both
+ * exist in the DOM at once outside that override, so a visitor with no
+ * override set still only ever downloads the single asset they need.
+ */
+function EditorialMedia({
+  editorial,
+  mobile,
+}: {
+  editorial: Exclude<ResolvedMedia, null>;
+  mobile: ResolvedMedia;
+}) {
+  if (!mobile) {
+    return <EditorialFrame media={editorial} />;
+  }
+  return (
+    <>
+      <div className="sm:hidden">
+        <EditorialFrame
+          media={mobile}
+          aspectClassName="aspect-[4/5]"
+          sizes="100vw"
+        />
+      </div>
+      <div className="hidden sm:block">
+        <EditorialFrame media={editorial} aspectClassName="aspect-[16/9]" />
+      </div>
+    </>
   );
 }
 
