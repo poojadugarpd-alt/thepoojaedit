@@ -15,8 +15,14 @@ values ('documents', 'documents', false)
 on conflict (id) do update set public = false;
 
 -- Helper: is the current auth user an active admin?
+-- SECURITY DEFINER is required: 01_lock_down_data_api.sql revokes all
+-- table privileges from `authenticated`, so this function must run with
+-- the definer's (owner's) privileges to read AdminUser itself, or every
+-- caller gets "permission denied for table AdminUser" the moment this
+-- runs inside an RLS check. search_path is pinned per Postgres's own
+-- guidance for SECURITY DEFINER functions, to prevent search-path hijack.
 create or replace function public.is_active_admin()
-returns boolean language sql stable as $$
+returns boolean language sql stable security definer set search_path = public, pg_temp as $$
   select exists (
     select 1 from public."AdminUser" a
     where a."authUserId" = auth.uid() and a."isActive"
