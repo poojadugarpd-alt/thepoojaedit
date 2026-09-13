@@ -14,6 +14,7 @@ import { CATALOG_LABEL, productPath } from "@/lib/catalog-routes";
 import { timed } from "@/lib/perf";
 import { publicEnv } from "@/lib/public-env";
 import { getAdminProduct, validateForPublication } from "@/server/catalog/admin";
+import { HOME_RAIL_SLUG } from "@/server/catalog/queries";
 
 import {
   deleteImageAction,
@@ -22,6 +23,7 @@ import {
   setPrimaryImageAction,
   statusAction,
   thriftDetailsAction,
+  toggleFeatureOnHomeAction,
   updateProductAction,
   upsertVariantAction,
 } from "../actions";
@@ -468,20 +470,46 @@ export default async function EditProduct({
       )}
 
       {/* ── Collections ── */}
-      {p.collections.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
-            Collections
-          </h2>
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+          Collections
+        </h2>
+        {p.collections.length > 0 && (
           <ul className="mt-2 text-sm text-ink-soft">
-            {p.collections.map((pc) => (
-              <li key={pc.collectionId}>
-                {pc.collection.name} {pc.collection.isActive ? "" : "(inactive)"}
-              </li>
-            ))}
+            {p.collections
+              .filter((pc) => !pc.collection.isInternal)
+              .map((pc) => (
+                <li key={pc.collectionId}>
+                  {pc.collection.name} {pc.collection.isActive ? "" : "(inactive)"}
+                </li>
+              ))}
           </ul>
-        </section>
-      )}
+        )}
+        {/* The one-tap shortcut for the home page rail (owner feedback,
+            2026-09-13, Part B4) — the /admin/collections screen is for
+            reordering several pieces at once; this is what she'll use most. */}
+        {(() => {
+          const homeSlug = HOME_RAIL_SLUG[p.catalog];
+          const membership = p.collections.find(
+            (pc) => pc.collection.slug === homeSlug && pc.collection.isInternal,
+          );
+          return (
+            <div className="mt-3">
+              <ActionForm
+                action={toggleFeatureOnHomeAction.bind(null, id, p.catalog)}
+                submitLabel={
+                  membership
+                    ? `Remove from home page (currently #${membership.position + 1})`
+                    : "Feature on home page"
+                }
+                compact
+              >
+                <span />
+              </ActionForm>
+            </div>
+          );
+        })()}
+      </section>
 
       {/* ── Delete — bottom of the screen, destructive styling, never in the
           list rows where it could be tapped by accident (owner feedback,

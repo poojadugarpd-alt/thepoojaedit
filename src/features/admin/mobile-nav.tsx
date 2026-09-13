@@ -28,6 +28,7 @@ const TABS = [
     match: (p: string) =>
       p.startsWith("/admin/more") ||
       p.startsWith("/admin/home") ||
+      p.startsWith("/admin/collections") ||
       p.startsWith("/admin/inventory") ||
       p.startsWith("/admin/returns") ||
       p.startsWith("/admin/customers") ||

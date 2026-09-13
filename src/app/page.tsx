@@ -5,7 +5,7 @@ import { InstagramStrip } from "@/features/instagram/instagram-strip";
 import { ProductRail } from "@/features/catalog/product-rail";
 import { productPath, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { prisma } from "@/lib/db";
-import { listProducts } from "@/server/catalog";
+import { getRailProducts } from "@/server/catalog";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
 import { DEFAULT_HOME_CONTENT, getHomeContent } from "@/server/settings";
 
@@ -18,10 +18,16 @@ const EMPTY_ITEMS: PublicProductCard[] = [];
  * database is provisioned) must never turn the landing page into a 500. The
  * guard is a `try`/`catch`, not `.catch()`, because a missing `DATABASE_URL`
  * throws synchronously the first time the Prisma client is touched.
+ *
+ * `getRailProducts` (owner feedback, 2026-09-13, Part B) reads Pooja's own
+ * ordering from the internal `home-label` / `home-closet` collection and
+ * falls back to today's "newest 12" behaviour when she hasn't curated one —
+ * the fallback lives inside that function, not here, so an empty rail and a
+ * not-yet-created one behave identically.
  */
 async function railItems(catalog: "THE_POOJA_EDIT" | "THRIFT") {
   try {
-    return (await listProducts({ catalog, sort: "newest", limit: 12 })).items;
+    return await getRailProducts(catalog);
   } catch {
     return EMPTY_ITEMS;
   }

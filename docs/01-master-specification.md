@@ -123,7 +123,7 @@ Required routes:
 
 The homepage must immediately offer two clear catalog entrances. Shared typography, navigation, and checkout keep the brand consistent; catalog-specific content provides distinction. A mixed cart is required, with catalog labels and catalog-specific return-policy disclosure per item.
 
-The homepage's own words (hero headline/lead, rail headings, edit-block copy, newsletter copy) are owner-editable from `/admin/home` — not hard-coded — via `StoreSettings` (`home.content`), so a wording change never requires a code edit or deploy (D-108).
+The homepage's own words (hero headline/lead, rail headings, edit-block copy, newsletter copy) and which products populate its two rails are owner-editable from `/admin/home` and `/admin/collections` respectively — not hard-coded — via `StoreSettings` (`home.content`) and two reserved, catalog-scoped `Collection` rows (`isInternal: true`), so wording and merchandising changes never require a code edit or deploy (D-108/D-109).
 
 The Pooja Edit supports sizes/colors, quantities, restocking, collections, size charts, and compare-at prices. Thrift detail pages prominently show condition, original brand, labelled size, recommended fit, exact measurements with units, fabric, alterations, flaws, and flaw images. Acquisition cost is admin-only. Default thrift pieces have one sellable variant and quantity at most one across the physical piece. Do not model size labels as independently sellable copies of that piece.
 
@@ -147,7 +147,7 @@ Implement real relations, foreign keys, indexes, timestamps, and database constr
 | ProductVariant | Product FK; unique SKU; size/color; price/compare-at paise; on-hand/reserved quantities; low-stock threshold; weight/dimensions with units; active flag. |
 | ProductImage | Product FK; bucket/path as canonical identifier; optional cached public URL; dimensions; alt text; sort position; primary flag; PRIMARY/GALLERY/DETAIL/FLAW type. |
 | Category | Optional catalog scope, slug/name, parent FK. Enforce shared-category slug uniqueness explicitly; nullable composite uniqueness alone is insufficient. |
-| Collection / ProductCollection | Catalog, unique catalog/slug, name, description, hero asset, active flag; join table unique product/collection with position. |
+| Collection / ProductCollection | Catalog, unique catalog/slug, name, description, hero asset, active flag, internal flag (drives a home-page rail rather than a public collection page); join table unique product/collection with position. |
 | InventoryReservation | Order and variant FKs; quantity; ACTIVE/CONVERTED/RELEASED/EXPIRED; expiry and terminal timestamp; unique logical reservation identity. |
 | InventoryTransaction | Variant, optional order/admin; event type; on-hand and reserved deltas; reason; idempotency key; timestamp. Immutable ledger. |
 | Order | Unique public order number; optional customer; contact snapshot; separate order/payment/fulfillment statuses; payment method; INR currency; source/UTMs; monetary totals; lifecycle timestamps; version for concurrency. |
@@ -276,6 +276,7 @@ Provide `/admin` overview and modules for orders, shipping, products, inventory,
 - Overview: sales/orders by catalog, mixed-order allocation by line, COD vs prepaid, refunds, low stock, and Needs Attention.
 - Orders: contact/address/item snapshots; three independent statuses; complete timeline; invoice; payment attempts; shipment; notes; guarded confirm/cancel/refund/return actions.
 - Products: separate catalog forms, drafts/publication, variants, imagery, collections, prices and tax class. Thrift defects/measurements are required for publication.
+- Collections: create/edit collections per catalogue, manage membership and manual order; two reserved, catalog-scoped collections drive the home page's two rails (owner-editable placement, no code change).
 - Inventory: available/on-hand/reserved, immutable adjustment history, reasoned corrections, low-stock alerts; no unrestricted quantity field that bypasses invariants.
 - Shipping: serviceability, create shipment, AWB/labels, tracking, NDR/RTO actions and COD remittance discrepancies.
 - Notifications/jobs: delivery attempts, failed operations, safe retries and resolution history.

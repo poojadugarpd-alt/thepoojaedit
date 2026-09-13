@@ -1,42 +1,15 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { formatPaiseINR } from "@/lib/money";
 import { prisma } from "@/lib/db";
 import type { CatalogType } from "@/lib/catalog-routes";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
-import { Pill } from "@/features/admin/format";
+import { Pill, Thumb } from "@/features/admin/format";
 import { Sheet } from "@/features/admin/sheet";
 import { timed } from "@/lib/perf";
 import { listAdminProducts, type ProductStatusFilter } from "@/server/catalog/admin";
 
 const STATUSES: ProductStatusFilter[] = ["ALL", "DRAFT", "PUBLISHED", "ARCHIVED"];
-
-// 56px, 4:5 — small enough to be free, big enough to recognize the item at a
-// glance. A flat line-colour square stands in when a product has no primary
-// image yet, rather than a broken/empty <img>.
-function Thumb({ url, alt }: { url: string | null; alt: string }) {
-  if (!url) {
-    return (
-      <div
-        aria-hidden="true"
-        className="h-14 w-[45px] shrink-0 rounded bg-fill"
-      />
-    );
-  }
-  return (
-    <div className="relative h-14 w-[45px] shrink-0 overflow-hidden rounded bg-fill">
-      <Image
-        src={url}
-        alt={alt}
-        fill
-        sizes="45px"
-        loading="lazy"
-        className="object-cover"
-      />
-    </div>
-  );
-}
 
 export default async function AdminProducts({
   searchParams,

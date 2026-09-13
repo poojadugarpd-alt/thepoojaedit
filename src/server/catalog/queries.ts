@@ -168,8 +168,11 @@ export async function listActiveCollections(
   db: PrismaClient,
   catalog: CatalogType,
 ): Promise<{ slug: string; name: string; description: string | null }[]> {
+  // isInternal collections (the home-page rails) are an admin merchandising
+  // tool, not a shoppable collection page — never listed here (owner
+  // feedback, 2026-09-13, Part B2).
   const rows = await db.collection.findMany({
-    where: { catalog, isActive: true },
+    where: { catalog, isActive: true, isInternal: false },
     orderBy: { name: "asc" },
     select: { slug: true, name: true, description: true },
   });
@@ -197,7 +200,9 @@ export async function getActiveCollection(
       },
     },
   });
-  if (!col || !col.isActive) return null;
+  // isInternal 404s here exactly like inactive/missing does — its slug is
+  // never meant to resolve as a public collection page.
+  if (!col || !col.isActive || col.isInternal) return null;
   return {
     slug: col.slug,
     name: col.name,
@@ -207,4 +212,42 @@ export async function getActiveCollection(
       .filter((p) => p.status === "PUBLISHED" && p.publishedAt != null)
       .map(toPublicCard),
   };
+}
+
+/** Slugs of the two internal, non-deletable collections that drive the home
+ * page rails — shared between the public read below and the admin service. */
+export const HOME_RAIL_SLUG: Record<CatalogType, string> = {
+  THE_POOJA_EDIT: "home-label",
+  THRIFT: "home-closet",
+};
+
+/**
+ * Home page rail (owner feedback, 2026-09-13, Part B) — the internal
+ * catalog-scoped collection `home-label` / `home-closet` gives Pooja manual
+ * control of the rail's order (`ProductCollection.position`) without her
+ * ever seeing the word "collection". An empty or not-yet-created rail falls
+ * back to today's behaviour: newest 12 published products in the catalogue.
+ */
+export async function getHomeRailProducts(
+  db: PrismaClient,
+  catalog: CatalogType,
+): Promise<PublicProductCard[]> {
+  const slug = HOME_RAIL_SLUG[catalog];
+  const col = await db.collection.findUnique({
+    where: { catalog_slug: { catalog, slug } },
+    select: { id: true },
+  });
+  if (col) {
+    const rows = await db.productCollection.findMany({
+      where: {
+        collectionId: col.id,
+        product: { status: "PUBLISHED", publishedAt: { not: null } },
+      },
+      orderBy: { position: "asc" },
+      take: 12,
+      include: { product: { include: CARD_INCLUDE } },
+    });
+    if (rows.length > 0) return rows.map((r) => toPublicCard(r.product));
+  }
+  return (await listPublishedProducts(db, { catalog, sort: "newest", limit: 12 })).items;
 }

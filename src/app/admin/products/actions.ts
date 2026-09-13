@@ -13,6 +13,7 @@ import {
   deleteProduct,
   publishProduct,
   setProductStatus,
+  toggleFeatureOnHomePage,
   updateProduct,
   upsertThriftDetails,
   upsertVariant,
@@ -134,6 +135,28 @@ export async function deleteProductAction(
   }
   revalidatePath("/admin/products");
   redirect("/admin/products");
+}
+
+// Every field this needs (productId, catalog) is bound at the call site —
+// nothing to read from the form, same shape as deleteProductAction above.
+/* eslint-disable @typescript-eslint/no-unused-vars */
+export async function toggleFeatureOnHomeAction(
+  productId: string,
+  catalog: CatalogType,
+  _prev: ActionState,
+  _form: FormData,
+): Promise<ActionState> {
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+  const admin = await requireAdmin();
+  try {
+    await toggleFeatureOnHomePage(prisma, admin, productId, catalog);
+  } catch (e) {
+    return handle(e);
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath("/admin/collections");
+  revalidatePath("/");
+  return { ok: true };
 }
 
 export async function upsertVariantAction(

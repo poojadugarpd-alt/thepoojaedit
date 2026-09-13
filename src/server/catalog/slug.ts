@@ -45,3 +45,24 @@ export async function generateUniqueSlug(
   }
   return candidate;
 }
+
+/** Same idea as `generateUniqueSlug`, against `Collection`'s own
+ * `[catalog, slug]` uniqueness — used by the admin "Create collection" form
+ * (owner feedback, 2026-09-13, Part B3) so a collection's slug is as
+ * invisible as a product's. */
+export async function generateUniqueCollectionSlug(
+  db: PrismaClient,
+  catalog: CatalogType,
+  name: string,
+): Promise<string> {
+  const base = slugify(name);
+  let candidate = base;
+  let suffix = 2;
+  while (
+    await db.collection.findUnique({ where: { catalog_slug: { catalog, slug: candidate } } })
+  ) {
+    candidate = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}

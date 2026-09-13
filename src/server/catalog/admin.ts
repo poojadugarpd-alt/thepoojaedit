@@ -12,8 +12,9 @@ import { Prisma } from "@/generated/prisma";
 import type { StoragePort } from "@/lib/storage";
 import { auditLog } from "@/server/admin/audit";
 
+import { HOME_RAIL_SLUG } from "./queries";
 import { generateClosetSku } from "./sku";
-import { generateUniqueSlug } from "./slug";
+import { generateUniqueCollectionSlug, generateUniqueSlug } from "./slug";
 
 /**
  * Catalog write operations (master §4, §10). Every function takes the acting
@@ -620,25 +621,39 @@ export async function createCollection(
   admin: AdminUser,
   input: {
     catalog: CatalogType;
-    slug: string;
+    /** Omit to auto-generate from `name` (owner feedback, 2026-09-13, Part
+     *  B3 — the "Create collection" form doesn't ask for one, matching
+     *  `createProduct`). Pass an explicit value only for scripted/seed
+     *  callers, including the two internal home-rail collections below. */
+    slug?: string;
     name: string;
     description?: string | null;
+    /** Never set from the admin "Create collection" form — only
+     * `ensureHomeCollections()` creates an internal collection. */
+    isInternal?: boolean;
   },
 ) {
-  assertSlug(input.slug);
-  const clash = await db.collection.findUnique({
-    where: { catalog_slug: { catalog: input.catalog, slug: input.slug } },
-    select: { id: true },
-  });
-  if (clash)
-    throw new ValidationError(`slug "${input.slug}" is taken in this catalogue.`);
+  let slug: string;
+  if (input.slug) {
+    assertSlug(input.slug);
+    const clash = await db.collection.findUnique({
+      where: { catalog_slug: { catalog: input.catalog, slug: input.slug } },
+      select: { id: true },
+    });
+    if (clash)
+      throw new ValidationError(`slug "${input.slug}" is taken in this catalogue.`);
+    slug = input.slug;
+  } else {
+    slug = await generateUniqueCollectionSlug(db, input.catalog, input.name);
+  }
   const col = await db.collection.create({
     data: {
       catalog: input.catalog,
-      slug: input.slug,
+      slug,
       name: input.name,
       description: input.description ?? null,
-      isActive: false,
+      isActive: input.isInternal ? true : false,
+      isInternal: input.isInternal ?? false,
     },
   });
   await auditLog(db, {
@@ -649,6 +664,38 @@ export async function createCollection(
     after: { catalog: col.catalog, slug: col.slug },
   });
   return col;
+}
+
+/**
+ * Idempotent — safe to call on every admin request that needs the home rails
+ * to exist (Part B2: "created on first load in production if absent"). Never
+ * called from the public home page itself: an absent collection there just
+ * means "fall back to newest", identical in effect to an empty one, so the
+ * storefront read path never needs to write.
+ */
+export async function ensureHomeCollections(
+  db: PrismaClient,
+  admin: AdminUser,
+): Promise<void> {
+  const specs: { catalog: CatalogType; name: string }[] = [
+    { catalog: "THE_POOJA_EDIT", name: "Home page — New in" },
+    { catalog: "THRIFT", name: "Home page — From the Closet" },
+  ];
+  for (const spec of specs) {
+    const slug = HOME_RAIL_SLUG[spec.catalog];
+    const exists = await db.collection.findUnique({
+      where: { catalog_slug: { catalog: spec.catalog, slug } },
+      select: { id: true },
+    });
+    if (!exists) {
+      await createCollection(db, admin, {
+        catalog: spec.catalog,
+        slug,
+        name: spec.name,
+        isInternal: true,
+      });
+    }
+  }
 }
 
 export async function setCollectionActive(
@@ -707,6 +754,24 @@ export async function addProductToCollection(
   });
 }
 
+/** Rewrites `position` for exactly these product IDs, in this order, to
+ * 0..n-1 in one transaction — the one place positions are ever written, so
+ * gaps and duplicates can't accumulate (owner feedback, 2026-09-13, Part B3). */
+async function normalizeCollectionPositions(
+  db: PrismaClient,
+  collectionId: string,
+  orderedProductIds: string[],
+): Promise<void> {
+  await db.$transaction(
+    orderedProductIds.map((productId, position) =>
+      db.productCollection.update({
+        where: { productId_collectionId: { productId, collectionId } },
+        data: { position },
+      }),
+    ),
+  );
+}
+
 export async function removeProductFromCollection(
   db: PrismaClient,
   admin: AdminUser,
@@ -714,11 +779,204 @@ export async function removeProductFromCollection(
   productId: string,
 ): Promise<void> {
   await db.productCollection.deleteMany({ where: { collectionId, productId } });
+  const remaining = await db.productCollection.findMany({
+    where: { collectionId },
+    orderBy: { position: "asc" },
+    select: { productId: true },
+  });
+  await normalizeCollectionPositions(
+    db,
+    collectionId,
+    remaining.map((r) => r.productId),
+  );
   await auditLog(db, {
     adminUserId: admin.id,
     action: "collection.removeProduct",
     entityType: "Collection",
     entityId: collectionId,
     after: { productId },
+  });
+}
+
+/** Swaps this product with its neighbour — the same up/down, swap-two-rows
+ * pattern as `reorderImageAction` (src/app/admin/products/actions.ts). No
+ * drag-and-drop library; these buttons work reliably on a phone. */
+export async function reorderCollectionProduct(
+  db: PrismaClient,
+  admin: AdminUser,
+  collectionId: string,
+  productId: string,
+  direction: "up" | "down",
+): Promise<void> {
+  const rows = await db.productCollection.findMany({
+    where: { collectionId },
+    orderBy: { position: "asc" },
+    select: { productId: true },
+  });
+  const ids = rows.map((r) => r.productId);
+  const idx = ids.indexOf(productId);
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= ids.length) return; // already at an end
+  [ids[idx], ids[swapIdx]] = [ids[swapIdx], ids[idx]];
+  await normalizeCollectionPositions(db, collectionId, ids);
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: "collection.products.update",
+    entityType: "Collection",
+    entityId: collectionId,
+    after: { reordered: productId, direction },
+  });
+}
+
+// ─────────────────────── Admin collections screens ───────────────────────
+
+export async function listCollectionsAdmin(db: PrismaClient) {
+  const rows = await db.collection.findMany({
+    orderBy: [{ isInternal: "desc" }, { catalog: "asc" }, { name: "asc" }],
+    include: { _count: { select: { products: true } } },
+  });
+  return rows.map((c) => ({
+    id: c.id,
+    catalog: c.catalog,
+    slug: c.slug,
+    name: c.name,
+    isActive: c.isActive,
+    isInternal: c.isInternal,
+    productCount: c._count.products,
+  }));
+}
+
+const COLLECTION_PRODUCT_SELECT = {
+  id: true,
+  title: true,
+  slug: true,
+  status: true,
+  publishedAt: true,
+  variants: { select: { pricePaise: true } },
+  images: {
+    where: { isPrimary: true },
+    take: 1,
+    select: { publicUrl: true, altText: true },
+  },
+} satisfies Prisma.ProductSelect;
+
+export async function getCollectionAdmin(db: PrismaClient, id: string) {
+  return db.collection.findUnique({
+    where: { id },
+    include: {
+      products: {
+        orderBy: { position: "asc" },
+        include: { product: { select: COLLECTION_PRODUCT_SELECT } },
+      },
+    },
+  });
+}
+
+export async function updateCollection(
+  db: PrismaClient,
+  admin: AdminUser,
+  id: string,
+  input: { name: string; description?: string | null; isActive?: boolean },
+): Promise<void> {
+  const existing = await db.collection.findUniqueOrThrow({ where: { id } });
+  const col = await db.collection.update({
+    where: { id },
+    data: {
+      name: input.name,
+      description: input.description ?? null,
+      // The active toggle is hidden on an internal collection's edit screen —
+      // its visibility is governed entirely by `isInternal`, never applied here.
+      ...(existing.isInternal ? {} : { isActive: input.isActive ?? existing.isActive }),
+    },
+  });
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: "collection.update",
+    entityType: "Collection",
+    entityId: id,
+    before: {
+      name: existing.name,
+      description: existing.description,
+      isActive: existing.isActive,
+    },
+    after: { name: col.name, description: col.description, isActive: col.isActive },
+  });
+}
+
+/** Published products in this collection's catalogue, not already a member —
+ * backs the "Add product" search box. */
+export async function searchAddableCollectionProducts(
+  db: PrismaClient,
+  collectionId: string,
+  catalog: CatalogType,
+  q: string,
+) {
+  const query = q.trim();
+  if (query.length < 2) return [];
+  const existing = await db.productCollection.findMany({
+    where: { collectionId },
+    select: { productId: true },
+  });
+  const excludeIds = existing.map((e) => e.productId);
+  return db.product.findMany({
+    where: {
+      catalog,
+      status: "PUBLISHED",
+      publishedAt: { not: null },
+      ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { slug: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    orderBy: { title: "asc" },
+    take: 10,
+    select: {
+      id: true,
+      title: true,
+      images: { where: { isPrimary: true }, take: 1, select: { publicUrl: true, altText: true } },
+    },
+  });
+}
+
+/**
+ * The product-page shortcut (Part B4): "Feature on home page" adds this
+ * product at position 0 of its own catalogue's home rail; if it's already
+ * there, the same control removes it. `ensureHomeCollections` runs first so
+ * this works even on a product page visited before `/admin/collections` ever
+ * was.
+ */
+export async function toggleFeatureOnHomePage(
+  db: PrismaClient,
+  admin: AdminUser,
+  productId: string,
+  catalog: CatalogType,
+): Promise<void> {
+  await ensureHomeCollections(db, admin);
+  const slug = HOME_RAIL_SLUG[catalog];
+  const col = await db.collection.findUniqueOrThrow({
+    where: { catalog_slug: { catalog, slug } },
+    select: { id: true },
+  });
+  const existing = await db.productCollection.findUnique({
+    where: { productId_collectionId: { productId, collectionId: col.id } },
+  });
+  if (existing) {
+    await removeProductFromCollection(db, admin, col.id, productId);
+    return;
+  }
+  await db.$transaction([
+    db.productCollection.updateMany({
+      where: { collectionId: col.id },
+      data: { position: { increment: 1 } },
+    }),
+    db.productCollection.create({ data: { productId, collectionId: col.id, position: 0 } }),
+  ]);
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: "collection.products.update",
+    entityType: "Collection",
+    entityId: col.id,
+    after: { productId, position: 0 },
   });
 }

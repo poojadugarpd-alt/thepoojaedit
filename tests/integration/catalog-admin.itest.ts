@@ -12,8 +12,16 @@ import {
   createCollection,
   createProduct,
   deleteProduct,
+  ensureHomeCollections,
+  getCollectionAdmin,
   listAdminProducts,
+  listCollectionsAdmin,
   publishProduct,
+  removeProductFromCollection,
+  reorderCollectionProduct,
+  searchAddableCollectionProducts,
+  toggleFeatureOnHomePage,
+  updateCollection,
   updateProduct,
   upsertThriftDetails,
   upsertVariant,
@@ -354,6 +362,174 @@ describe("collections never cross catalogues (AC-01)", () => {
     });
     expect(members).toHaveLength(1);
     expect(members[0].position).toBe(0);
+  });
+});
+
+/** A minimal published, in-stock product — the shape `getCollectionAdmin` /
+ * `getHomeRailProducts` filter on. */
+async function publishedProduct(catalog: "THE_POOJA_EDIT" | "THRIFT", title: string) {
+  const p = await createProduct(db, admin, { catalog, title });
+  await upsertVariant(db, admin, p.id, {
+    sku: `${title}-${randomUUID().slice(0, 6)}`,
+    pricePaise: 50000,
+    // 1, not more — a THRIFT variant defaults `isOneOfOne: true` (see
+    // upsertThriftDetails below), which caps total on-hand at 1.
+    onHandQty: 1,
+  });
+  await db.productImage.create({
+    data: {
+      productId: p.id,
+      bucket: "product-images",
+      path: `${p.id}/photo.jpg`,
+      publicUrl: `https://example.invalid/${p.id}.jpg`,
+      altText: title,
+      isPrimary: true,
+    },
+  });
+  if (catalog === "THRIFT") {
+    await upsertThriftDetails(db, admin, p.id, {
+      conditionGrade: "GOOD",
+      measurements: { length: { value: "60", unit: "in" } },
+    });
+  }
+  return publishProduct(db, admin, p.id);
+}
+
+// Owner feedback (2026-09-13, Part B3) — admin collections screens.
+describe("admin collections service", () => {
+  it("auto-generates a collection slug from the name, suffixing -2/-3 on collision", async () => {
+    const first = await createCollection(db, admin, { catalog: "THRIFT", name: "Autumn Edit" });
+    expect(first.slug).toBe("autumn-edit");
+    const second = await createCollection(db, admin, { catalog: "THRIFT", name: "Autumn Edit" });
+    expect(second.slug).toBe("autumn-edit-2");
+  });
+
+  it("ensureHomeCollections creates both rails once and is idempotent", async () => {
+    await ensureHomeCollections(db, admin);
+    await ensureHomeCollections(db, admin);
+    const rows = await db.collection.findMany({ where: { isInternal: true } });
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.slug).sort()).toEqual(["home-closet", "home-label"]);
+    expect(rows.every((r) => r.catalog === "THE_POOJA_EDIT" || r.catalog === "THRIFT")).toBe(
+      true,
+    );
+  });
+
+  it("toggleFeatureOnHomePage inserts at position 0, shifting existing members down, and removing works", async () => {
+    const a = await publishedProduct("THE_POOJA_EDIT", "A");
+    const b = await publishedProduct("THE_POOJA_EDIT", "B");
+
+    await toggleFeatureOnHomePage(db, admin, a.id, "THE_POOJA_EDIT");
+    await toggleFeatureOnHomePage(db, admin, b.id, "THE_POOJA_EDIT");
+
+    const col = await db.collection.findUniqueOrThrow({
+      where: { catalog_slug: { catalog: "THE_POOJA_EDIT", slug: "home-label" } },
+    });
+    const members = await db.productCollection.findMany({
+      where: { collectionId: col.id },
+      orderBy: { position: "asc" },
+    });
+    // b was featured second, so it's at position 0 and a was pushed to 1.
+    expect(members.map((m) => m.productId)).toEqual([b.id, a.id]);
+    expect(members.map((m) => m.position)).toEqual([0, 1]);
+
+    // Toggling an already-featured product removes it and renormalizes.
+    await toggleFeatureOnHomePage(db, admin, b.id, "THE_POOJA_EDIT");
+    const after = await db.productCollection.findMany({
+      where: { collectionId: col.id },
+      orderBy: { position: "asc" },
+    });
+    expect(after.map((m) => m.productId)).toEqual([a.id]);
+    expect(after[0].position).toBe(0);
+  });
+
+  it("reorderCollectionProduct swaps neighbours and normalizes positions; a no-op at either end", async () => {
+    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Order test" });
+    const a = await publishedProduct("THRIFT", "OrderA");
+    const b = await publishedProduct("THRIFT", "OrderB");
+    const c = await publishedProduct("THRIFT", "OrderC");
+    await addProductToCollection(db, admin, col.id, a.id);
+    await addProductToCollection(db, admin, col.id, b.id);
+    await addProductToCollection(db, admin, col.id, c.id);
+
+    await reorderCollectionProduct(db, admin, col.id, b.id, "up");
+    let rows = await db.productCollection.findMany({
+      where: { collectionId: col.id },
+      orderBy: { position: "asc" },
+    });
+    expect(rows.map((r) => r.productId)).toEqual([b.id, a.id, c.id]);
+    expect(rows.map((r) => r.position)).toEqual([0, 1, 2]);
+
+    // Already first — moving "up" again is a no-op, not an error.
+    await reorderCollectionProduct(db, admin, col.id, b.id, "up");
+    rows = await db.productCollection.findMany({
+      where: { collectionId: col.id },
+      orderBy: { position: "asc" },
+    });
+    expect(rows.map((r) => r.productId)).toEqual([b.id, a.id, c.id]);
+  });
+
+  it("removeProductFromCollection renormalizes the remaining positions", async () => {
+    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Remove test" });
+    const a = await publishedProduct("THRIFT", "RemA");
+    const b = await publishedProduct("THRIFT", "RemB");
+    const c = await publishedProduct("THRIFT", "RemC");
+    await addProductToCollection(db, admin, col.id, a.id);
+    await addProductToCollection(db, admin, col.id, b.id);
+    await addProductToCollection(db, admin, col.id, c.id);
+
+    await removeProductFromCollection(db, admin, col.id, a.id);
+    const rows = await db.productCollection.findMany({
+      where: { collectionId: col.id },
+      orderBy: { position: "asc" },
+    });
+    expect(rows.map((r) => r.productId)).toEqual([b.id, c.id]);
+    expect(rows.map((r) => r.position)).toEqual([0, 1]); // no gap left by the deleted row
+  });
+
+  it("updateCollection ignores the active toggle for an internal collection", async () => {
+    await ensureHomeCollections(db, admin);
+    const home = await db.collection.findUniqueOrThrow({
+      where: { catalog_slug: { catalog: "THE_POOJA_EDIT", slug: "home-label" } },
+    });
+    await updateCollection(db, admin, home.id, {
+      name: "Renamed rail",
+      isActive: false, // ignored — an internal collection's visibility is isInternal alone
+    });
+    const after = await db.collection.findUniqueOrThrow({ where: { id: home.id } });
+    expect(after.name).toBe("Renamed rail");
+    expect(after.isActive).toBe(true); // unchanged
+  });
+
+  it("searchAddableCollectionProducts excludes existing members, drafts, and the other catalogue", async () => {
+    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Search test" });
+    const already = await publishedProduct("THRIFT", "Search Already In");
+    await addProductToCollection(db, admin, col.id, already.id);
+    const findable = await publishedProduct("THRIFT", "Search Findable Item");
+    const draft = await createProduct(db, admin, { catalog: "THRIFT", title: "Search Draft" });
+    const otherCatalog = await publishedProduct("THE_POOJA_EDIT", "Search Other Catalogue");
+
+    const results = await searchAddableCollectionProducts(db, col.id, "THRIFT", "search");
+    const ids = results.map((r) => r.id);
+    expect(ids).toContain(findable.id);
+    expect(ids).not.toContain(already.id);
+    expect(ids).not.toContain(draft.id);
+    expect(ids).not.toContain(otherCatalog.id);
+  });
+
+  it("listCollectionsAdmin and getCollectionAdmin report product counts and membership", async () => {
+    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "List test" });
+    const p = await publishedProduct("THRIFT", "Listed piece");
+    await addProductToCollection(db, admin, col.id, p.id);
+
+    const list = await listCollectionsAdmin(db);
+    const row = list.find((c) => c.id === col.id);
+    expect(row?.productCount).toBe(1);
+    expect(row?.isInternal).toBe(false);
+
+    const detail = await getCollectionAdmin(db, col.id);
+    expect(detail?.products).toHaveLength(1);
+    expect(detail?.products[0].product.id).toBe(p.id);
   });
 });
 

@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { formatPaiseINR } from "@/lib/money";
 
 export function money(paise: number | null | undefined): string {
@@ -57,6 +59,21 @@ const STATUS_TONE: Record<string, keyof typeof TONE_CLASS> = {
   REJECTED: "bad",
   DAMAGED_DISCARD: "bad",
 };
+
+// 56px, 4:5 — small enough to be free, big enough to recognize the item at a
+// glance. A flat line-colour square stands in when a product has no primary
+// image yet, rather than a broken/empty <img>. Shared by the product list
+// and the collection product list (owner feedback, 2026-09-13).
+export function Thumb({ url, alt }: { url: string | null; alt: string }) {
+  if (!url) {
+    return <div aria-hidden="true" className="h-14 w-[45px] shrink-0 rounded bg-fill" />;
+  }
+  return (
+    <div className="relative h-14 w-[45px] shrink-0 overflow-hidden rounded bg-fill">
+      <Image src={url} alt={alt} fill sizes="45px" loading="lazy" className="object-cover" />
+    </div>
+  );
+}
 
 export function Pill({ value }: { value: string }) {
   const tone = STATUS_TONE[value] ?? "muted";

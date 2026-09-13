@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db";
 
 import {
   getActiveCollection,
+  getHomeRailProducts,
   getPublishedProduct,
   listActiveCollections,
   listPublishedProducts,
@@ -57,4 +58,8 @@ export function getCollections(catalog: CatalogType) {
 
 export function getCollection(catalog: CatalogType, slug: string) {
   return getActiveCollection(prisma, catalog, slug);
+}
+
+export function getRailProducts(catalog: CatalogType) {
+  return getHomeRailProducts(prisma, catalog);
 }

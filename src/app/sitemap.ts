@@ -40,7 +40,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         select: { catalog: true, slug: true, updatedAt: true },
       }),
       prisma.collection.findMany({
-        where: { isActive: true },
+        // isInternal collections (the home-page rails) are not a public page —
+        // owner feedback, 2026-09-13, Part B2.
+        where: { isActive: true, isInternal: false },
         select: { catalog: true, slug: true, updatedAt: true },
       }),
     ]);

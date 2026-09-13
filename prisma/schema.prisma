@@ -383,6 +383,11 @@ model Collection {
   heroBucket  String?
   heroPath    String?
   isActive    Boolean     @default(true)
+  // Drives a home-page rail (`home-label` / `home-closet`) rather than a
+  // shoppable collection page — excluded from listActiveCollections, the
+  // public /collections/[slug] routes and the sitemap (owner feedback,
+  // 2026-09-13, Part B2). Not exposed on the create-collection admin form.
+  isInternal  Boolean     @default(false)
   createdAt   DateTime    @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime    @updatedAt @db.Timestamptz(6)
 
