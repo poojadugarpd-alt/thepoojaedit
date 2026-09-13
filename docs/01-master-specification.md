@@ -123,6 +123,8 @@ Required routes:
 
 The homepage must immediately offer two clear catalog entrances. Shared typography, navigation, and checkout keep the brand consistent; catalog-specific content provides distinction. A mixed cart is required, with catalog labels and catalog-specific return-policy disclosure per item.
 
+The homepage's own words (hero headline/lead, rail headings, edit-block copy, newsletter copy) are owner-editable from `/admin/home` — not hard-coded — via `StoreSettings` (`home.content`), so a wording change never requires a code edit or deploy (D-108).
+
 The Pooja Edit supports sizes/colors, quantities, restocking, collections, size charts, and compare-at prices. Thrift detail pages prominently show condition, original brand, labelled size, recommended fit, exact measurements with units, fabric, alterations, flaws, and flaw images. Acquisition cost is admin-only. Default thrift pieces have one sellable variant and quantity at most one across the physical piece. Do not model size labels as independently sellable copies of that piece.
 
 Sold thrift URLs remain accessible with a SOLD state, disabled purchase controls, alternatives, and `OutOfStock` structured data. Draft and archived products are not purchasable. Separate publishing status from derived availability.
@@ -278,7 +280,7 @@ Provide `/admin` overview and modules for orders, shipping, products, inventory,
 - Shipping: serviceability, create shipment, AWB/labels, tracking, NDR/RTO actions and COD remittance discrepancies.
 - Notifications/jobs: delivery attempts, failed operations, safe retries and resolution history.
 - Customers: history and private notes, with access control and no insecure contact-based merging.
-- Settings: verified business details, policies, COD/shipping rules, nonsecret integration state and templates. Show credential health without exposing credentials.
+- Settings: verified business details, policies, COD/shipping rules, nonsecret integration state and templates. Show credential health without exposing credentials. Home-page wording is owner-editable from its own screen, not the generic settings editor.
 - Bulk operations: bounded selection, per-record authorization/eligibility, explicit confirmation, partial-success results, and audit records.
 
 Needs Attention includes pending COD confirmation, payment review, inventory conflict, failed shipment creation/refund/background job, NDR, RTO inspection, and low stock. Resolve tasks when the underlying condition is resolved, not merely when an alert is read. Financial summaries derive from canonical payments/refunds and distinguish placed orders, captured revenue and COD remittance.

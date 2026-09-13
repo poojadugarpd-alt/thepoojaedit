@@ -21,6 +21,9 @@ const EDITABLE_KEYS = [
   "policy.returns",
   "policy.shipping",
   "policy.privacy",
+  // Edited from its own screen (/admin/home), not the generic JSON editor
+  // below — see the exclusion in src/app/admin/settings/page.tsx.
+  "home.content",
 ] as const;
 export type SettingKey = (typeof EDITABLE_KEYS)[number];
 

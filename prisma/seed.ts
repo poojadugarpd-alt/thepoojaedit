@@ -78,6 +78,53 @@ async function seedTaxAndSettings() {
     },
   });
 
+  // Not a placeholder like the rows above — this is the real, owner-approved
+  // home page copy, kept identical to DEFAULT_HOME_CONTENT in
+  // src/server/settings/index.ts (that module can't be imported here — it
+  // starts with `import "server-only"`, which throws under plain `tsx`
+  // outside a React Server Component). Seeded so a fresh dev database shows
+  // the live site's actual wording instead of an empty admin form; save from
+  // /admin/home overwrites this key.
+  await prisma.storeSettings.upsert({
+    where: { key: "home.content" },
+    update: {},
+    create: {
+      key: "home.content",
+      value: {
+        hero: {
+          eyebrow: "The Pooja Edit · by Pooja Dugar",
+          heading: "One brand, two ways to shop.",
+          lead: "Realistic, wearable clothes, the same ones you see on my Instagram. Shop the Label for pieces I design in real sizes, or the Closet for one-off pieces from my own wardrobe. One bag, one checkout.",
+          primaryCta: "Shop the Label",
+          secondaryCta: "Shop the Closet",
+        },
+        editorial: { linkLabel: "Shop the piece" },
+        newIn: { eyebrow: "New apparel", heading: "New in", linkLabel: "All new pieces" },
+        fromCloset: {
+          eyebrow: "Pre-loved",
+          heading: "From the Closet",
+          linkLabel: "All pre-loved",
+        },
+        labelBlock: {
+          heading: "The Label",
+          body: "Pooja's own designs — kurtis, co-ord sets and linen, made in real sizes and small runs.",
+          cta: "View the collection",
+        },
+        closetBlock: {
+          heading: "The Closet",
+          body: "Pooja's own wardrobe, passed on. Every piece is one of one, listed with its condition, measurements and any flaws, so you know exactly what you're getting. When it's gone, it's gone.",
+          cta: "Browse the rails",
+        },
+        newsletter: {
+          eyebrow: "Newsletter",
+          heading: "Get the drop list",
+          body: "One email when new pieces and Closet restocks go live. No noise.",
+          buttonLabel: "Notify me",
+        },
+      },
+    },
+  });
+
   return taxClass;
 }
 

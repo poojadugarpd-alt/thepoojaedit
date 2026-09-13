@@ -62,6 +62,7 @@ export function Field({
   required,
   placeholder,
   hint,
+  maxLength,
 }: {
   label: string;
   name: string;
@@ -70,6 +71,7 @@ export function Field({
   required?: boolean;
   placeholder?: string;
   hint?: string;
+  maxLength?: number;
 }) {
   const id = `f-${name}`;
   return (
@@ -84,6 +86,7 @@ export function Field({
         type={type}
         required={required}
         placeholder={placeholder}
+        maxLength={maxLength}
         defaultValue={defaultValue ?? undefined}
         className="mt-1 min-h-11 w-full rounded border border-line bg-transparent px-2 py-1.5 text-base sm:text-sm"
       />
@@ -97,11 +100,19 @@ export function TextArea({
   name,
   defaultValue,
   rows = 4,
+  hint,
+  maxLength,
+  mono = true,
 }: {
   label: string;
   name: string;
   defaultValue?: string | null;
   rows?: number;
+  hint?: string;
+  maxLength?: number;
+  /** The settings JSON editor wants a monospace box; prose fields (home page
+   * copy) read better in the ordinary text font. */
+  mono?: boolean;
 }) {
   const id = `f-${name}`;
   return (
@@ -113,9 +124,11 @@ export function TextArea({
         id={id}
         name={name}
         rows={rows}
+        maxLength={maxLength}
         defaultValue={defaultValue ?? undefined}
-        className="mt-1 w-full rounded border border-line bg-transparent px-2 py-1.5 font-mono text-base sm:text-xs"
+        className={`mt-1 w-full rounded border border-line bg-transparent px-2 py-1.5 text-base sm:text-sm ${mono ? "font-mono sm:text-xs" : ""}`}
       />
+      {hint && <p className="mt-0.5 text-[11px] text-ink-soft">{hint}</p>}
     </div>
   );
 }

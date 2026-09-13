@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
  * Bottom tab bar — mobile only (`sm:hidden`), the desktop sidebar in
  * src/app/admin/layout.tsx is unchanged and hidden on mobile instead. Four
  * destinations per the admin-PWA plan (docs/admin-pwa-plan.md §1): Home,
- * Orders, Products, More (the other 7 modules + Install + Sign out).
+ * Orders, Products, More (the other modules + Install + Sign out).
  */
 
 const TABS = [
@@ -27,6 +27,7 @@ const TABS = [
     label: "More",
     match: (p: string) =>
       p.startsWith("/admin/more") ||
+      p.startsWith("/admin/home") ||
       p.startsWith("/admin/inventory") ||
       p.startsWith("/admin/returns") ||
       p.startsWith("/admin/customers") ||

@@ -9,6 +9,11 @@ export const metadata = { title: "More" };
  * directly and is unaffected.
  */
 const ITEMS = [
+  {
+    href: "/admin/home",
+    label: "Home page",
+    hint: "Edit the words shoppers see on the home page",
+  },
   { href: "/admin/inventory", label: "Inventory", hint: "Stock levels and corrections" },
   { href: "/admin/returns", label: "Returns", hint: "Requests, inspection, resolution" },
   { href: "/admin/customers", label: "Customers", hint: "History and private notes" },

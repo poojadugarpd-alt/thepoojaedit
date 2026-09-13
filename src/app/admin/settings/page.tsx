@@ -88,7 +88,11 @@ export default async function AdminSettingsPage() {
           and is audited. Real GSTIN, rates and invoice policy are confirmed with the
           owner before live checkout.
         </p>
-        {settings.map((s) => (
+        {/* "home.content" has its own screen (/admin/home) — a plain form,
+            not a JSON box — so it's deliberately left out of this list. */}
+        {settings
+          .filter((s) => s.key !== "home.content")
+          .map((s) => (
           <div key={s.key} className="rounded border border-line p-3">
             <p className="text-xs font-medium text-ink-strong">
               {s.key}{" "}

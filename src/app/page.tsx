@@ -4,8 +4,10 @@ import Link from "next/link";
 import { InstagramStrip } from "@/features/instagram/instagram-strip";
 import { ProductRail } from "@/features/catalog/product-rail";
 import { productPath, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
+import { prisma } from "@/lib/db";
 import { listProducts } from "@/server/catalog";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
+import { DEFAULT_HOME_CONTENT, getHomeContent } from "@/server/settings";
 
 export const revalidate = 300;
 
@@ -22,6 +24,15 @@ async function railItems(catalog: "THE_POOJA_EDIT" | "THRIFT") {
     return (await listProducts({ catalog, sort: "newest", limit: 12 })).items;
   } catch {
     return EMPTY_ITEMS;
+  }
+}
+
+/** Same cold-database guard as `railItems()` — the copy always has to render. */
+async function homeContent() {
+  try {
+    return await getHomeContent(prisma);
+  } catch {
+    return DEFAULT_HOME_CONTENT;
   }
 }
 
@@ -69,9 +80,10 @@ function RailSection({
 }
 
 export default async function HomePage() {
-  const [editItems, thriftItems] = await Promise.all([
+  const [editItems, thriftItems, home] = await Promise.all([
     railItems("THE_POOJA_EDIT"),
     railItems("THRIFT"),
+    homeContent(),
   ]);
 
   const hero = pickImage(editItems) ?? pickImage(thriftItems);
@@ -93,19 +105,15 @@ export default async function HomePage() {
     <div>
       {/* Hero — the headline is the whole opening move, calm and oversized */}
       <section className="u-page pt-14 pb-16 sm:pt-20 sm:pb-24">
-        <p className="u-eyebrow">The Pooja Edit · by Pooja Dugar</p>
-        <h1 className="u-display mt-6 max-w-[14ch]">One brand, two ways to shop.</h1>
-        <p className="u-lead mt-7">
-          Realistic, wearable clothes, the same ones you see on my Instagram. Shop
-          the Label for pieces I design in real sizes, or the Closet for one-off
-          pieces from my own wardrobe. One bag, one checkout.
-        </p>
+        <p className="u-eyebrow">{home.hero.eyebrow}</p>
+        <h1 className="u-display mt-6 max-w-[14ch]">{home.hero.heading}</h1>
+        <p className="u-lead mt-7">{home.hero.lead}</p>
         <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
           <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-pill">
-            Shop the Label
+            {home.hero.primaryCta}
           </Link>
           <Link href={`/${SEGMENT_BY_CATALOG.THRIFT}`} className="u-textlink">
-            Shop the Closet
+            {home.hero.secondaryCta}
           </Link>
         </div>
       </section>
@@ -126,17 +134,17 @@ export default async function HomePage() {
             </div>
             <div className="mt-4 flex items-center justify-between gap-4">
               <p className="u-label">{hero.product.title}</p>
-              <span className="u-textlink">Shop the piece</span>
+              <span className="u-textlink">{home.editorial.linkLabel}</span>
             </div>
           </Link>
         </section>
       )}
 
       <RailSection
-        eyebrow="New apparel"
-        heading="New in"
+        eyebrow={home.newIn.eyebrow}
+        heading={home.newIn.heading}
         href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
-        shopLabel="All new pieces"
+        shopLabel={home.newIn.linkLabel}
         products={editItems}
       />
 
@@ -145,26 +153,26 @@ export default async function HomePage() {
         <div className="u-page grid gap-12 sm:grid-cols-2 sm:gap-8">
           <EditBlock
             href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
-            heading="The Label"
-            body="Pooja's own designs — kurtis, co-ord sets and linen, made in real sizes and small runs."
-            cta="View the collection"
+            heading={home.labelBlock.heading}
+            body={home.labelBlock.body}
+            cta={home.labelBlock.cta}
             hero={editHero}
           />
           <EditBlock
             href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
-            heading="The Closet"
-            body="Pooja's own wardrobe, passed on. Every piece is one of one, listed with its condition, measurements and any flaws, so you know exactly what you're getting. When it's gone, it's gone."
-            cta="Browse the rails"
+            heading={home.closetBlock.heading}
+            body={home.closetBlock.body}
+            cta={home.closetBlock.cta}
             hero={thriftHero}
           />
         </div>
       </section>
 
       <RailSection
-        eyebrow="Pre-loved"
-        heading="From the Closet"
+        eyebrow={home.fromCloset.eyebrow}
+        heading={home.fromCloset.heading}
         href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
-        shopLabel="All pre-loved"
+        shopLabel={home.fromCloset.linkLabel}
         products={thriftItems}
       />
 
@@ -174,11 +182,9 @@ export default async function HomePage() {
       {/* Newsletter */}
       <section className="u-section u-rule">
         <div className="u-page max-w-xl">
-          <p className="u-eyebrow">Newsletter</p>
-          <h2 className="u-h2 mt-3">Get the drop list</h2>
-          <p className="mt-4 text-ink">
-            One email when new pieces and Closet restocks go live. No noise.
-          </p>
+          <p className="u-eyebrow">{home.newsletter.eyebrow}</p>
+          <h2 className="u-h2 mt-3">{home.newsletter.heading}</h2>
+          <p className="mt-4 text-ink">{home.newsletter.body}</p>
           {/* Newsletter capture is not wired yet — the form is inert until a
               provider (Resend / Behold) is connected. */}
           <form className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -194,7 +200,7 @@ export default async function HomePage() {
               className="w-full rounded-full border border-line bg-transparent px-5 py-3 text-[0.95rem] text-ink placeholder:text-ink-soft focus-visible:border-ink-strong"
             />
             <button type="submit" className="u-pill shrink-0">
-              Notify me
+              {home.newsletter.buttonLabel}
             </button>
           </form>
         </div>
