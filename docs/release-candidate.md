@@ -105,23 +105,20 @@ No unresolved **critical security, overselling, money, migration or data-loss** 
 ## 5a. Admin PWA (separate effort, 2026-09-12) — two more deploy-time actions
 
 Not one of the 8 launch blockers above (this extends the existing admin
-console rather than gating the storefront), but two items land as real
-deploy steps whenever this branch is deployed, tracked here so they aren't
-missed at launch time:
+console rather than gating the storefront). Both items previously tracked
+here as open are now done, confirmed 2026-09-13 while investigating D-111:
 
-- **New migration** (`20260912114320_admin_push`, purely additive — two new
+- **Migration `20260912114320_admin_push`** (purely additive — two new
   tables, `AdminPushSubscription`/`AdminNotificationPreference`, nothing
-  altered or dropped on any existing table) needs `prisma migrate deploy`
-  run against the **production** Supabase `DATABASE_URL` — this repo has no
-  automated migrate-on-deploy step (confirmed: `next build` only, no
-  `vercel.json` build-command override), so this is a manual action, same
-  as every other migration so far.
+  altered or dropped on any existing table) — ✅ confirmed applied to the
+  production Supabase database (`prisma migrate status` against the live
+  `DATABASE_URL` reports all 5 migrations, including this one, up to date).
+  The manual-step risk this bullet warned about is real and generalised —
+  see blocker #7's new finding — but this specific migration was not missed.
 - **`NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`**
-  need adding to Vercel's env vars (all 3 environments) — currently only in
-  local `.env.local`. Until both of the above are done, the admin PWA itself
-  (install, mobile UI, offline page) works in production exactly as today;
-  only push notifications stay silently unconfigured (`sendAdminPush`
-  no-ops, same as any other unconfigured channel — see D-102).
+  — ✅ confirmed present on Vercel across Production/Preview/Development.
+  Push notifications should be live; not yet exercised end-to-end on a real
+  device (still needs the Stage 5 physical-iPhone checklist, D-103).
 
 Full detail: `docs/admin-pwa-plan.md`, `docs/admin-pwa-setup.md`,
 `docs/admin-pwa-verification.md`, decisions D-99 through D-103.
