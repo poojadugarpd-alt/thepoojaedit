@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,7 +9,12 @@ import { productPath, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { prisma } from "@/lib/db";
 import { getRailProducts } from "@/server/catalog";
 import type { PublicProductCard } from "@/server/catalog/public-shape";
-import { DEFAULT_HOME_CONTENT, getHomeContent } from "@/server/settings";
+import {
+  DEFAULT_HOME_CONTENT,
+  getHomeContent,
+  type HomeMediaSlot,
+  type HomeSectionKey,
+} from "@/server/settings";
 
 export const revalidate = 300;
 
@@ -51,6 +58,73 @@ function pickImage(group: PublicProductCard[], skipSlug?: string) {
   return null;
 }
 
+/**
+ * A media spot (the big editorial band, or a Label/Closet block photo) can be
+ * a deliberately uploaded picture or short video (owner follow-up,
+ * 2026-09-13 — "no option to edit the actual pictures/video"), or fall back
+ * to "auto": the first rail item with a photo, tied to that product.
+ */
+type ResolvedMedia =
+  | { kind: "auto"; url: string; alt: string; product: PublicProductCard }
+  | { kind: "image"; url: string; alt: string }
+  | { kind: "video"; url: string; posterUrl?: string; alt: string }
+  | null;
+
+function resolveMedia(
+  slot: HomeMediaSlot,
+  autoPick: { image: PublicProductCard["primaryImage"]; product: PublicProductCard } | null,
+): ResolvedMedia {
+  if (slot.kind === "image" && slot.url) return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
+  if (slot.kind === "video" && slot.url) {
+    return { kind: "video", url: slot.url, posterUrl: slot.posterUrl, alt: slot.alt ?? "" };
+  }
+  if (autoPick?.image) {
+    return {
+      kind: "auto",
+      url: autoPick.image.url,
+      alt: autoPick.image.alt || autoPick.product.title,
+      product: autoPick.product,
+    };
+  }
+  return null;
+}
+
+/** Fills a fixed aspect-ratio box with either an image or an autoplaying,
+ * muted, looping video — the one place this home page renders either. */
+function MediaFill({
+  media,
+  priority = false,
+  sizes,
+}: {
+  media: Exclude<ResolvedMedia, null>;
+  priority?: boolean;
+  sizes: string;
+}) {
+  if (media.kind === "video") {
+    return (
+      <video
+        src={media.url}
+        poster={media.posterUrl}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="h-full w-full object-cover"
+      />
+    );
+  }
+  return (
+    <Image
+      src={media.url}
+      alt={media.alt}
+      fill
+      priority={priority}
+      sizes={sizes}
+      className="object-cover transition-opacity duration-300 group-hover:opacity-95"
+    />
+  );
+}
+
 function RailSection({
   eyebrow,
   heading,
@@ -92,11 +166,16 @@ export default async function HomePage() {
     homeContent(),
   ]);
 
-  const hero = pickImage(editItems) ?? pickImage(thriftItems);
-  const editHero = pickImage(editItems, hero?.product.slug);
-  const thriftHero = pickImage(thriftItems, hero?.product.slug);
+  const editAutoPick = pickImage(editItems);
+  const editorial = resolveMedia(home.media.editorial, editAutoPick ?? pickImage(thriftItems));
+  const skipSlug = editorial?.kind === "auto" ? editorial.product.slug : undefined;
+  const labelMedia = resolveMedia(home.media.labelBlock, pickImage(editItems, skipSlug));
+  const closetMedia = resolveMedia(home.media.closetBlock, pickImage(thriftItems, skipSlug));
+
   const usedSlugs = new Set(
-    [hero, editHero, thriftHero].map((h) => h?.product.slug).filter(Boolean),
+    [editorial, labelMedia, closetMedia]
+      .map((m) => (m?.kind === "auto" ? m.product.slug : undefined))
+      .filter(Boolean),
   );
   const fallbackTiles = [...editItems, ...thriftItems]
     .filter((p) => p.primaryImage && !usedSlugs.has(p.slug))
@@ -107,86 +186,68 @@ export default async function HomePage() {
       alt: p.primaryImage!.alt || p.title,
     }));
 
-  return (
-    <div>
-      {/* Hero — the headline is the whole opening move, calm and oversized */}
-      <section className="u-page pt-14 pb-16 sm:pt-20 sm:pb-24">
-        <p className="u-eyebrow">{home.hero.eyebrow}</p>
-        <h1 className="u-display mt-6 max-w-[14ch]">{home.hero.heading}</h1>
-        <p className="u-lead mt-7">{home.hero.lead}</p>
-        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-          <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-pill">
-            {home.hero.primaryCta}
-          </Link>
-          <Link href={`/${SEGMENT_BY_CATALOG.THRIFT}`} className="u-textlink">
-            {home.hero.secondaryCta}
-          </Link>
-        </div>
-      </section>
-
-      {/* Editorial band — one large image, only when we have product photography */}
-      {hero && (
-        <section className="u-page pb-4">
-          <Link href={productPath(hero.product.catalog, hero.product.slug)} className="group block">
-            <div className="u-media relative aspect-[4/5] w-full sm:aspect-[16/10]">
-              <Image
-                src={hero.image.url}
-                alt={hero.image.alt || hero.product.title}
-                fill
-                priority
-                sizes="(max-width: 1440px) 100vw, 1440px"
-                className="object-cover transition-opacity duration-300 group-hover:opacity-95"
-              />
-            </div>
+  // Layout: hero (the two-catalogue-entrance opening, master spec §4) always
+  // renders first and is never hideable; everything else follows Pooja's own
+  // order/visibility from /admin/home (owner follow-up, 2026-09-13).
+  const sectionContent: Record<HomeSectionKey, ReactNode> = {
+    editorial: editorial && (
+      <section key="editorial" className="u-page pb-4">
+        {editorial.kind === "auto" ? (
+          <Link href={productPath(editorial.product.catalog, editorial.product.slug)} className="group block">
+            <EditorialFrame media={editorial} />
             <div className="mt-4 flex items-center justify-between gap-4">
-              <p className="u-label">{hero.product.title}</p>
+              <p className="u-label">{editorial.product.title}</p>
               <span className="u-textlink">{home.editorial.linkLabel}</span>
             </div>
           </Link>
-        </section>
-      )}
-
+        ) : (
+          <EditorialFrame media={editorial} />
+        )}
+      </section>
+    ),
+    newIn: (
       <RailSection
+        key="newIn"
         eyebrow={home.newIn.eyebrow}
         heading={home.newIn.heading}
         href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
         shopLabel={home.newIn.linkLabel}
         products={editItems}
       />
-
-      {/* Two edits — image-led where we have a photo, text otherwise */}
-      <section className="u-section u-section--fill">
+    ),
+    editBlocks: (
+      <section key="editBlocks" className="u-section u-section--fill">
         <div className="u-page grid gap-12 sm:grid-cols-2 sm:gap-8">
           <EditBlock
             href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`}
             heading={home.labelBlock.heading}
             body={home.labelBlock.body}
             cta={home.labelBlock.cta}
-            hero={editHero}
+            media={labelMedia}
           />
           <EditBlock
             href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
             heading={home.closetBlock.heading}
             body={home.closetBlock.body}
             cta={home.closetBlock.cta}
-            hero={thriftHero}
+            media={closetMedia}
           />
         </div>
       </section>
-
+    ),
+    fromCloset: (
       <RailSection
+        key="fromCloset"
         eyebrow={home.fromCloset.eyebrow}
         heading={home.fromCloset.heading}
         href={`/${SEGMENT_BY_CATALOG.THRIFT}`}
         shopLabel={home.fromCloset.linkLabel}
         products={thriftItems}
       />
-
-      {/* Instagram — live @poojadugar_ feed via Behold, curated fallback */}
-      <InstagramStrip fallback={fallbackTiles} />
-
-      {/* Newsletter */}
-      <section className="u-section u-rule">
+    ),
+    instagram: <InstagramStrip key="instagram" fallback={fallbackTiles} />,
+    newsletter: (
+      <section key="newsletter" className="u-section u-rule">
         <div className="u-page max-w-xl">
           <p className="u-eyebrow">{home.newsletter.eyebrow}</p>
           <h2 className="u-h2 mt-3">{home.newsletter.heading}</h2>
@@ -211,6 +272,37 @@ export default async function HomePage() {
           </form>
         </div>
       </section>
+    ),
+  };
+
+  return (
+    <div>
+      {/* Hero — the headline is the whole opening move, calm and oversized.
+          Not a toggleable section: master spec §4 requires the homepage to
+          "immediately offer two clear catalog entrances", which lives here. */}
+      <section className="u-page pt-14 pb-16 sm:pt-20 sm:pb-24">
+        <p className="u-eyebrow">{home.hero.eyebrow}</p>
+        <h1 className="u-display mt-6 max-w-[14ch]">{home.hero.heading}</h1>
+        <p className="u-lead mt-7">{home.hero.lead}</p>
+        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
+          <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-pill">
+            {home.hero.primaryCta}
+          </Link>
+          <Link href={`/${SEGMENT_BY_CATALOG.THRIFT}`} className="u-textlink">
+            {home.hero.secondaryCta}
+          </Link>
+        </div>
+      </section>
+
+      {home.sections.filter((s) => s.enabled).map((s) => sectionContent[s.key])}
+    </div>
+  );
+}
+
+function EditorialFrame({ media }: { media: Exclude<ResolvedMedia, null> }) {
+  return (
+    <div className="u-media relative aspect-[4/5] w-full sm:aspect-[16/10]">
+      <MediaFill media={media} priority sizes="(max-width: 1440px) 100vw, 1440px" />
     </div>
   );
 }
@@ -220,30 +312,24 @@ function EditBlock({
   heading,
   body,
   cta,
-  hero,
+  media,
 }: {
   href: string;
   heading: string;
   body: string;
   cta: string;
-  hero: { image: { url: string; alt: string }; product: { title: string } } | null;
+  media: ResolvedMedia;
 }) {
   return (
     <div>
-      {hero && (
+      {media && (
         <Link href={href} className="group block">
           <div className="u-media relative aspect-[4/5] w-full">
-            <Image
-              src={hero.image.url}
-              alt={hero.image.alt || heading}
-              fill
-              sizes="(max-width: 640px) 100vw, 45vw"
-              className="object-cover transition-opacity duration-300 group-hover:opacity-95"
-            />
+            <MediaFill media={media} sizes="(max-width: 640px) 100vw, 45vw" />
           </div>
         </Link>
       )}
-      <h2 className={`u-h3 ${hero ? "mt-5" : ""}`}>{heading}</h2>
+      <h2 className={`u-h3 ${media ? "mt-5" : ""}`}>{heading}</h2>
       <p className="mt-3 max-w-[42ch] text-ink">{body}</p>
       <Link href={href} className="u-textlink mt-5">
         {cta}

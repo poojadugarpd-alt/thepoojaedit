@@ -2,13 +2,24 @@ import Link from "next/link";
 
 import { ActionForm, Field, TextArea } from "@/features/admin/action-form";
 import { prisma } from "@/lib/db";
-import { getHomeContent } from "@/server/settings";
+import { getHomeContent, type HomeSectionKey } from "@/server/settings";
 import { requireAdmin } from "@/server/auth/require-admin";
 
-import { updateHomeContentAction } from "./actions";
+import { reorderHomeSectionAction, toggleHomeSectionAction, updateHomeContentAction } from "./actions";
+import { HomeMediaUploader } from "./home-media-uploader";
+import { HomeMediaPreview } from "./home-media-preview";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Home page" };
+
+const SECTION_LABEL: Record<HomeSectionKey, string> = {
+  editorial: "Big image",
+  newIn: "New in (the Label rail)",
+  editBlocks: "The Label / Closet blocks",
+  fromCloset: "From the Closet (the Closet rail)",
+  instagram: "Instagram",
+  newsletter: "Newsletter",
+};
 
 export default async function AdminHomePage() {
   await requireAdmin();
@@ -36,6 +47,51 @@ export default async function AdminHomePage() {
         </Link>
         .
       </p>
+
+      <section className="space-y-3 border-t border-line pt-4">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+          Layout
+        </h2>
+        <p className="text-xs text-ink-soft">
+          The order below is the order shoppers see, top to bottom, under the
+          opening headline. Hide a section instead of deleting anything in it —
+          nothing is lost, and turning it back on restores it exactly as it was.
+        </p>
+        <ul className="divide-y divide-line rounded border border-line">
+          {c.sections.map((s, i) => (
+            <li key={s.key} className="flex items-center justify-between gap-3 px-3 py-2">
+              <span className={`text-sm ${s.enabled ? "text-ink-strong" : "text-ink-soft"}`}>
+                {SECTION_LABEL[s.key]}
+                {!s.enabled && " (hidden)"}
+              </span>
+              <div className="flex shrink-0 items-center gap-2 text-[11px]">
+                <span className="text-ink-soft">#{i + 1}</span>
+                <ActionForm
+                  action={reorderHomeSectionAction.bind(null, s.key, "up")}
+                  submitLabel="↑"
+                  compact
+                >
+                  <span />
+                </ActionForm>
+                <ActionForm
+                  action={reorderHomeSectionAction.bind(null, s.key, "down")}
+                  submitLabel="↓"
+                  compact
+                >
+                  <span />
+                </ActionForm>
+                <ActionForm
+                  action={toggleHomeSectionAction.bind(null, s.key)}
+                  submitLabel={s.enabled ? "Hide" : "Show"}
+                  compact
+                >
+                  <input type="hidden" name="enabled" value={s.enabled ? "" : "on"} />
+                </ActionForm>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <ActionForm action={updateHomeContentAction} submitLabel="Save home page">
         <section className="space-y-3">
@@ -85,6 +141,8 @@ export default async function AdminHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
             Big image
           </h2>
+          <HomeMediaPreview slot={c.media.editorial} />
+          <HomeMediaUploader slot="editorial" currentKind={c.media.editorial.kind} />
           <Field
             label="Link label under the photo"
             name="editorial.linkLabel"
@@ -152,6 +210,8 @@ export default async function AdminHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
             The Label block
           </h2>
+          <HomeMediaPreview slot={c.media.labelBlock} />
+          <HomeMediaUploader slot="labelBlock" currentKind={c.media.labelBlock.kind} />
           <Field
             label="Heading"
             name="labelBlock.heading"
@@ -181,6 +241,8 @@ export default async function AdminHomePage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
             The Closet block
           </h2>
+          <HomeMediaPreview slot={c.media.closetBlock} />
+          <HomeMediaUploader slot="closetBlock" currentKind={c.media.closetBlock.kind} />
           <Field
             label="Heading"
             name="closetBlock.heading"

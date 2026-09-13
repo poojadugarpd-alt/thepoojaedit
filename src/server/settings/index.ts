@@ -104,7 +104,65 @@ export interface HomeContent {
   labelBlock: { heading: string; body: string; cta: string };
   closetBlock: { heading: string; body: string; cta: string };
   newsletter: { eyebrow: string; heading: string; body: string; buttonLabel: string };
+  media: HomeMedia;
+  sections: HomeSection[];
 }
+
+/**
+ * Layout + media (owner follow-up, 2026-09-13 — "no option to edit the actual
+ * pictures/video and layout of the home page"). Hero (the opening headline
+ * block) is not a toggleable section — master spec §4 requires the homepage
+ * to "immediately offer two clear catalog entrances", which lives there.
+ */
+export type HomeSectionKey =
+  | "editorial"
+  | "newIn"
+  | "editBlocks"
+  | "fromCloset"
+  | "instagram"
+  | "newsletter";
+
+export interface HomeSection {
+  key: HomeSectionKey;
+  enabled: boolean;
+}
+
+export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
+  { key: "editorial", enabled: true },
+  { key: "newIn", enabled: true },
+  { key: "editBlocks", enabled: true },
+  { key: "fromCloset", enabled: true },
+  { key: "instagram", enabled: true },
+  { key: "newsletter", enabled: true },
+];
+
+/**
+ * `kind: "auto"` is today's unchanged behaviour — the first rail item with a
+ * photo. `"image"`/`"video"` is a deliberately uploaded override for this one
+ * spot, independent of any product. A slot is a whole-object override: it is
+ * never merged field-by-field with the default, only replaced or kept.
+ */
+export interface HomeMediaSlot {
+  kind: "auto" | "image" | "video";
+  bucket?: string;
+  path?: string;
+  url?: string;
+  /** Video only — a still frame shown before playback / if video can't load. */
+  posterUrl?: string;
+  alt?: string;
+}
+
+export interface HomeMedia {
+  editorial: HomeMediaSlot;
+  labelBlock: HomeMediaSlot;
+  closetBlock: HomeMediaSlot;
+}
+
+export const DEFAULT_HOME_MEDIA: HomeMedia = {
+  editorial: { kind: "auto" },
+  labelBlock: { kind: "auto" },
+  closetBlock: { kind: "auto" },
+};
 
 // Word for word what was live on `/` before this setting existed — copied out
 // of `page.tsx`, not retyped from memory. This is the fallback for a missing
@@ -141,6 +199,8 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
     body: "One email when new pieces and Closet restocks go live. No noise.",
     buttonLabel: "Notify me",
   },
+  media: DEFAULT_HOME_MEDIA,
+  sections: DEFAULT_HOME_SECTIONS,
 };
 
 /**
@@ -148,11 +208,62 @@ export const DEFAULT_HOME_CONTENT: HomeContent = {
  * section) — a blank or missing individual field falls back to its own
  * default instead of rendering an empty heading, per owner feedback.
  */
+interface RawHomeContent extends Record<string, unknown> {
+  hero?: Record<string, string>;
+  editorial?: Record<string, string>;
+  newIn?: Record<string, string>;
+  fromCloset?: Record<string, string>;
+  labelBlock?: Record<string, string>;
+  closetBlock?: Record<string, string>;
+  newsletter?: Record<string, string>;
+  media?: Partial<Record<keyof HomeMedia, Partial<HomeMediaSlot>>>;
+  sections?: Partial<HomeSection>[];
+}
+
+/** A media slot is replaced wholesale, not field-by-field — a saved `"auto"`
+ * slot with a leftover `url` from a previous upload is still `"auto"`. */
+function mergeMediaSlot(def: HomeMediaSlot, saved?: Partial<HomeMediaSlot>): HomeMediaSlot {
+  if (!saved || (saved.kind !== "image" && saved.kind !== "video" && saved.kind !== "auto")) {
+    return def;
+  }
+  if (saved.kind === "auto") return { kind: "auto" };
+  return {
+    kind: saved.kind,
+    bucket: saved.bucket,
+    path: saved.path,
+    url: saved.url,
+    posterUrl: saved.posterUrl,
+    alt: saved.alt,
+  };
+}
+
+/**
+ * The saved order/enabled state wins wholesale (not merged per item) so
+ * reordering and hiding both persist — but always reconciled against the
+ * known section keys, so a bad/stale save can't crash the home page and a
+ * section added after the save was made still appears (enabled, at the end)
+ * instead of silently disappearing.
+ */
+function normalizeSections(saved?: Partial<HomeSection>[]): HomeSection[] {
+  if (!Array.isArray(saved)) return DEFAULT_HOME_SECTIONS;
+  const known = new Set(DEFAULT_HOME_SECTIONS.map((s) => s.key));
+  const seen = new Set<HomeSectionKey>();
+  const out: HomeSection[] = [];
+  for (const s of saved) {
+    if (!s || typeof s.key !== "string" || !known.has(s.key as HomeSectionKey)) continue;
+    const key = s.key as HomeSectionKey;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, enabled: s.enabled !== false });
+  }
+  for (const def of DEFAULT_HOME_SECTIONS) {
+    if (!seen.has(def.key)) out.push({ ...def });
+  }
+  return out;
+}
+
 export async function getHomeContent(db: PrismaClient): Promise<HomeContent> {
-  const v = await readSetting<Partial<Record<keyof HomeContent, Record<string, string>>>>(
-    db,
-    "home.content",
-  );
+  const v = await readSetting<RawHomeContent>(db, "home.content");
   const merge = <S extends Record<string, string>>(def: S, saved?: Partial<S>): S => {
     const out = { ...def };
     for (const k of Object.keys(def) as (keyof S)[]) {
@@ -169,5 +280,11 @@ export async function getHomeContent(db: PrismaClient): Promise<HomeContent> {
     labelBlock: merge(DEFAULT_HOME_CONTENT.labelBlock, v?.labelBlock),
     closetBlock: merge(DEFAULT_HOME_CONTENT.closetBlock, v?.closetBlock),
     newsletter: merge(DEFAULT_HOME_CONTENT.newsletter, v?.newsletter),
+    media: {
+      editorial: mergeMediaSlot(DEFAULT_HOME_MEDIA.editorial, v?.media?.editorial),
+      labelBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.labelBlock, v?.media?.labelBlock),
+      closetBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.closetBlock, v?.media?.closetBlock),
+    },
+    sections: normalizeSections(v?.sections),
   };
 }
