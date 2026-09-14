@@ -82,10 +82,23 @@ test.describe("sold thrift (AC-02)", () => {
     page,
   }) => {
     await page.goto("/closet");
+    // Sold-out pieces are deliberately sorted to the end of the listing
+    // (owner request, 2026-09-14), so on a catalog with more in-stock pieces
+    // than fit on one page, a SOLD card only shows up after paging in —
+    // "Load more" a bounded number of times rather than assuming page 1.
     const soldCard = page
       .locator("ul.grid > li")
       .filter({ has: page.getByText("SOLD") })
       .first();
+    const loadMore = page.getByRole("button", { name: /load more/i });
+    for (let i = 0; i < 6 && (await soldCard.count()) === 0; i++) {
+      if (!(await loadMore.isVisible().catch(() => false))) break;
+      const [response] = await Promise.all([
+        page.waitForResponse((r) => r.url().includes("/api/catalog/")),
+        loadMore.click(),
+      ]);
+      await response.finished();
+    }
     await expect(soldCard).toBeVisible();
     await soldCard.locator("a").click();
 

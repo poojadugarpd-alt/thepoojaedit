@@ -65,6 +65,10 @@ export interface PublicProductCard {
   fromPricePaise: number | null;
   compareAtPaise: number | null;
   availability: PublicAvailability;
+  /** Distinct, non-empty variant sizes on this product (e.g. ["S", "M"] for a
+   * Closet listing carrying more than one size) — drives the size filter and
+   * a size badge on the card. Empty when no variant has a size set. */
+  sizes: string[];
 }
 
 export interface PublicProductDetail extends PublicProductCard {
@@ -150,6 +154,7 @@ export function toPublicCard(p: ProductRow): PublicProductCard {
     fromPricePaise: fromPrice(p.variants),
     compareAtPaise: bestCompareAt(p.variants),
     availability: deriveAvailability(p.catalog, isOneOfOne, p.variants),
+    sizes: [...new Set(p.variants.map((v) => v.size).filter((s): s is string => !!s))],
   };
 }
 

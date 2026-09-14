@@ -11,17 +11,25 @@ import { prisma } from "@/lib/db";
 import {
   getActiveCollection,
   getHomeRailProducts,
+  getProductFacets,
   getPublishedProduct,
   listActiveCollections,
   listPublishedProducts,
   searchPublishedProducts,
+  type ProductFacets,
+  type ProductFilters,
   type ProductPage,
   type ProductSort,
 } from "./queries";
 
 export * from "./public-shape";
 export { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from "./queries";
-export type { ProductPage, ProductSort } from "./queries";
+export type {
+  ProductFacets,
+  ProductFilters,
+  ProductPage,
+  ProductSort,
+} from "./queries";
 export {
   CATALOG_BY_SEGMENT,
   SEGMENT_BY_CATALOG,
@@ -36,8 +44,13 @@ export function listProducts(opts: {
   cursor?: string | null;
   sort?: ProductSort;
   categorySlug?: string;
+  filters?: ProductFilters;
 }): Promise<ProductPage> {
   return listPublishedProducts(prisma, opts);
+}
+
+export function getFacets(catalog: CatalogType): Promise<ProductFacets> {
+  return getProductFacets(prisma, catalog);
 }
 
 export function getProduct(catalog: CatalogType, slug: string) {

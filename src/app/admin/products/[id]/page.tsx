@@ -57,7 +57,9 @@ export default async function EditProduct({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const p = await timed("admin:product-edit (main, cached)", () => getAdminProductCached(id));
+  const p = await timed("admin:product-edit (main, cached)", () =>
+    getAdminProductCached(id),
+  );
   if (!p) notFound();
 
   const isThrift = p.catalog === "THRIFT";
@@ -190,10 +192,15 @@ export default async function EditProduct({
                     {productPath(p.catalog, p.slug)}
                   </span>
                 </p>
-                <Field label="Web address (slug)" name="slug" defaultValue={p.slug} required />
+                <Field
+                  label="Web address (slug)"
+                  name="slug"
+                  defaultValue={p.slug}
+                  required
+                />
                 <p className="text-xs text-stop">
-                  Changing this breaks any link to this product already shared —
-                  only change it if you know that&rsquo;s what you want.
+                  Changing this breaks any link to this product already shared — only
+                  change it if you know that&rsquo;s what you want.
                 </p>
               </div>
             </details>
@@ -228,7 +235,9 @@ export default async function EditProduct({
                 </p>
               ) : null}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {!isThrift && <Field label="SKU" name="sku" defaultValue={v.sku} required />}
+                {!isThrift && (
+                  <Field label="SKU" name="sku" defaultValue={v.sku} required />
+                )}
                 <Field label="Size" name="size" defaultValue={v.size} />
                 <Field label="Color" name="color" defaultValue={v.color} />
                 <Field
@@ -245,7 +254,9 @@ export default async function EditProduct({
                   type="number"
                   step="0.01"
                   defaultValue={
-                    v.compareAtPaise != null ? paiseToRupees(paise(v.compareAtPaise)) : null
+                    v.compareAtPaise != null
+                      ? paiseToRupees(paise(v.compareAtPaise))
+                      : null
                   }
                 />
                 <Field
@@ -268,7 +279,23 @@ export default async function EditProduct({
             </ActionForm>
           ))}
 
-          {!(isThrift && p.thriftDetails?.isOneOfOne && p.variants.length >= 1) && (
+          {/* A one-of-one Closet piece has exactly one physical unit — a DB
+              trigger (master §5) backstops that, rejecting a second variant
+              outright, so the form is hidden rather than let her hit that
+              raw error. The real lever for "I have this in more than one
+              size" (owner request, 2026-09-14) is unchecking "one of one"
+              below first — this explains that instead of just disappearing. */}
+          {isThrift && p.thriftDetails?.isOneOfOne && p.variants.length >= 1 ? (
+            <p className="rounded border border-dashed border-line p-3 text-xs text-ink-soft">
+              This listing is marked{" "}
+              <a href="#f-isOneOfOne-label" className="underline">
+                “one of one”
+              </a>
+              , so it can only have a single variant. If you actually have this design
+              in more than one size, uncheck “one of one” above, save, then come back
+              here to add the other size.
+            </p>
+          ) : (
             <ActionForm
               action={upsertVariantAction.bind(null, id)}
               submitLabel="Add variant"
@@ -278,6 +305,8 @@ export default async function EditProduct({
               {isThrift && (
                 <p className="text-xs text-ink-soft">
                   SKU is generated automatically once you save (e.g. CLO-000123).
+                  {p.variants.length >= 1 &&
+                    " Adding another size lists it as a separate piece under this listing."}
                 </p>
               )}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -287,8 +316,19 @@ export default async function EditProduct({
                   <LabelSkuFields productTitle={p.title} />
                 )}
                 <Field label="Color" name="color" />
-                <Field label="Price (₹)" name="price" type="number" step="0.01" required />
-                <Field label="Compare-at (₹)" name="compareAt" type="number" step="0.01" />
+                <Field
+                  label="Price (₹)"
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  required
+                />
+                <Field
+                  label="Compare-at (₹)"
+                  name="compareAt"
+                  type="number"
+                  step="0.01"
+                />
                 <Field label="On hand" name="onHandQty" type="number" />
                 <label className="flex min-h-11 items-center gap-1 text-xs">
                   <input type="checkbox" name="isActive" defaultChecked /> active
@@ -337,11 +377,19 @@ export default async function EditProduct({
                 )}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-                <ActionForm action={reorderImageAction.bind(null, id)} submitLabel="↑" compact>
+                <ActionForm
+                  action={reorderImageAction.bind(null, id)}
+                  submitLabel="↑"
+                  compact
+                >
                   <input type="hidden" name="imageId" value={im.id} />
                   <input type="hidden" name="direction" value="up" />
                 </ActionForm>
-                <ActionForm action={reorderImageAction.bind(null, id)} submitLabel="↓" compact>
+                <ActionForm
+                  action={reorderImageAction.bind(null, id)}
+                  submitLabel="↓"
+                  compact
+                >
                   <input type="hidden" name="imageId" value={im.id} />
                   <input type="hidden" name="direction" value="down" />
                 </ActionForm>
@@ -362,7 +410,10 @@ export default async function EditProduct({
                   <input type="hidden" name="imageId" value={im.id} />
                 </ActionForm>
               </div>
-              <p className="mt-0.5 truncate text-[11px] text-ink-soft" title={im.altText}>
+              <p
+                className="mt-0.5 truncate text-[11px] text-ink-soft"
+                title={im.altText}
+              >
                 {i + 1}. {im.altText}
               </p>
             </li>
@@ -402,7 +453,10 @@ export default async function EditProduct({
                     ))}
                   </select>
                 </div>
-                <label className="flex min-h-11 items-end gap-2 text-xs">
+                <label
+                  id="f-isOneOfOne-label"
+                  className="flex min-h-11 items-end gap-2 text-xs"
+                >
                   <input
                     type="checkbox"
                     name="isOneOfOne"
@@ -531,8 +585,8 @@ export default async function EditProduct({
           Delete
         </h2>
         <p className="mt-1 text-xs text-ink-soft">
-          Only possible if this product has never appeared on an order. If it has,
-          use &ldquo;Hide from shop&rdquo; above instead.
+          Only possible if this product has never appeared on an order. If it has, use
+          &ldquo;Hide from shop&rdquo; above instead.
         </p>
         <div className="mt-3">
           <DeleteProductConfirm

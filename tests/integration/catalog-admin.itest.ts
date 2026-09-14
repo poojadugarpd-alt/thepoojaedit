@@ -30,7 +30,9 @@ import {
 import { makeClient, resetDb } from "./helpers";
 
 /** Records what was asked to be deleted, deletes nothing for real. */
-function fakeStorage(): StoragePort & { deleted: { bucket: string; paths: string[] }[] } {
+function fakeStorage(): StoragePort & {
+  deleted: { bucket: string; paths: string[] }[];
+} {
   const deleted: { bucket: string; paths: string[] }[] = [];
   return {
     deleted,
@@ -283,9 +285,14 @@ describe("upsertVariant — thrift one-of-one", () => {
       pricePaise: 50000,
       onHandQty: 1,
     });
+    // A second variant is rejected with a friendly message pointing at the
+    // real lever (uncheck "One of one") — DB trigger
+    // ProductVariant_thrift_one_of_one (master §5) backstops this: total
+    // on-hand across every variant of a one-of-one product can never
+    // exceed 1, so a second variant could never hold real stock anyway.
     await expect(
       upsertVariant(db, admin, p.id, { sku: "THR-2", pricePaise: 50000, onHandQty: 1 }),
-    ).rejects.toThrow(/single variant/i);
+    ).rejects.toThrow(/one of one/i);
     await expect(
       upsertVariant(db, admin, p.id, {
         id: v.id,
@@ -294,6 +301,41 @@ describe("upsertVariant — thrift one-of-one", () => {
         onHandQty: 2,
       }),
     ).rejects.toThrow(/0 or 1/);
+  });
+
+  it("multiple variants ARE allowed once the listing is no longer marked one-of-one — the real lever for a piece the owner has in more than one size (owner request, 2026-09-14)", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      slug: "multi-size-scarf",
+      title: "Multi-size scarf",
+    });
+    await upsertThriftDetails(db, admin, p.id, {
+      conditionGrade: "GOOD",
+      measurements: {},
+      isOneOfOne: false,
+    });
+
+    const v1 = await upsertVariant(db, admin, p.id, {
+      sku: "THR-S",
+      size: "S",
+      pricePaise: 50000,
+      onHandQty: 1,
+    });
+    const v2 = await upsertVariant(db, admin, p.id, {
+      sku: "THR-M",
+      size: "M",
+      pricePaise: 50000,
+      onHandQty: 1,
+    });
+    expect(v2.id).not.toBe(v1.id);
+    const withVariants = await db.product.findUniqueOrThrow({
+      where: { id: p.id },
+      include: { variants: true },
+    });
+    expect(withVariants.variants).toHaveLength(2);
+    // Both sizes genuinely in stock at once — no total-on-hand cap applies
+    // once the product isn't flagged one-of-one.
+    expect(withVariants.variants.reduce((s, v) => s + v.onHandQty, 0)).toBe(2);
   });
 });
 
@@ -306,7 +348,10 @@ describe("upsertVariant — SKU generation (owner feedback)", () => {
       catalog: "THRIFT",
       title: "Windcheater",
     });
-    const created = await upsertVariant(db, admin, p.id, { pricePaise: 90000, onHandQty: 1 });
+    const created = await upsertVariant(db, admin, p.id, {
+      pricePaise: 90000,
+      onHandQty: 1,
+    });
     expect(created.sku).toMatch(/^CLO-\d{6}$/);
 
     // Updating without a SKU keeps the one already generated — stable.
@@ -321,13 +366,22 @@ describe("upsertVariant — SKU generation (owner feedback)", () => {
   it("two Closet variants created back to back get different generated SKUs", async () => {
     const a = await createProduct(db, admin, { catalog: "THRIFT", title: "A" });
     const b = await createProduct(db, admin, { catalog: "THRIFT", title: "B" });
-    const va = await upsertVariant(db, admin, a.id, { pricePaise: 10000, onHandQty: 1 });
-    const vb = await upsertVariant(db, admin, b.id, { pricePaise: 10000, onHandQty: 1 });
+    const va = await upsertVariant(db, admin, a.id, {
+      pricePaise: 10000,
+      onHandQty: 1,
+    });
+    const vb = await upsertVariant(db, admin, b.id, {
+      pricePaise: 10000,
+      onHandQty: 1,
+    });
     expect(va.sku).not.toBe(vb.sku);
   });
 
   it("a Label variant still requires an explicit SKU", async () => {
-    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Kurta" });
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Kurta",
+    });
     await expect(
       upsertVariant(db, admin, p.id, { pricePaise: 199900, onHandQty: 5 }),
     ).rejects.toThrow(/sku is required/i);
@@ -398,9 +452,15 @@ async function publishedProduct(catalog: "THE_POOJA_EDIT" | "THRIFT", title: str
 // Owner feedback (2026-09-13, Part B3) — admin collections screens.
 describe("admin collections service", () => {
   it("auto-generates a collection slug from the name, suffixing -2/-3 on collision", async () => {
-    const first = await createCollection(db, admin, { catalog: "THRIFT", name: "Autumn Edit" });
+    const first = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Autumn Edit",
+    });
     expect(first.slug).toBe("autumn-edit");
-    const second = await createCollection(db, admin, { catalog: "THRIFT", name: "Autumn Edit" });
+    const second = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Autumn Edit",
+    });
     expect(second.slug).toBe("autumn-edit-2");
   });
 
@@ -410,9 +470,9 @@ describe("admin collections service", () => {
     const rows = await db.collection.findMany({ where: { isInternal: true } });
     expect(rows).toHaveLength(2);
     expect(rows.map((r) => r.slug).sort()).toEqual(["home-closet", "home-label"]);
-    expect(rows.every((r) => r.catalog === "THE_POOJA_EDIT" || r.catalog === "THRIFT")).toBe(
-      true,
-    );
+    expect(
+      rows.every((r) => r.catalog === "THE_POOJA_EDIT" || r.catalog === "THRIFT"),
+    ).toBe(true);
   });
 
   it("toggleFeatureOnHomePage inserts at position 0, shifting existing members down, and removing works", async () => {
@@ -444,7 +504,10 @@ describe("admin collections service", () => {
   });
 
   it("reorderCollectionProduct swaps neighbours and normalizes positions; a no-op at either end", async () => {
-    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Order test" });
+    const col = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Order test",
+    });
     const a = await publishedProduct("THRIFT", "OrderA");
     const b = await publishedProduct("THRIFT", "OrderB");
     const c = await publishedProduct("THRIFT", "OrderC");
@@ -470,7 +533,10 @@ describe("admin collections service", () => {
   });
 
   it("removeProductFromCollection renormalizes the remaining positions", async () => {
-    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Remove test" });
+    const col = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Remove test",
+    });
     const a = await publishedProduct("THRIFT", "RemA");
     const b = await publishedProduct("THRIFT", "RemB");
     const c = await publishedProduct("THRIFT", "RemC");
@@ -502,14 +568,28 @@ describe("admin collections service", () => {
   });
 
   it("searchAddableCollectionProducts excludes existing members, drafts, and the other catalogue", async () => {
-    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "Search test" });
+    const col = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Search test",
+    });
     const already = await publishedProduct("THRIFT", "Search Already In");
     await addProductToCollection(db, admin, col.id, already.id);
     const findable = await publishedProduct("THRIFT", "Search Findable Item");
-    const draft = await createProduct(db, admin, { catalog: "THRIFT", title: "Search Draft" });
-    const otherCatalog = await publishedProduct("THE_POOJA_EDIT", "Search Other Catalogue");
+    const draft = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Search Draft",
+    });
+    const otherCatalog = await publishedProduct(
+      "THE_POOJA_EDIT",
+      "Search Other Catalogue",
+    );
 
-    const results = await searchAddableCollectionProducts(db, col.id, "THRIFT", "search");
+    const results = await searchAddableCollectionProducts(
+      db,
+      col.id,
+      "THRIFT",
+      "search",
+    );
     const ids = results.map((r) => r.id);
     expect(ids).toContain(findable.id);
     expect(ids).not.toContain(already.id);
@@ -518,7 +598,10 @@ describe("admin collections service", () => {
   });
 
   it("listCollectionsAdmin and getCollectionAdmin report product counts and membership", async () => {
-    const col = await createCollection(db, admin, { catalog: "THRIFT", name: "List test" });
+    const col = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "List test",
+    });
     const p = await publishedProduct("THRIFT", "Listed piece");
     await addProductToCollection(db, admin, col.id, p.id);
 
@@ -598,6 +681,85 @@ describe("listAdminProducts pagination + primary image (speed audit)", () => {
   });
 });
 
+// Owner request, 2026-09-14: "for sale" and "sold" listings were mixed on
+// one page, making the one she wants to edit or add to a hassle to find.
+describe("listAdminProducts availability split (owner request, 2026-09-14)", () => {
+  it("FOR_SALE and SOLD partition products by whether any stock remains", async () => {
+    const forSale = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      slug: "avail-for-sale",
+      title: "For sale",
+    });
+    await upsertVariant(db, admin, forSale.id, {
+      sku: `SKU-${randomUUID().slice(0, 8)}`,
+      pricePaise: 50000,
+      onHandQty: 1,
+    });
+
+    const sold = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      slug: "avail-sold",
+      title: "Sold",
+    });
+    await upsertVariant(db, admin, sold.id, {
+      sku: `SKU-${randomUUID().slice(0, 8)}`,
+      pricePaise: 50000,
+      onHandQty: 0,
+    });
+
+    const forSaleList = await listAdminProducts(db, { availability: "FOR_SALE" });
+    expect(forSaleList.items.map((i) => i.slug)).toContain("avail-for-sale");
+    expect(forSaleList.items.map((i) => i.slug)).not.toContain("avail-sold");
+
+    const soldList = await listAdminProducts(db, { availability: "SOLD" });
+    expect(soldList.items.map((i) => i.slug)).toContain("avail-sold");
+    expect(soldList.items.map((i) => i.slug)).not.toContain("avail-for-sale");
+
+    const allList = await listAdminProducts(db, { availability: "ALL" });
+    expect(allList.items.map((i) => i.slug)).toEqual(
+      expect.arrayContaining(["avail-for-sale", "avail-sold"]),
+    );
+  });
+
+  it("a product with no variant at all counts as SOLD (nothing to sell)", async () => {
+    const bare = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      slug: "avail-no-variant",
+      title: "No variant",
+    });
+    const soldList = await listAdminProducts(db, { availability: "SOLD" });
+    expect(soldList.items.map((i) => i.id)).toContain(bare.id);
+  });
+
+  it("SOLD pagination (hasMore) works over the in-JS-filtered list", async () => {
+    for (let i = 0; i < 3; i++) {
+      const p = await createProduct(db, admin, {
+        catalog: "THRIFT",
+        slug: `avail-sold-page-${i}`,
+        title: `Sold page ${i}`,
+      });
+      await upsertVariant(db, admin, p.id, {
+        sku: `SKU-${randomUUID().slice(0, 8)}`,
+        pricePaise: 50000,
+        onHandQty: 0,
+      });
+    }
+    const firstPage = await listAdminProducts(db, {
+      availability: "SOLD",
+      take: 2,
+      skip: 0,
+    });
+    expect(firstPage.items).toHaveLength(2);
+    expect(firstPage.hasMore).toBe(true);
+    const secondPage = await listAdminProducts(db, {
+      availability: "SOLD",
+      take: 2,
+      skip: 2,
+    });
+    expect(secondPage.hasMore).toBe(false);
+  });
+});
+
 // Owner feedback (2026-09-13): real delete only when the product has never
 // appeared on an order — otherwise "Hide from shop" (archive) is the only
 // option. Both paths covered.
@@ -607,7 +769,11 @@ describe("deleteProduct", () => {
       catalog: "THE_POOJA_EDIT",
       title: "Never sold",
     });
-    await upsertVariant(db, admin, p.id, { sku: "NS-1", pricePaise: 50000, onHandQty: 3 });
+    await upsertVariant(db, admin, p.id, {
+      sku: "NS-1",
+      pricePaise: 50000,
+      onHandQty: 3,
+    });
     await db.productImage.create({
       data: {
         productId: p.id,
@@ -623,7 +789,9 @@ describe("deleteProduct", () => {
     await deleteProduct(db, storage, admin, p.id);
 
     expect(await db.product.findUnique({ where: { id: p.id } })).toBeNull();
-    expect(await db.productVariant.findMany({ where: { productId: p.id } })).toHaveLength(0);
+    expect(
+      await db.productVariant.findMany({ where: { productId: p.id } }),
+    ).toHaveLength(0);
     expect(storage.deleted).toEqual([
       { bucket: "product-images", paths: [`${p.id}/photo.jpg`] },
     ]);

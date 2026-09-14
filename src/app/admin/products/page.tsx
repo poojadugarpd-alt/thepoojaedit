@@ -7,7 +7,11 @@ import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { Pill, Thumb } from "@/features/admin/format";
 import { Sheet } from "@/features/admin/sheet";
 import { timed } from "@/lib/perf";
-import { listAdminProducts, type ProductStatusFilter } from "@/server/catalog/admin";
+import {
+  listAdminProducts,
+  type ProductAvailabilityFilter,
+  type ProductStatusFilter,
+} from "@/server/catalog/admin";
 
 const STATUSES: ProductStatusFilter[] = ["ALL", "DRAFT", "PUBLISHED", "ARCHIVED"];
 
@@ -17,6 +21,7 @@ export default async function AdminProducts({
   searchParams: Promise<{
     catalog?: string;
     status?: string;
+    availability?: string;
     q?: string;
     page?: string;
   }>;
@@ -29,6 +34,16 @@ export default async function AdminProducts({
   const status = (
     STATUSES.includes(sp.status as ProductStatusFilter) ? sp.status : "ALL"
   ) as ProductStatusFilter;
+  // Defaults to FOR_SALE — the working view an admin actually wants day to
+  // day — not ALL, so sold-out pieces don't clutter the list she's editing
+  // or adding to (owner request, 2026-09-14). "Sold" is one click away, its
+  // own view via `?availability=SOLD`.
+  const availability: ProductAvailabilityFilter =
+    sp.availability === "SOLD"
+      ? "SOLD"
+      : sp.availability === "ALL"
+        ? "ALL"
+        : "FOR_SALE";
   const q = sp.q ?? "";
   const page = Math.max(1, Number(sp.page) || 1);
   const take = 30;
@@ -36,13 +51,21 @@ export default async function AdminProducts({
   // No exact COUNT — the only past use for it was "Page X of Y"; Previous /
   // Next (shown only when there's really another page) needs just `hasMore`.
   const { items, hasMore } = await timed("admin:products-list", () =>
-    listAdminProducts(prisma, { catalog, status, q, skip: (page - 1) * take, take }),
+    listAdminProducts(prisma, {
+      catalog,
+      status,
+      availability,
+      q,
+      skip: (page - 1) * take,
+      take,
+    }),
   );
 
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     if (catalog) p.set("catalog", catalog);
     if (status !== "ALL") p.set("status", status);
+    if (availability !== "FOR_SALE") p.set("availability", availability);
     if (q) p.set("q", q);
     for (const [k, v] of Object.entries(patch)) {
       if (v) p.set(k, v);
@@ -58,8 +81,14 @@ export default async function AdminProducts({
   // the mobile filter sheet — never nested inside the search form below
   // (nesting forms is invalid HTML and browsers silently mis-handle it).
   const filterFields = (
-    <form method="get" className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <form
+      method="get"
+      className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+    >
       {q && <input type="hidden" name="q" value={q} />}
+      {availability !== "FOR_SALE" && (
+        <input type="hidden" name="availability" value={availability} />
+      )}
       <select
         aria-label="Filter by catalogue"
         name="catalog"
@@ -101,6 +130,11 @@ export default async function AdminProducts({
     </form>
   );
 
+  // The "For sale" / "Sold" tabs carry every other active filter forward
+  // (catalog, status, search) — only `availability` itself changes.
+  const availabilityHref = (value: ProductAvailabilityFilter) =>
+    qs({ availability: value === "FOR_SALE" ? undefined : value, page: undefined });
+
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
@@ -113,17 +147,42 @@ export default async function AdminProducts({
         </Link>
       </div>
 
+      <nav aria-label="Availability" className="mt-3 flex gap-2">
+        {(["FOR_SALE", "SOLD"] as const).map((value) => {
+          const active = availability === value;
+          return (
+            <Link
+              key={value}
+              href={availabilityHref(value)}
+              aria-current={active ? "true" : undefined}
+              className={`flex min-h-11 items-center rounded px-3 text-sm font-medium ${
+                active
+                  ? "bg-foreground text-background"
+                  : "border border-line text-ink hover:bg-fill"
+              }`}
+            >
+              {value === "FOR_SALE" ? "For sale" : "Sold"}
+            </Link>
+          );
+        })}
+      </nav>
+
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <form method="get" className="flex min-w-0 flex-1 items-center gap-2">
           {catalog && <input type="hidden" name="catalog" value={catalog} />}
           {status !== "ALL" && <input type="hidden" name="status" value={status} />}
+          {availability !== "FOR_SALE" && (
+            <input type="hidden" name="availability" value={availability} />
+          )}
           <input
             name="q"
             defaultValue={q}
             placeholder="title / slug / brand"
             className="min-h-11 min-w-0 flex-1 rounded border border-line bg-transparent px-2 py-1 text-base sm:max-w-xs sm:text-sm"
           />
-          <button className="min-h-11 rounded border border-line px-3 text-sm">Search</button>
+          <button className="min-h-11 rounded border border-line px-3 text-sm">
+            Search
+          </button>
         </form>
 
         {/* Desktop: inline filter form. Mobile: same fields, inside a sheet. */}
@@ -141,7 +200,10 @@ export default async function AdminProducts({
         {items.map((p) => (
           <li key={p.id} className="rounded border border-line p-3">
             <Link href={`/admin/products/${p.id}`} className="flex gap-3">
-              <Thumb url={p.primaryImage?.publicUrl ?? null} alt={p.primaryImage?.altText ?? ""} />
+              <Thumb
+                url={p.primaryImage?.publicUrl ?? null}
+                alt={p.primaryImage?.altText ?? ""}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -164,7 +226,9 @@ export default async function AdminProducts({
                   <div>
                     <dt className="inline">From </dt>
                     <dd className="inline font-medium text-ink">
-                      {p.fromPricePaise != null ? formatPaiseINR(p.fromPricePaise) : "—"}
+                      {p.fromPricePaise != null
+                        ? formatPaiseINR(p.fromPricePaise)
+                        : "—"}
                     </dd>
                   </div>
                   <div>

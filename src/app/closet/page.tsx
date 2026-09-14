@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
-import { CatalogListing } from "@/features/catalog/catalog-listing";
-import type { ProductSort } from "@/server/catalog";
+import {
+  CatalogListing,
+  type CatalogSearchParams,
+} from "@/features/catalog/catalog-listing";
 
 export const metadata: Metadata = {
   title: "The Closet",
@@ -11,18 +13,10 @@ export const metadata: Metadata = {
   openGraph: { title: "The Closet", url: "/closet" },
 };
 
-const SORTS = new Set<ProductSort>(["newest", "price_asc", "price_desc"]);
-
 export default async function ClosetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<CatalogSearchParams>;
 }) {
-  const { sort } = await searchParams;
-  return (
-    <CatalogListing
-      catalog="THRIFT"
-      sort={SORTS.has(sort as ProductSort) ? (sort as ProductSort) : "newest"}
-    />
-  );
+  return <CatalogListing catalog="THRIFT" searchParams={await searchParams} />;
 }

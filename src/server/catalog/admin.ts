@@ -37,11 +37,18 @@ export class ValidationError extends Error {
 
 export type ProductStatusFilter = "ALL" | "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
+export type ProductAvailabilityFilter = "ALL" | "FOR_SALE" | "SOLD";
+
 export async function listAdminProducts(
   db: PrismaClient,
   opts: {
     catalog?: CatalogType;
     status?: ProductStatusFilter;
+    /** "FOR_SALE" = has stock somewhere; "SOLD" = every variant is
+     * exhausted. Owner request, 2026-09-14 — for-sale and sold-out listings
+     * were mixed on one page, making the one she actually wants to edit
+     * harder to find; this is what splits them onto separate views. */
+    availability?: ProductAvailabilityFilter;
     q?: string;
     skip?: number;
     take?: number;
@@ -61,18 +68,19 @@ export async function listAdminProducts(
       : {}),
   };
   const take = Math.min(Math.max(opts.take ?? 30, 1), 100);
-  // Speed audit (2026-09-13): a single query, over-fetching by one row to
-  // learn "is there a next page" cheaply — no separate `db.product.count()`.
-  // The exact total was only ever used to draw "Page X of Y"; the UI now
-  // shows "Page X" with Previous/Next instead, so nothing needs it. Also
-  // dropped `_count.select.variants` (redundant — `variants.length` is the
-  // same number, from data already being fetched) and fetches only the
-  // primary image (one row, not the full gallery) for the list thumbnail.
+  const availability = opts.availability ?? "ALL";
+  // Speed audit (2026-09-13) established the over-fetch-by-one-row trick for
+  // "is there a next page" without a separate COUNT. Availability isn't a
+  // plain column (it's a sum across variants), so filtering by it can't stay
+  // at the DB `skip`/`take` layer — when it's active, fetch every matching
+  // row (both catalogs together are a few hundred products at most, not a
+  // scale where this is a real cost) and paginate the filtered list in JS
+  // instead.
   const rows = await db.product.findMany({
     where,
     orderBy: [{ updatedAt: "desc" }],
-    skip: opts.skip ?? 0,
-    take: take + 1,
+    skip: availability === "ALL" ? (opts.skip ?? 0) : 0,
+    take: availability === "ALL" ? take + 1 : 1000,
     include: {
       _count: { select: { images: true } },
       variants: { select: { pricePaise: true, onHandQty: true, reservedQty: true } },
@@ -83,27 +91,34 @@ export async function listAdminProducts(
       },
     },
   });
-  const hasMore = rows.length > take;
-  const page = hasMore ? rows.slice(0, take) : rows;
-  return {
-    hasMore,
-    take,
-    items: page.map((p) => ({
-      id: p.id,
-      catalog: p.catalog,
-      slug: p.slug,
-      title: p.title,
-      status: p.status,
-      variantCount: p.variants.length,
-      imageCount: p._count.images,
-      primaryImage: p.images[0] ?? null,
-      fromPricePaise: p.variants.length
-        ? Math.min(...p.variants.map((v) => v.pricePaise))
-        : null,
-      onHand: p.variants.reduce((s, v) => s + v.onHandQty, 0),
-      available: p.variants.reduce((s, v) => s + (v.onHandQty - v.reservedQty), 0),
-    })),
-  };
+
+  const shaped = rows.map((p) => ({
+    id: p.id,
+    catalog: p.catalog,
+    slug: p.slug,
+    title: p.title,
+    status: p.status,
+    variantCount: p.variants.length,
+    imageCount: p._count.images,
+    primaryImage: p.images[0] ?? null,
+    fromPricePaise: p.variants.length
+      ? Math.min(...p.variants.map((v) => v.pricePaise))
+      : null,
+    onHand: p.variants.reduce((s, v) => s + v.onHandQty, 0),
+    available: p.variants.reduce((s, v) => s + (v.onHandQty - v.reservedQty), 0),
+  }));
+
+  if (availability === "ALL") {
+    const hasMore = shaped.length > take;
+    return { hasMore, take, items: hasMore ? shaped.slice(0, take) : shaped };
+  }
+
+  const filtered = shaped.filter((p) =>
+    availability === "SOLD" ? p.available <= 0 : p.available > 0,
+  );
+  const skip = opts.skip ?? 0;
+  const page = filtered.slice(skip, skip + take);
+  return { hasMore: skip + take < filtered.length, take, items: page };
 }
 
 export function getAdminProduct(db: PrismaClient, id: string) {
@@ -450,11 +465,21 @@ export async function upsertVariant(
   });
 
   if (input.pricePaise < 0) throw new ValidationError("Price must be >= 0.");
+  // "One of one" means exactly one physical garment exists for this
+  // PRODUCT, full stop — a DB trigger (`ProductVariant_thrift_one_of_one`,
+  // master §5) backstops this by rejecting total on-hand > 1 summed across
+  // every variant, so a second variant can never actually hold real stock
+  // here; reject it early with a friendly message instead of a raw trigger
+  // error. A listing that's genuinely more than one physical piece (e.g.
+  // the owner has the same design in two sizes) isn't "one of one" at the
+  // product level — see the admin UI's guidance to uncheck that box first.
   if (product.catalog === "THRIFT" && product.thriftDetails?.isOneOfOne) {
     const others = product.variants.filter((v) => v.id !== input.id);
     if (others.length > 0) {
       throw new ValidationError(
-        "A one-of-one thrift piece has a single variant. Edit the existing one.",
+        "This listing is marked “One of one”, so it can only have a single variant. " +
+          "If you actually have this design in more than one size, uncheck “One of one” " +
+          "below first, then add the other size.",
       );
     }
     if ((input.onHandQty ?? 0) > 1) {
@@ -934,7 +959,11 @@ export async function searchAddableCollectionProducts(
     select: {
       id: true,
       title: true,
-      images: { where: { isPrimary: true }, take: 1, select: { publicUrl: true, altText: true } },
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+        select: { publicUrl: true, altText: true },
+      },
     },
   });
 }
@@ -970,7 +999,9 @@ export async function toggleFeatureOnHomePage(
       where: { collectionId: col.id },
       data: { position: { increment: 1 } },
     }),
-    db.productCollection.create({ data: { productId, collectionId: col.id, position: 0 } }),
+    db.productCollection.create({
+      data: { productId, collectionId: col.id, position: 0 },
+    }),
   ]);
   await auditLog(db, {
     adminUserId: admin.id,

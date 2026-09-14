@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { CatalogType, PrismaClient } from "../../src/generated/prisma";
 import {
   getActiveCollection,
+  getProductFacets,
   getPublishedProduct,
   listPublishedProducts,
   searchPublishedProducts,
@@ -226,6 +227,140 @@ describe("search", () => {
       catalog: "THRIFT",
     });
     expect(thrOnly.map((c) => c.slug)).toEqual(["marigold-bag"]);
+  });
+});
+
+describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
+  it("sold-out / out-of-stock products always sink below in-stock ones, regardless of sort", async () => {
+    // Newest-first order would normally be [newer-sold, older-in-stock] —
+    // the in-stock one must still come first.
+    await makeProduct({ catalog: "THRIFT", slug: "older-in-stock", onHand: 1 });
+    await makeProduct({ catalog: "THRIFT", slug: "newer-sold", onHand: 0 });
+
+    const list = await listPublishedProducts(db, { catalog: "THRIFT" });
+    expect(list.items.map((c) => c.slug)).toEqual(["older-in-stock", "newer-sold"]);
+
+    // Holds under a price sort too, not just "newest".
+    const byPrice = await listPublishedProducts(db, {
+      catalog: "THRIFT",
+      sort: "price_asc",
+    });
+    expect(byPrice.items.map((c) => c.slug)).toEqual(["older-in-stock", "newer-sold"]);
+  });
+
+  it("filters by size — matches a product with a variant in that size", async () => {
+    await db.product.create({
+      data: {
+        catalog: "THRIFT",
+        slug: "multi-size",
+        title: "Multi Size",
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+        variants: {
+          create: [
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 100000, onHandQty: 1 },
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "M", pricePaise: 110000, onHandQty: 1 },
+          ],
+        },
+        thriftDetails: {
+          create: { conditionGrade: "GOOD", measurements: {}, isOneOfOne: false },
+        },
+      },
+    });
+    // makeProduct's default thrift variant is size "M" — this one only ever
+    // has that, never "S".
+    await makeProduct({ catalog: "THRIFT", slug: "m-only" });
+
+    const sizeS = await listPublishedProducts(db, {
+      catalog: "THRIFT",
+      filters: { sizes: ["S"] },
+    });
+    expect(sizeS.items.map((c) => c.slug)).toEqual(["multi-size"]);
+
+    const sizeM = await listPublishedProducts(db, {
+      catalog: "THRIFT",
+      filters: { sizes: ["M"] },
+    });
+    expect(sizeM.items.map((c) => c.slug).sort()).toEqual(["m-only", "multi-size"]);
+
+    const sizeXL = await listPublishedProducts(db, {
+      catalog: "THRIFT",
+      filters: { sizes: ["XL"] },
+    });
+    expect(sizeXL.items).toEqual([]);
+  });
+
+  it("filters by price range", async () => {
+    await db.product.create({
+      data: {
+        catalog: "THE_POOJA_EDIT",
+        slug: "cheap-item",
+        title: "Cheap",
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+        variants: {
+          create: [
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 50000, onHandQty: 1 },
+          ],
+        },
+      },
+    });
+    await db.product.create({
+      data: {
+        catalog: "THE_POOJA_EDIT",
+        slug: "pricey-item",
+        title: "Pricey",
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+        variants: {
+          create: [
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 500000, onHandQty: 1 },
+          ],
+        },
+      },
+    });
+
+    const midRange = await listPublishedProducts(db, {
+      catalog: "THE_POOJA_EDIT",
+      filters: { priceMinPaise: 40000, priceMaxPaise: 100000 },
+    });
+    expect(midRange.items.map((c) => c.slug)).toEqual(["cheap-item"]);
+  });
+
+  it("inStockOnly excludes sold-out entirely rather than just sinking it", async () => {
+    await makeProduct({ catalog: "THRIFT", slug: "in-stock-a", onHand: 1 });
+    await makeProduct({ catalog: "THRIFT", slug: "sold-out-a", onHand: 0 });
+
+    const filtered = await listPublishedProducts(db, {
+      catalog: "THRIFT",
+      filters: { inStockOnly: true },
+    });
+    expect(filtered.items.map((c) => c.slug)).toEqual(["in-stock-a"]);
+  });
+
+  it("getProductFacets returns distinct sizes (size-ordered) and the real price range", async () => {
+    await db.product.create({
+      data: {
+        catalog: "THRIFT",
+        slug: "facets-a",
+        title: "A",
+        status: "PUBLISHED",
+        publishedAt: new Date(),
+        variants: {
+          create: [
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "L", pricePaise: 30000, onHandQty: 1 },
+            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 90000, onHandQty: 1 },
+          ],
+        },
+        thriftDetails: {
+          create: { conditionGrade: "GOOD", measurements: {}, isOneOfOne: false },
+        },
+      },
+    });
+    const facets = await getProductFacets(db, "THRIFT");
+    expect(facets.sizes).toEqual(["S", "L"]); // size-scale order, not alphabetical
+    expect(facets.priceMinPaise).toBe(30000);
+    expect(facets.priceMaxPaise).toBe(90000);
   });
 });
 

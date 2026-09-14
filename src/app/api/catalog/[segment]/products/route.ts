@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { rupeesToPaise } from "@/lib/money";
 import { catalogFromSegment, listProducts, type ProductSort } from "@/server/catalog";
 
 export const runtime = "nodejs";
@@ -22,12 +23,24 @@ export async function GET(
     : "newest";
   const limit = Number(sp.get("limit")) || undefined;
 
+  const sizes = sp.getAll("size");
+  // priceMin/priceMax arrive as rupees (what the filter form and its "Load
+  // more" follow-up requests both send) — converted to paise once, here.
+  const priceMin = sp.get("priceMin");
+  const priceMax = sp.get("priceMax");
+
   const page = await listProducts({
     catalog,
     cursor: sp.get("cursor"),
     sort,
     limit,
     categorySlug: sp.get("category") ?? undefined,
+    filters: {
+      sizes: sizes.length ? sizes : undefined,
+      priceMinPaise: priceMin ? rupeesToPaise(priceMin) : undefined,
+      priceMaxPaise: priceMax ? rupeesToPaise(priceMax) : undefined,
+      inStockOnly: sp.get("inStockOnly") === "1",
+    },
   });
 
   return NextResponse.json(page, {
