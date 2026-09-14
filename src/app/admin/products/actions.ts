@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 
 import type { CatalogType, ConditionGrade, ImageType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
+import { rupeesToPaise } from "@/lib/money";
+import { publicEnv } from "@/lib/public-env";
 import { createSupabaseStoragePort } from "@/lib/storage";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {
@@ -29,10 +31,6 @@ export type ActionState = { ok: boolean; message?: string; errors?: string[] };
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
 const strOrNull = (v: FormDataEntryValue | null) => str(v) || null;
-const intOrNull = (v: FormDataEntryValue | null) => {
-  const s = str(v);
-  return s === "" ? null : Number(s);
-};
 
 function handle(e: unknown): ActionState {
   if (e instanceof ValidationError)
@@ -166,13 +164,17 @@ export async function upsertVariantAction(
 ): Promise<ActionState> {
   const admin = await requireAdmin();
   try {
+    // The form takes rupees (what an admin actually thinks in), not paise —
+    // was previously a raw paise field, meaning "1900" saved as ₹19.00.
+    const priceStr = str(form.get("price"));
+    const compareAtStr = str(form.get("compareAt"));
     await upsertVariant(prisma, admin, productId, {
       id: strOrNull(form.get("id")) ?? undefined,
       sku: str(form.get("sku")),
       size: strOrNull(form.get("size")),
       color: strOrNull(form.get("color")),
-      pricePaise: Number(str(form.get("pricePaise")) || 0),
-      compareAtPaise: intOrNull(form.get("compareAtPaise")),
+      pricePaise: priceStr ? rupeesToPaise(priceStr) : 0,
+      compareAtPaise: compareAtStr ? rupeesToPaise(compareAtStr) : null,
       onHandQty: Number(str(form.get("onHandQty")) || 0),
       lowStockThreshold: Number(str(form.get("lowStockThreshold")) || 0),
       isActive: form.get("isActive") === "on",
@@ -261,7 +263,10 @@ export async function thriftDetailsAction(
       authenticityNotes: strOrNull(form.get("authenticityNotes")),
       careNotes: strOrNull(form.get("careNotes")),
       isOneOfOne: form.get("isOneOfOne") === "on",
-      acquisitionCostPaise: intOrNull(form.get("acquisitionCostPaise")),
+      acquisitionCostPaise: (() => {
+        const s = str(form.get("acquisitionCost"));
+        return s ? rupeesToPaise(s) : null;
+      })(),
     });
   } catch (e) {
     return handle(e);
@@ -325,7 +330,7 @@ export async function confirmImageUploadAction(
   try {
     const storage = await createSupabaseStoragePort();
     const image = await confirmProductImageUpload(
-      { db: prisma, storage, admin },
+      { db: prisma, storage, admin, supabaseUrl: publicEnv.NEXT_PUBLIC_SUPABASE_URL },
       { productId, ...input },
     );
     await prisma.adminActivityLog.create({

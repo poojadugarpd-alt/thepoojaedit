@@ -12,6 +12,7 @@ import { Pill } from "@/features/admin/format";
 import { prisma } from "@/lib/db";
 import { CATALOG_LABEL, productPath } from "@/lib/catalog-routes";
 import { timed } from "@/lib/perf";
+import { paise, paiseToRupees } from "@/lib/money";
 import { publicEnv } from "@/lib/public-env";
 import { getAdminProduct, validateForPublication } from "@/server/catalog/admin";
 import { HOME_RAIL_SLUG } from "@/server/catalog/queries";
@@ -231,17 +232,21 @@ export default async function EditProduct({
                 <Field label="Size" name="size" defaultValue={v.size} />
                 <Field label="Color" name="color" defaultValue={v.color} />
                 <Field
-                  label="Price (paise)"
-                  name="pricePaise"
+                  label="Price (₹)"
+                  name="price"
                   type="number"
-                  defaultValue={v.pricePaise}
+                  step="0.01"
+                  defaultValue={paiseToRupees(paise(v.pricePaise))}
                   required
                 />
                 <Field
-                  label="Compare-at (paise)"
-                  name="compareAtPaise"
+                  label="Compare-at (₹)"
+                  name="compareAt"
                   type="number"
-                  defaultValue={v.compareAtPaise}
+                  step="0.01"
+                  defaultValue={
+                    v.compareAtPaise != null ? paiseToRupees(paise(v.compareAtPaise)) : null
+                  }
                 />
                 <Field
                   label="On hand"
@@ -282,8 +287,8 @@ export default async function EditProduct({
                   <LabelSkuFields productTitle={p.title} />
                 )}
                 <Field label="Color" name="color" />
-                <Field label="Price (paise)" name="pricePaise" type="number" required />
-                <Field label="Compare-at (paise)" name="compareAtPaise" type="number" />
+                <Field label="Price (₹)" name="price" type="number" step="0.01" required />
+                <Field label="Compare-at (₹)" name="compareAt" type="number" step="0.01" />
                 <Field label="On hand" name="onHandQty" type="number" />
                 <label className="flex min-h-11 items-center gap-1 text-xs">
                   <input type="checkbox" name="isActive" defaultChecked /> active
@@ -438,10 +443,15 @@ export default async function EditProduct({
                   defaultValue={p.thriftDetails?.alterations}
                 />
                 <Field
-                  label="Acquisition cost (paise, admin-only)"
-                  name="acquisitionCostPaise"
+                  label="Acquisition cost (₹, admin-only)"
+                  name="acquisitionCost"
                   type="number"
-                  defaultValue={p.thriftDetails?.acquisitionCostPaise}
+                  step="0.01"
+                  defaultValue={
+                    p.thriftDetails?.acquisitionCostPaise != null
+                      ? paiseToRupees(paise(p.thriftDetails.acquisitionCostPaise))
+                      : null
+                  }
                 />
               </div>
               <Field

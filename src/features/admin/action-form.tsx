@@ -63,6 +63,7 @@ export function Field({
   placeholder,
   hint,
   maxLength,
+  step,
 }: {
   label: string;
   name: string;
@@ -72,6 +73,10 @@ export function Field({
   placeholder?: string;
   hint?: string;
   maxLength?: number;
+  /** For `type="number"` — e.g. "0.01" so a rupee amount like 1499.50 doesn't
+   * trip the browser's step-mismatch validation (which defaults to whole
+   * numbers only). */
+  step?: string;
 }) {
   const id = `f-${name}`;
   return (
@@ -87,6 +92,7 @@ export function Field({
         required={required}
         placeholder={placeholder}
         maxLength={maxLength}
+        step={step}
         defaultValue={defaultValue ?? undefined}
         className="mt-1 min-h-11 w-full rounded border border-line bg-transparent px-2 py-1.5 text-base sm:text-sm"
       />

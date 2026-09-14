@@ -77,6 +77,18 @@ interface Deps {
   db: PrismaClient;
   storage: StoragePort;
   admin: AdminUser | null;
+  /** Site's own Supabase project URL, for computing a real public image URL
+   * at write time (see `productImagePublicUrl`) — optional only so existing
+   * callers/tests that never read `publicUrl` don't have to supply it. */
+  supabaseUrl?: string;
+}
+
+/** Public URL for an object in this bucket, matching Supabase Storage's own
+ * public-object URL shape (same pattern as `homeMediaPublicUrl`). Computed
+ * once at write time and cached on the row — no network round trip needed to
+ * render an image. */
+export function productImagePublicUrl(supabaseUrl: string, path: string): string {
+  return `${supabaseUrl}/storage/v1/object/public/${PRODUCT_IMAGE_BUCKET}/${path}`;
 }
 
 export interface UploadTicket {
@@ -180,6 +192,11 @@ export async function confirmProductImageUpload(
     productId: input.productId,
     bucket: PRODUCT_IMAGE_BUCKET,
     path: input.path,
+    // Was previously left unset (bug — a real admin upload fell back to
+    // `toPublicImage`'s relative `/bucket/path` string, which no route
+    // resolves in production, so the image just never rendered). Computed
+    // here, at write time, exactly like every other real upload.
+    publicUrl: deps.supabaseUrl ? productImagePublicUrl(deps.supabaseUrl, input.path) : null,
     altText: input.altText,
     type: makePrimary ? ("PRIMARY" as const) : (input.type ?? "GALLERY"),
     isPrimary: makePrimary,
