@@ -76,8 +76,30 @@ class LocalDiskDocumentStore implements DocumentStore {
 }
 
 async function createSupabaseDocumentStore(): Promise<DocumentStore> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase/server");
-  const supabase = await createSupabaseServerClient();
+  // Deliberately NOT `createSupabaseServerClient()` — that binds to the
+  // *current request's* cookies, which is right for a real admin's browser
+  // session (product images, home media) but wrong here: invoice generation
+  // runs from an Inngest background job with no incoming user session at
+  // all, so that client resolves to the fully anonymous role and every
+  // write was rejected — "new row violates row-level security policy" (a
+  // real, confirmed failure found during an admin walkthrough, 2026-09-15).
+  // This is a trusted, fully server-side operation with no user input beyond
+  // an invoice ID already validated by the caller, so the service key
+  // (bypasses RLS entirely) is the correct credential, not a user session.
+  const { createClient } = await import("@supabase/supabase-js");
+  const { publicEnv } = await import("@/lib/public-env");
+  const { env } = await import("@/lib/env");
+  if (!publicEnv.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
+    throw new Error(
+      "Supabase is not configured for the document store — need both " +
+        "NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY.",
+    );
+  }
+  const supabase = createClient(
+    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SECRET_KEY,
+    { auth: { persistSession: false } },
+  );
   const BUCKET = "documents";
   return {
     async put(key, bytes, contentType) {
