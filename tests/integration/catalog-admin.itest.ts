@@ -133,6 +133,22 @@ describe("createProduct", () => {
     });
     expect(otherCatalogue.slug).toBe("marigold-cotton-kurta");
   });
+
+  it("accepts tags at create time (Shopify-style product editor)", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Tagged Kurta",
+      tags: ["festive", "cotton"],
+    });
+    expect(p.tags).toEqual(["festive", "cotton"]);
+
+    // omitted entirely — defaults to empty, not null/undefined
+    const untagged = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Untagged Kurta",
+    });
+    expect(untagged.tags).toEqual([]);
+  });
 });
 
 describe("updateProduct", () => {
@@ -154,6 +170,16 @@ describe("updateProduct", () => {
     await expect(
       updateProduct(db, admin, a.id, { categoryId: tpeCat.id }),
     ).rejects.toThrow(/different catalogue/i);
+  });
+
+  it("replaces tags wholesale", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Retag Me",
+      tags: ["old-tag"],
+    });
+    const updated = await updateProduct(db, admin, p.id, { tags: ["new-tag", "second"] });
+    expect(updated.tags).toEqual(["new-tag", "second"]);
   });
 });
 

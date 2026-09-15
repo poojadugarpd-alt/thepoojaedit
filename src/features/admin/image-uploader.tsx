@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -76,7 +76,11 @@ export function ImageUploader({
   defaultAltPrefix,
   hasExistingImages,
 }: {
-  productId: string;
+  /** Null before the product's first Save — files can still be picked and
+   *  previewed, just not actually uploaded yet (there's nowhere to attach
+   *  them). Once the page-level Save creates the product and this flips to
+   *  a real id, anything still queued uploads automatically. */
+  productId: string | null;
   isThrift: boolean;
   defaultAltPrefix: string;
   hasExistingImages: boolean;
@@ -138,9 +142,9 @@ export function ImageUploader({
     });
   }
 
-  async function uploadOne(item: QueueItem) {
+  async function uploadOne(item: QueueItem, id: string) {
     updateItem(item.localId, { status: "uploading", progress: 0, error: undefined });
-    const ticket = await requestImageUploadAction(productId, item.file.type);
+    const ticket = await requestImageUploadAction(id, item.file.type);
     if (!ticket.ok) {
       updateItem(item.localId, { status: "error", error: ticket.message });
       return;
@@ -157,7 +161,7 @@ export function ImageUploader({
       return;
     }
     updateItem(item.localId, { status: "saving" });
-    const confirmed = await confirmImageUploadAction(productId, {
+    const confirmed = await confirmImageUploadAction(id, {
       imageId: ticket.imageId,
       path: ticket.path,
       contentType: item.file.type,
@@ -174,10 +178,10 @@ export function ImageUploader({
     updateItem(item.localId, { status: "done", progress: 100 });
   }
 
-  async function uploadAll() {
+  async function uploadAll(id: string) {
     const pending = queue.filter((i) => i.status === "queued" || i.status === "error");
     for (const item of pending) {
-      await uploadOne(item);
+      await uploadOne(item, id);
     }
     router.refresh();
     // Clear anything that finished; leave failures visible for retry.
@@ -186,6 +190,20 @@ export function ImageUploader({
 
   const hasPending = queue.some((i) => i.status === "queued" || i.status === "error");
   const isBusy = queue.some((i) => i.status === "uploading" || i.status === "saving");
+
+  // The page-level Save creates the product and this prop flips from null
+  // to a real id — anything still queued (picked before that first Save)
+  // uploads automatically the moment there's somewhere to attach it to.
+  const prevProductId = useRef(productId);
+  useEffect(() => {
+    if (!prevProductId.current && productId && hasPending) {
+      void uploadAll(productId);
+    }
+    prevProductId.current = productId;
+    // Only react to productId actually changing — `hasPending`/`uploadAll`
+    // would otherwise re-run this on every queue edit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
   return (
     <div className="space-y-3 rounded border border-dashed border-line p-3">
@@ -204,15 +222,20 @@ export function ImageUploader({
         >
           Take photo
         </button>
-        {hasPending && (
+        {hasPending && productId && (
           <button
             type="button"
-            onClick={uploadAll}
+            onClick={() => uploadAll(productId)}
             disabled={isBusy}
             className="min-h-11 rounded bg-foreground px-3 text-sm font-semibold text-background disabled:opacity-50"
           >
             {isBusy ? "Uploading…" : `Upload ${queue.filter((i) => i.status !== "done").length}`}
           </button>
+        )}
+        {hasPending && !productId && (
+          <p className="flex min-h-11 items-center text-xs text-ink-soft">
+            Queued — uploads once you save the product.
+          </p>
         )}
         <input
           ref={pickerRef}
@@ -288,11 +311,11 @@ export function ImageUploader({
                     {it.status === "done" && <p className="text-xs text-ok">Uploaded.</p>}
                   </>
                 )}
-                {it.status === "error" && (
+                {it.status === "error" && productId && (
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => uploadOne(it)}
+                      onClick={() => uploadOne(it, productId)}
                       className="min-h-11 text-xs underline"
                     >
                       Retry

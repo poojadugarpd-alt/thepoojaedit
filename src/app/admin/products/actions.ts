@@ -27,10 +27,13 @@ import {
   type UploadTicket,
 } from "@/server/catalog/product-images";
 
+// ── FormData-based actions (still wrapped in `<ActionForm>`/`useActionState`
+// for the handful of small, independent, instant actions this page keeps —
+// delete, reorder, set-primary, home-page feature toggle). ──
+
 export type ActionState = { ok: boolean; message?: string; errors?: string[] };
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
-const strOrNull = (v: FormDataEntryValue | null) => str(v) || null;
 
 function handle(e: unknown): ActionState {
   if (e instanceof ValidationError)
@@ -39,79 +42,13 @@ function handle(e: unknown): ActionState {
   return { ok: false, message: "Something went wrong." };
 }
 
-export async function createProductAction(
-  _prev: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const admin = await requireAdmin();
-  let id: string;
-  try {
-    const p = await createProduct(prisma, admin, {
-      catalog: str(form.get("catalog")) as CatalogType,
-      title: str(form.get("title")),
-      // No slug field on this form (owner feedback, 2026-09-13) —
-      // createProduct generates and uniques one from the title.
-    });
-    id = p.id;
-  } catch (e) {
-    return handle(e);
-  }
-  revalidatePath("/admin/products");
-  redirect(`/admin/products/${id}`);
-}
-
-export async function updateProductAction(
-  productId: string,
-  _prev: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const admin = await requireAdmin();
-  try {
-    await updateProduct(
-      prisma,
-      admin,
-      productId,
-      {
-        slug: str(form.get("slug")),
-        title: str(form.get("title")),
-        description: str(form.get("description")),
-        brand: strOrNull(form.get("brand")),
-        hsnCode: strOrNull(form.get("hsnCode")),
-        metaTitle: strOrNull(form.get("metaTitle")),
-        metaDescription: strOrNull(form.get("metaDescription")),
-      },
-      strOrNull(form.get("reason")) ?? undefined,
-    );
-  } catch (e) {
-    return handle(e);
-  }
-  revalidatePath(`/admin/products/${productId}`);
-  return { ok: true, message: "Saved." };
-}
-
-export async function statusAction(
-  productId: string,
-  next: "PUBLISH" | "DRAFT" | "ARCHIVE",
-  _prev: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const admin = await requireAdmin();
-  try {
-    if (next === "PUBLISH") await publishProduct(prisma, admin, productId);
-    else
-      await setProductStatus(
-        prisma,
-        admin,
-        productId,
-        next === "DRAFT" ? "DRAFT" : "ARCHIVED",
-        strOrNull(form.get("reason")) ?? undefined,
-      );
-  } catch (e) {
-    return handle(e);
-  }
-  revalidatePath(`/admin/products/${productId}`);
-  revalidatePath("/admin/products");
-  return { ok: true, message: `Status changed.` };
+/** Same mapping as `handle`, typed for the plain-object actions below whose
+ *  result type needs the `false` branch's `ok` to be a literal, not `boolean`. */
+function handleResult(e: unknown): { ok: false; message: string; errors?: string[] } {
+  if (e instanceof ValidationError)
+    return { ok: false, message: e.message, errors: e.errors };
+  if (e instanceof Error) return { ok: false, message: e.message };
+  return { ok: false, message: "Something went wrong." };
 }
 
 // Every field the delete needs (productId) is already bound via
@@ -155,35 +92,6 @@ export async function toggleFeatureOnHomeAction(
   revalidatePath("/admin/collections");
   revalidatePath("/");
   return { ok: true };
-}
-
-export async function upsertVariantAction(
-  productId: string,
-  _prev: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  const admin = await requireAdmin();
-  try {
-    // The form takes rupees (what an admin actually thinks in), not paise —
-    // was previously a raw paise field, meaning "1900" saved as ₹19.00.
-    const priceStr = str(form.get("price"));
-    const compareAtStr = str(form.get("compareAt"));
-    await upsertVariant(prisma, admin, productId, {
-      id: strOrNull(form.get("id")) ?? undefined,
-      sku: str(form.get("sku")),
-      size: strOrNull(form.get("size")),
-      color: strOrNull(form.get("color")),
-      pricePaise: priceStr ? rupeesToPaise(priceStr) : 0,
-      compareAtPaise: compareAtStr ? rupeesToPaise(compareAtStr) : null,
-      onHandQty: Number(str(form.get("onHandQty")) || 0),
-      lowStockThreshold: Number(str(form.get("lowStockThreshold")) || 0),
-      isActive: form.get("isActive") === "on",
-    });
-  } catch (e) {
-    return handle(e);
-  }
-  revalidatePath(`/admin/products/${productId}`);
-  return { ok: true, message: "Variant saved." };
 }
 
 export async function deleteImageAction(
@@ -235,44 +143,42 @@ export async function setPrimaryImageAction(
   return { ok: true, message: "Primary image set." };
 }
 
-export async function thriftDetailsAction(
+/** Swap sort position with the previous/next image — the mobile reorder control. */
+export async function reorderImageAction(
   productId: string,
   _prev: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const admin = await requireAdmin();
-  let measurements: Record<string, unknown> = {};
-  const raw = str(form.get("measurementsJson"));
-  if (raw) {
-    try {
-      measurements = JSON.parse(raw);
-    } catch {
-      return { ok: false, message: "Measurements must be valid JSON." };
-    }
-  }
+  await requireAdmin();
+  const imageId = str(form.get("imageId"));
+  const direction = str(form.get("direction"));
   try {
-    await upsertThriftDetails(prisma, admin, productId, {
-      conditionGrade: str(form.get("conditionGrade")) as ConditionGrade,
-      conditionNotes: strOrNull(form.get("conditionNotes")),
-      originalBrand: strOrNull(form.get("originalBrand")),
-      labelledSize: strOrNull(form.get("labelledSize")),
-      recommendedFit: strOrNull(form.get("recommendedFit")),
-      fabric: strOrNull(form.get("fabric")),
-      measurements,
-      alterations: strOrNull(form.get("alterations")),
-      authenticityNotes: strOrNull(form.get("authenticityNotes")),
-      careNotes: strOrNull(form.get("careNotes")),
-      isOneOfOne: form.get("isOneOfOne") === "on",
-      acquisitionCostPaise: (() => {
-        const s = str(form.get("acquisitionCost"));
-        return s ? rupeesToPaise(s) : null;
-      })(),
+    const images = await prisma.productImage.findMany({
+      where: { productId },
+      orderBy: { sortPosition: "asc" },
     });
+    const idx = images.findIndex((im) => im.id === imageId);
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= images.length) {
+      return { ok: true }; // already at an end — silently a no-op
+    }
+    const a = images[idx];
+    const b = images[swapIdx];
+    await prisma.$transaction([
+      prisma.productImage.update({
+        where: { id: a.id },
+        data: { sortPosition: b.sortPosition },
+      }),
+      prisma.productImage.update({
+        where: { id: b.id },
+        data: { sortPosition: a.sortPosition },
+      }),
+    ]);
   } catch (e) {
     return handle(e);
   }
   revalidatePath(`/admin/products/${productId}`);
-  return { ok: true, message: "Thrift details saved." };
+  return { ok: true };
 }
 
 // ── Image upload (called directly from client JS, not through <form action>,
@@ -356,40 +262,273 @@ export async function confirmImageUploadAction(
   return { ok: true, imageId: input.imageId };
 }
 
-/** Swap sort position with the previous/next image — the mobile reorder control. */
-export async function reorderImageAction(
+// ── Plain typed-argument actions for the unified product editor — called
+// directly from client code (not through `<form action>`), same reasoning
+// as the image-upload pair above: this page holds one piece of controlled
+// state across the whole product, so its save actions take that state
+// directly rather than a FormData a `<form>` would have serialized. ──
+
+export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string; errors?: string[] };
+
+export type ProductCoreInput = {
+  slug?: string;
+  title?: string;
+  description?: string;
+  /** Shown as "Vendor" in the UI — same underlying field as always. */
+  brand?: string | null;
+  tags?: string[];
+  hsnCode?: string | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+};
+
+export async function updateProductAction(
   productId: string,
-  _prev: ActionState,
-  form: FormData,
-): Promise<ActionState> {
-  await requireAdmin();
-  const imageId = str(form.get("imageId"));
-  const direction = str(form.get("direction"));
+  input: ProductCoreInput,
+  reason?: string,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
   try {
-    const images = await prisma.productImage.findMany({
-      where: { productId },
-      orderBy: { sortPosition: "asc" },
-    });
-    const idx = images.findIndex((im) => im.id === imageId);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (idx === -1 || swapIdx < 0 || swapIdx >= images.length) {
-      return { ok: true }; // already at an end — silently a no-op
-    }
-    const a = images[idx];
-    const b = images[swapIdx];
-    await prisma.$transaction([
-      prisma.productImage.update({
-        where: { id: a.id },
-        data: { sortPosition: b.sortPosition },
-      }),
-      prisma.productImage.update({
-        where: { id: b.id },
-        data: { sortPosition: a.sortPosition },
-      }),
-    ]);
+    await updateProduct(
+      prisma,
+      admin,
+      productId,
+      {
+        slug: input.slug?.trim() || undefined,
+        title: input.title?.trim(),
+        description: input.description,
+        brand: input.brand?.trim() || null,
+        tags: input.tags?.map((t) => t.trim()).filter(Boolean),
+        hsnCode: input.hsnCode?.trim() || null,
+        metaTitle: input.metaTitle?.trim() || null,
+        metaDescription: input.metaDescription?.trim() || null,
+      },
+      reason?.trim() || undefined,
+    );
   } catch (e) {
-    return handle(e);
+    return handleResult(e);
   }
   revalidatePath(`/admin/products/${productId}`);
-  return { ok: true };
+  return { ok: true, message: "Saved." };
+}
+
+export async function statusAction(
+  productId: string,
+  next: "PUBLISH" | "DRAFT" | "ARCHIVE",
+  reason?: string,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
+  try {
+    if (next === "PUBLISH") await publishProduct(prisma, admin, productId);
+    else
+      await setProductStatus(
+        prisma,
+        admin,
+        productId,
+        next === "DRAFT" ? "DRAFT" : "ARCHIVED",
+        reason?.trim() || undefined,
+      );
+  } catch (e) {
+    return handleResult(e);
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath("/admin/products");
+  return { ok: true, message: "Status changed." };
+}
+
+export type VariantInput = {
+  id?: string;
+  /** Omit/empty for Closet — generated automatically. Required for Label. */
+  sku?: string;
+  size?: string | null;
+  color?: string | null;
+  price: number | string;
+  compareAt?: number | string | null;
+  onHandQty?: number;
+  lowStockThreshold?: number;
+  isActive?: boolean;
+};
+
+export type VariantResult =
+  | { ok: true; variantId: string }
+  | { ok: false; message: string; errors?: string[] };
+
+export async function upsertVariantAction(
+  productId: string,
+  input: VariantInput,
+): Promise<VariantResult> {
+  const admin = await requireAdmin();
+  try {
+    const variant = await upsertVariant(prisma, admin, productId, {
+      id: input.id,
+      sku: input.sku?.trim() || undefined,
+      size: input.size?.trim() || null,
+      color: input.color?.trim() || null,
+      pricePaise: rupeesToPaise(input.price || 0),
+      compareAtPaise: input.compareAt ? rupeesToPaise(input.compareAt) : null,
+      onHandQty: input.onHandQty ?? 0,
+      lowStockThreshold: input.lowStockThreshold ?? 0,
+      isActive: input.isActive ?? true,
+    });
+    revalidatePath(`/admin/products/${productId}`);
+    return { ok: true, variantId: variant.id };
+  } catch (e) {
+    const h = handle(e);
+    return { ok: false, message: h.message ?? "Something went wrong.", errors: h.errors };
+  }
+}
+
+export type ThriftDetailsInput = {
+  conditionGrade: ConditionGrade;
+  conditionNotes?: string | null;
+  originalBrand?: string | null;
+  labelledSize?: string | null;
+  recommendedFit?: string | null;
+  fabric?: string | null;
+  /** Raw JSON text from the measurements textarea — parsed here, same
+   *  validation as before ("Measurements must be valid JSON."). */
+  measurementsJson: string;
+  alterations?: string | null;
+  authenticityNotes?: string | null;
+  careNotes?: string | null;
+  isOneOfOne: boolean;
+  acquisitionCost?: number | string | null;
+};
+
+export async function thriftDetailsAction(
+  productId: string,
+  input: ThriftDetailsInput,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
+  let measurements: Record<string, unknown> = {};
+  const raw = input.measurementsJson?.trim();
+  if (raw) {
+    try {
+      measurements = JSON.parse(raw);
+    } catch {
+      return { ok: false, message: "Measurements must be valid JSON." };
+    }
+  }
+  try {
+    await upsertThriftDetails(prisma, admin, productId, {
+      conditionGrade: input.conditionGrade,
+      conditionNotes: input.conditionNotes ?? null,
+      originalBrand: input.originalBrand ?? null,
+      labelledSize: input.labelledSize ?? null,
+      recommendedFit: input.recommendedFit ?? null,
+      fabric: input.fabric ?? null,
+      measurements,
+      alterations: input.alterations ?? null,
+      authenticityNotes: input.authenticityNotes ?? null,
+      careNotes: input.careNotes ?? null,
+      isOneOfOne: input.isOneOfOne,
+      acquisitionCostPaise: input.acquisitionCost
+        ? rupeesToPaise(input.acquisitionCost)
+        : null,
+    });
+  } catch (e) {
+    return handleResult(e);
+  }
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true, message: "Thrift details saved." };
+}
+
+export type FullProductInput = ProductCoreInput & {
+  catalog: CatalogType;
+  title: string;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  variants: VariantInput[];
+  thrift?: ThriftDetailsInput;
+};
+
+export type FullProductResult =
+  | { ok: true; productId: string }
+  | { ok: false; message: string; errors?: string[]; productId?: string };
+
+/**
+ * Orchestrates a brand-new product's first Save — create, then every
+ * variant row from the matrix, then thrift details (Closet), then status if
+ * it's not the default DRAFT. Each step reuses the exact same domain-service
+ * call the granular edit-time actions above use (D-77: pure composition, no
+ * lifecycle rule re-implemented here) — this just sequences several of them
+ * behind one Save click instead of several separate ones.
+ *
+ * Not wrapped in a single DB transaction (Storage uploads for images happen
+ * after this returns and can never participate in one anyway) — instead, if
+ * `createProduct` itself succeeds but a later step throws, the already-real
+ * `productId` is still returned alongside the failure so the client can
+ * carry on editing/retrying against the real row rather than risk creating
+ * a second duplicate product on retry.
+ */
+export async function createFullProductAction(
+  input: FullProductInput,
+): Promise<FullProductResult> {
+  const admin = await requireAdmin();
+  let productId: string | undefined;
+  try {
+    const created = await createProduct(prisma, admin, {
+      catalog: input.catalog,
+      title: input.title.trim(),
+      description: input.description,
+      brand: input.brand?.trim() || null,
+      tags: (input.tags ?? []).map((t) => t.trim()).filter(Boolean),
+      hsnCode: input.hsnCode?.trim() || null,
+      metaTitle: input.metaTitle?.trim() || null,
+      metaDescription: input.metaDescription?.trim() || null,
+    });
+    productId = created.id;
+
+    for (const v of input.variants) {
+      await upsertVariant(prisma, admin, productId, {
+        sku: v.sku?.trim() || undefined,
+        size: v.size?.trim() || null,
+        color: v.color?.trim() || null,
+        pricePaise: rupeesToPaise(v.price || 0),
+        compareAtPaise: v.compareAt ? rupeesToPaise(v.compareAt) : null,
+        onHandQty: v.onHandQty ?? 0,
+        lowStockThreshold: v.lowStockThreshold ?? 0,
+        isActive: v.isActive ?? true,
+      });
+    }
+
+    if (input.catalog === "THRIFT" && input.thrift) {
+      let measurements: Record<string, unknown> = {};
+      const raw = input.thrift.measurementsJson?.trim();
+      if (raw) {
+        try {
+          measurements = JSON.parse(raw);
+        } catch {
+          return { ok: false, message: "Measurements must be valid JSON.", productId };
+        }
+      }
+      await upsertThriftDetails(prisma, admin, productId, {
+        conditionGrade: input.thrift.conditionGrade,
+        conditionNotes: input.thrift.conditionNotes ?? null,
+        originalBrand: input.thrift.originalBrand ?? null,
+        labelledSize: input.thrift.labelledSize ?? null,
+        recommendedFit: input.thrift.recommendedFit ?? null,
+        fabric: input.thrift.fabric ?? null,
+        measurements,
+        alterations: input.thrift.alterations ?? null,
+        authenticityNotes: input.thrift.authenticityNotes ?? null,
+        careNotes: input.thrift.careNotes ?? null,
+        isOneOfOne: input.thrift.isOneOfOne,
+        acquisitionCostPaise: input.thrift.acquisitionCost
+          ? rupeesToPaise(input.thrift.acquisitionCost)
+          : null,
+      });
+    }
+
+    if (input.status === "PUBLISHED") {
+      await publishProduct(prisma, admin, productId);
+    } else if (input.status === "ARCHIVED") {
+      await setProductStatus(prisma, admin, productId, "ARCHIVED");
+    }
+  } catch (e) {
+    const h = handle(e);
+    return { ok: false, message: h.message ?? "Something went wrong.", errors: h.errors, productId };
+  }
+  revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${productId}`);
+  return { ok: true, productId };
 }

@@ -406,6 +406,10 @@ model Product {
   categoryId     String?       @db.Uuid
   category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   brand          String?
+  // Shown as "Vendor" in the admin UI (Shopify-style product editor) — kept
+  // as `brand` in the schema since every existing reader/writer already
+  // uses that name; this is a UI label choice, not a new column.
+  tags           String[]      @default([])
   hsnCode        String?
   taxClassId     String?       @db.Uuid
   taxClass       TaxClass?     @relation(fields: [taxClassId], references: [id], onDelete: Restrict)

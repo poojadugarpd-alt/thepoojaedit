@@ -98,3 +98,40 @@ test("mobile bottom nav reaches every primary destination", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "More" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Install on iPhone" })).toBeVisible();
 });
+
+/**
+ * The rebuilt Shopify-style single-page product editor (owner: "I am not
+ * at all happy with the admin add product workflow ... change it to look
+ * like that of the shopify app") — proves the whole point of the merge:
+ * title, the Sizes matrix, and pricing are all filled in on one page before
+ * anything is ever saved, and one Save click creates the product with both
+ * variant rows already attached (no separate "add variant" round trips).
+ */
+test("create a Label product with two sizes in one Save", async ({ page }) => {
+  await page.goto("/admin/products/new");
+  await expect(page.getByRole("heading", { name: "New product" })).toBeVisible();
+
+  await page.getByLabel("Title", { exact: true }).fill("E2E Test Kurta");
+
+  const sizesInput = page.getByLabel("Sizes", { exact: true });
+  await sizesInput.fill("S");
+  await sizesInput.press("Enter");
+  await sizesInput.fill("M");
+  await sizesInput.press("Enter");
+
+  // Two rows now exist in the variant table, SKU pre-suggested from
+  // title+size — only price is left to fill per row.
+  await page.getByLabel("Price, ₹ (S)").fill("1999");
+  await page.getByLabel("Price, ₹ (M)").fill("1999");
+
+  await page.getByRole("button", { name: "Save product" }).click();
+  await expect(page.getByText("Product created.")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]+$/);
+
+  // Reload to confirm it actually persisted, not just optimistic client
+  // state — both variant rows survive a fresh load.
+  await page.reload();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue("E2E Test Kurta");
+  await expect(page.getByLabel("Price, ₹ (S)")).toHaveValue("1999.00");
+  await expect(page.getByLabel("Price, ₹ (M)")).toHaveValue("1999.00");
+});

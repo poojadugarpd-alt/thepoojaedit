@@ -165,8 +165,11 @@ export async function createProduct(
     title: string;
     description?: string;
     brand?: string | null;
+    tags?: string[];
     hsnCode?: string | null;
     categoryId?: string | null;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
   },
 ): Promise<Product> {
   let slug: string;
@@ -195,8 +198,11 @@ export async function createProduct(
       title: input.title,
       description: input.description ?? "",
       brand: input.brand ?? null,
+      tags: input.tags ?? [],
       hsnCode: input.hsnCode ?? null,
       categoryId: input.categoryId ?? null,
+      metaTitle: input.metaTitle ?? null,
+      metaDescription: input.metaDescription ?? null,
       status: "DRAFT",
     },
   });
@@ -219,6 +225,7 @@ export async function updateProduct(
     title?: string;
     description?: string;
     brand?: string | null;
+    tags?: string[];
     hsnCode?: string | null;
     categoryId?: string | null;
     metaTitle?: string | null;
