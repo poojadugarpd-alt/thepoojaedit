@@ -29,6 +29,12 @@ import {
 } from "@/app/admin/products/actions";
 
 import { SelectInput, TextAreaInput, TextInput } from "./controlled-fields";
+import {
+  MeasurementsEditor,
+  measurementsToRows,
+  rowsToMeasurementsJson,
+  type MeasurementRow,
+} from "./measurements-editor";
 import { SeoPreview } from "./seo-preview";
 import { TagInput } from "./tag-input";
 import { VariantMatrix, variantsToMatrixState, type VariantRow } from "./variant-matrix";
@@ -115,8 +121,8 @@ export function ProductEditor({
   const [acquisitionCost, setAcquisitionCost] = useState(
     td?.acquisitionCostPaise != null ? (td.acquisitionCostPaise / 100).toFixed(2) : "",
   );
-  const [measurementsJson, setMeasurementsJson] = useState(
-    JSON.stringify(td?.measurements ?? {}, null, 2),
+  const [measurementRows, setMeasurementRows] = useState<MeasurementRow[]>(
+    measurementsToRows(td?.measurements),
   );
 
   const [saving, setSaving] = useState(false);
@@ -138,7 +144,7 @@ export function ProductEditor({
           labelledSize: labelledSize || null,
           recommendedFit: recommendedFit || null,
           fabric: fabric || null,
-          measurementsJson,
+          measurementsJson: rowsToMeasurementsJson(measurementRows),
           alterations: alterations || null,
           authenticityNotes: authenticityNotes || null,
           careNotes: careNotes || null,
@@ -423,13 +429,7 @@ export function ProductEditor({
               </div>
               <TextInput label="Authenticity notes" value={authenticityNotes} onChange={setAuthenticityNotes} />
               <TextInput label="Care notes" value={careNotes} onChange={setCareNotes} />
-              <TextAreaInput
-                label='Measurements (JSON, e.g. {"bust":{"value":"34","unit":"in"}})'
-                value={measurementsJson}
-                onChange={setMeasurementsJson}
-                rows={6}
-                mono
-              />
+              <MeasurementsEditor rows={measurementRows} onChange={setMeasurementRows} />
             </section>
           )}
 
