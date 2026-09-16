@@ -9,6 +9,7 @@ import {
   ProductHasHistoryError,
   ValidationError,
   addProductToCollection,
+  createCategory,
   createCollection,
   createProduct,
   deleteProduct,
@@ -20,6 +21,7 @@ import {
   removeProductFromCollection,
   reorderCollectionProduct,
   searchAddableCollectionProducts,
+  switchProductCatalog,
   toggleFeatureOnHomePage,
   updateCollection,
   updateProduct,
@@ -890,5 +892,151 @@ describe("deleteProduct", () => {
       /on past orders/i,
     );
     expect(await db.product.findUnique({ where: { id: p.id } })).not.toBeNull();
+  });
+});
+
+describe("switchProductCatalog", () => {
+  it("moves Label → Closet: creates placeholder thrift details, drops to Draft", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Mislabelled Skirt",
+    });
+    await upsertVariant(db, admin, p.id, { sku: "MIS-1", pricePaise: 50000, onHandQty: 5 });
+    await db.productImage.create({
+      data: { productId: p.id, bucket: "b", path: `p/${p.id}/0`, altText: "x", isPrimary: true },
+    });
+    await publishProduct(db, admin, p.id);
+
+    const result = await switchProductCatalog(db, admin, p.id, "THRIFT");
+    expect(result.product.catalog).toBe("THRIFT");
+    expect(result.product.status).toBe("DRAFT");
+    expect(result.product.publishedAt).toBeNull();
+    expect(result.thriftDetailsCreated).toBe(true);
+
+    const td = await db.thriftDetails.findUnique({ where: { productId: p.id } });
+    expect(td?.conditionGrade).toBe("GOOD");
+
+    const log = await db.adminActivityLog.findFirst({
+      where: { action: "product.switchCatalog", entityId: p.id },
+    });
+    expect(log?.adminUserId).toBe(admin.id);
+  });
+
+  it("moves Closet → Label: removes the now-invalid thrift details", async () => {
+    const p = await createProduct(db, admin, { catalog: "THRIFT", title: "Actually New" });
+    await upsertThriftDetails(db, admin, p.id, {
+      conditionGrade: "NEW_WITH_TAGS",
+      measurements: { bust: { value: "34", unit: "in" } },
+    });
+
+    const result = await switchProductCatalog(db, admin, p.id, "THE_POOJA_EDIT");
+    expect(result.product.catalog).toBe("THE_POOJA_EDIT");
+    expect(result.thriftDetailsRemoved).toBe(true);
+    expect(await db.thriftDetails.findUnique({ where: { productId: p.id } })).toBeNull();
+  });
+
+  it("drops membership in a collection that belongs to the old catalogue, keeps one that doesn't", async () => {
+    const closetOnly = await createCollection(db, admin, {
+      catalog: "THRIFT",
+      name: "Closet Favourites",
+    });
+    const labelOnly = await createCollection(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      name: "Label Favourites",
+    });
+    const p = await createProduct(db, admin, { catalog: "THRIFT", title: "Moving Piece" });
+    await addProductToCollection(db, admin, closetOnly.id, p.id);
+
+    const result = await switchProductCatalog(db, admin, p.id, "THE_POOJA_EDIT");
+    expect(result.removedFromCollections).toBe(1);
+    expect(
+      await db.productCollection.findMany({ where: { productId: p.id } }),
+    ).toHaveLength(0);
+
+    // Sanity: a same-target-catalogue collection membership would have
+    // survived a switch instead of being dropped.
+    await addProductToCollection(db, admin, labelOnly.id, p.id);
+    const noOp = await switchProductCatalog(db, admin, p.id, "THE_POOJA_EDIT").catch(
+      (e) => e,
+    );
+    expect(noOp).toBeInstanceOf(ValidationError); // already in that catalogue
+  });
+
+  it("clears a catalogue-scoped category that no longer matches, keeps a global one", async () => {
+    const labelCategory = await createCategory(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      slug: "tops",
+      name: "Tops",
+    });
+    const globalCategory = await createCategory(db, admin, {
+      catalog: null,
+      slug: "sale",
+      name: "Sale",
+    });
+    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Top" });
+    await updateProduct(db, admin, p.id, { categoryId: labelCategory.id });
+
+    const result = await switchProductCatalog(db, admin, p.id, "THRIFT");
+    expect(result.categoryCleared).toBe(true);
+    expect(result.product.categoryId).toBeNull();
+
+    // A global category (catalog: null) is untouched by a switch.
+    const p2 = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Top 2" });
+    await updateProduct(db, admin, p2.id, { categoryId: globalCategory.id });
+    const result2 = await switchProductCatalog(db, admin, p2.id, "THRIFT");
+    expect(result2.categoryCleared).toBe(false);
+    expect(result2.product.categoryId).toBe(globalCategory.id);
+  });
+
+  it("refuses when the slug is already taken in the target catalogue", async () => {
+    await createProduct(db, admin, {
+      catalog: "THRIFT",
+      slug: "linen-set",
+      title: "Existing Closet Item",
+    });
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      slug: "linen-set",
+      title: "New Label Item",
+    });
+    await expect(switchProductCatalog(db, admin, p.id, "THRIFT")).rejects.toThrow(
+      /already exists in the other catalogue/i,
+    );
+  });
+
+  it("is safe with real order history — OrderItem keeps its own immutable catalog snapshot", async () => {
+    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Ordered Once" });
+    const v = await upsertVariant(db, admin, p.id, { sku: "ORD-1", pricePaise: 50000, onHandQty: 3 });
+    const order = await db.order.create({
+      data: {
+        orderNumber: `PE-${randomUUID().slice(0, 10)}`,
+        contactPhone: "+919812345678",
+        paymentMethod: "PREPAID_RAZORPAY",
+        subtotalPaise: 50000,
+        totalPaise: 50000,
+      },
+    });
+    await db.orderItem.create({
+      data: {
+        orderId: order.id,
+        productId: p.id,
+        variantId: v.id,
+        catalog: "THE_POOJA_EDIT",
+        sku: v.sku,
+        title: p.title,
+        quantity: 1,
+        unitPricePaise: 50000,
+        taxableValuePaise: 50000,
+        totalPaise: 50000,
+        returnPolicySnapshot: {},
+      },
+    });
+
+    await expect(
+      switchProductCatalog(db, admin, p.id, "THRIFT"),
+    ).resolves.toBeDefined();
+
+    const item = await db.orderItem.findFirst({ where: { orderId: order.id } });
+    expect(item?.catalog).toBe("THE_POOJA_EDIT"); // untouched, still what was actually sold
   });
 });

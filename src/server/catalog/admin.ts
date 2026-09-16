@@ -595,6 +595,139 @@ export async function upsertThriftDetails(
   return row;
 }
 
+// ───────────────────────── Catalog switch ───────────────────────
+
+export interface CatalogSwitchResult {
+  product: Product;
+  removedFromCollections: number;
+  thriftDetailsCreated: boolean;
+  thriftDetailsRemoved: boolean;
+  categoryCleared: boolean;
+}
+
+/**
+ * Moves a product to the other catalogue — the only previous way to fix a
+ * mis-catalogued product was to delete it and rebuild it from scratch (owner
+ * feedback, 2026-09-16: "really counter intuitive to make the listing
+ * again"). Reconciles every catalog-scoped invariant a plain
+ * `product.catalog` write would silently violate (master §4):
+ *  - `@@unique([catalog, slug])` — refuses if the slug is already taken in
+ *    the target catalogue, with a clear message instead of a raw P2002.
+ *  - cross-catalogue collection membership is forbidden
+ *    (`addProductToCollection` enforces the same rule going forward) — any
+ *    existing membership in a collection of the OLD catalogue is removed.
+ *  - a catalog-scoped `Category` (global ones, `catalog: null`, are left
+ *    alone) that doesn't match the new catalogue is cleared.
+ *  - `ThriftDetails` only applies to THRIFT (`upsertThriftDetails`'s own
+ *    guard) — created with placeholder defaults when switching in (the
+ *    admin still needs to fill real condition/measurements before
+ *    publishing — `validateForPublication` already requires that), deleted
+ *    when switching out.
+ *
+ * Safe regardless of order history: `OrderItem.catalog` is an immutable
+ * snapshot column (schema: "Immutable snapshots"), independent of
+ * `Product.catalog` — past orders are correct forever no matter how many
+ * times the live product's catalogue changes afterward.
+ *
+ * Always drops the product to DRAFT. A catalogue switch changes public
+ * routing, return-policy wording and (for Closet) introduces mandatory
+ * condition/measurement data that can't be real yet — silently leaving a
+ * switched listing live would either show placeholder thrift details to a
+ * customer or a dead URL. The admin reviews and explicitly re-publishes.
+ */
+export async function switchProductCatalog(
+  db: PrismaClient,
+  admin: AdminUser,
+  productId: string,
+  targetCatalog: CatalogType,
+): Promise<CatalogSwitchResult> {
+  const product = await db.product.findUniqueOrThrow({
+    where: { id: productId },
+    include: {
+      thriftDetails: true,
+      category: true,
+      collections: { include: { collection: true } },
+    },
+  });
+  if (product.catalog === targetCatalog) {
+    throw new ValidationError(
+      `Already in ${targetCatalog === "THRIFT" ? "the Closet" : "the Label"}.`,
+    );
+  }
+
+  const clash = await db.product.findUnique({
+    where: { catalog_slug: { catalog: targetCatalog, slug: product.slug } },
+    select: { id: true },
+  });
+  if (clash) {
+    throw new ValidationError(
+      `A product with slug "${product.slug}" already exists in the other catalogue — rename this product's URL slug first, then switch.`,
+    );
+  }
+
+  const crossCatalogueMemberships = product.collections.filter(
+    (pc) => pc.collection.catalog !== targetCatalog,
+  );
+  const categoryCleared =
+    product.category?.catalog != null && product.category.catalog !== targetCatalog;
+
+  return db.$transaction(async (tx) => {
+    if (crossCatalogueMemberships.length > 0) {
+      await tx.productCollection.deleteMany({
+        where: {
+          productId,
+          collectionId: { in: crossCatalogueMemberships.map((pc) => pc.collectionId) },
+        },
+      });
+    }
+
+    let thriftDetailsCreated = false;
+    let thriftDetailsRemoved = false;
+    if (targetCatalog === "THRIFT" && !product.thriftDetails) {
+      await tx.thriftDetails.create({
+        data: {
+          productId,
+          conditionGrade: "GOOD",
+          measurements: {},
+          flaws: [],
+          isOneOfOne: true,
+        },
+      });
+      thriftDetailsCreated = true;
+    } else if (targetCatalog !== "THRIFT" && product.thriftDetails) {
+      await tx.thriftDetails.delete({ where: { productId } });
+      thriftDetailsRemoved = true;
+    }
+
+    const updated = await tx.product.update({
+      where: { id: productId },
+      data: {
+        catalog: targetCatalog,
+        status: "DRAFT",
+        publishedAt: null,
+        ...(categoryCleared ? { categoryId: null } : {}),
+      },
+    });
+
+    await auditLog(tx, {
+      adminUserId: admin.id,
+      action: "product.switchCatalog",
+      entityType: "Product",
+      entityId: productId,
+      before: { catalog: product.catalog, status: product.status },
+      after: { catalog: updated.catalog, status: updated.status },
+    });
+
+    return {
+      product: updated,
+      removedFromCollections: crossCatalogueMemberships.length,
+      thriftDetailsCreated,
+      thriftDetailsRemoved,
+      categoryCleared,
+    };
+  });
+}
+
 // ─────────────────────── Categories & collections ─────────────
 
 async function assertCategoryInCatalog(

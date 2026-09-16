@@ -20,6 +20,15 @@ import type {
 
 export type PublicAvailability = "IN_STOCK" | "OUT_OF_STOCK" | "SOLD";
 
+/**
+ * Soft per-order ceiling for the quantity picker — a UX convenience, not a
+ * stock boundary; checkout re-validates true availability regardless. Capped
+ * from above at real stock so the picker never offers a quantity the store
+ * can't fulfil (the bug this was added to fix: the old flat `9` let a
+ * customer select one more than an 8-in-stock variant actually had).
+ */
+export const MAX_ORDER_QTY = 9;
+
 export interface PublicImage {
   url: string;
   alt: string;
@@ -36,6 +45,9 @@ export interface PublicVariant {
   pricePaise: number;
   compareAtPaise: number | null;
   available: boolean; // advisory only — revalidated at checkout
+  /** Advisory quantity-picker ceiling — see `MAX_ORDER_QTY`. Never exceeds
+   * real stock, but real stock above the cap is never revealed exactly. */
+  maxOrderQty: number;
 }
 
 export interface PublicThrift {
@@ -85,6 +97,13 @@ export function variantAvailable(
   v: Pick<ProductVariant, "onHandQty" | "reservedQty" | "isActive">,
 ): boolean {
   return v.isActive && v.onHandQty - v.reservedQty > 0;
+}
+
+export function variantMaxOrderQty(
+  v: Pick<ProductVariant, "onHandQty" | "reservedQty" | "isActive">,
+): number {
+  if (!v.isActive) return 0;
+  return Math.max(0, Math.min(v.onHandQty - v.reservedQty, MAX_ORDER_QTY));
 }
 
 export function deriveAvailability(
@@ -179,6 +198,7 @@ export function toPublicDetail(
         pricePaise: v.pricePaise,
         compareAtPaise: v.compareAtPaise,
         available: variantAvailable(v),
+        maxOrderQty: variantMaxOrderQty(v),
       })),
     thrift: p.thriftDetails
       ? {

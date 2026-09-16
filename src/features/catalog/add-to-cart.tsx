@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCart } from "@/features/cart/store";
 import { SEGMENT_BY_CATALOG, type CatalogType } from "@/lib/catalog-routes";
@@ -37,8 +37,15 @@ export function AddToCart({
     () => variants.find((v) => v.id === variantId) ?? null,
     [variants, variantId],
   );
-  const maxQty = isOneOfOne ? 1 : 9;
+  // Server-computed, capped at real stock (never lets the picker offer more
+  // than the store can actually fulfil) — see `variantMaxOrderQty`.
+  const maxQty = isOneOfOne ? 1 : Math.max(1, selected?.maxOrderQty ?? 1);
   const canAdd = availability !== "SOLD" && selected?.available === true;
+
+  // A picked qty can outlive a size switch to a lower-stock variant.
+  useEffect(() => {
+    setQty((q) => Math.min(q, maxQty));
+  }, [maxQty]);
 
   if (availability === "SOLD") {
     return (

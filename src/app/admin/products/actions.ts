@@ -15,6 +15,7 @@ import {
   deleteProduct,
   publishProduct,
   setProductStatus,
+  switchProductCatalog,
   toggleFeatureOnHomePage,
   updateProduct,
   upsertThriftDetails,
@@ -312,6 +313,35 @@ export async function updateProductAction(
   return { ok: true, message: "Saved." };
 }
 
+export async function switchCatalogAction(
+  productId: string,
+  targetCatalog: CatalogType,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
+  let result: Awaited<ReturnType<typeof switchProductCatalog>>;
+  try {
+    result = await switchProductCatalog(prisma, admin, productId, targetCatalog);
+  } catch (e) {
+    return handleResult(e);
+  }
+  revalidatePath("/admin/products");
+  revalidatePath(`/admin/products/${productId}`);
+  const notes: string[] = [];
+  if (result.removedFromCollections > 0) {
+    notes.push(
+      `removed from ${result.removedFromCollections} collection${result.removedFromCollections === 1 ? "" : "s"} that belonged to the other catalogue`,
+    );
+  }
+  if (result.thriftDetailsCreated) notes.push("added placeholder condition/measurements to fill in");
+  if (result.thriftDetailsRemoved) notes.push("its thrift details were removed");
+  if (result.categoryCleared) notes.push("its category was cleared");
+  const suffix = notes.length ? ` (${notes.join("; ")})` : "";
+  return {
+    ok: true,
+    message: `Moved to ${targetCatalog === "THRIFT" ? "the Closet" : "the Label"} and set to Draft${suffix}. Review and republish when ready.`,
+  };
+}
+
 export async function statusAction(
   productId: string,
   next: "PUBLISH" | "DRAFT" | "ARCHIVE",
@@ -443,7 +473,18 @@ export type FullProductInput = ProductCoreInput & {
 
 export type FullProductResult =
   | { ok: true; productId: string }
-  | { ok: false; message: string; errors?: string[]; productId?: string };
+  | {
+      ok: false;
+      message: string;
+      errors?: string[];
+      productId?: string;
+      /** Per-submitted-variant outcome, same order as the `variants` array
+       *  this was called with (see D-124). A retry needs this to tell which
+       *  rows already exist in the DB — without it, a retry re-`create()`s
+       *  a row that was already made on a previous partial failure and
+       *  permanently deadlocks on its own SKU's unique constraint. */
+      variantResults?: VariantResult[];
+    };
 
 /**
  * Orchestrates a brand-new product's first Save — create, then every
@@ -458,13 +499,18 @@ export type FullProductResult =
  * `createProduct` itself succeeds but a later step throws, the already-real
  * `productId` is still returned alongside the failure so the client can
  * carry on editing/retrying against the real row rather than risk creating
- * a second duplicate product on retry.
+ * a second duplicate product on retry. Every variant row is attempted even
+ * if an earlier one fails, and every row's outcome (including its real id
+ * on success) comes back in `variantResults` — a failed retry used to lose
+ * track of rows that *had* already been created, re-attempting a `create()`
+ * against their own now-existing SKU forever (D-124).
  */
 export async function createFullProductAction(
   input: FullProductInput,
 ): Promise<FullProductResult> {
   const admin = await requireAdmin();
   let productId: string | undefined;
+  let variantResults: VariantResult[] | undefined;
   try {
     const created = await createProduct(prisma, admin, {
       catalog: input.catalog,
@@ -478,17 +524,34 @@ export async function createFullProductAction(
     });
     productId = created.id;
 
+    variantResults = [];
     for (const v of input.variants) {
-      await upsertVariant(prisma, admin, productId, {
-        sku: v.sku?.trim() || undefined,
-        size: v.size?.trim() || null,
-        color: v.color?.trim() || null,
-        pricePaise: rupeesToPaise(v.price || 0),
-        compareAtPaise: v.compareAt ? rupeesToPaise(v.compareAt) : null,
-        onHandQty: v.onHandQty ?? 0,
-        lowStockThreshold: v.lowStockThreshold ?? 0,
-        isActive: v.isActive ?? true,
-      });
+      try {
+        const variant = await upsertVariant(prisma, admin, productId, {
+          sku: v.sku?.trim() || undefined,
+          size: v.size?.trim() || null,
+          color: v.color?.trim() || null,
+          pricePaise: rupeesToPaise(v.price || 0),
+          compareAtPaise: v.compareAt ? rupeesToPaise(v.compareAt) : null,
+          onHandQty: v.onHandQty ?? 0,
+          lowStockThreshold: v.lowStockThreshold ?? 0,
+          isActive: v.isActive ?? true,
+        });
+        variantResults.push({ ok: true, variantId: variant.id });
+      } catch (e) {
+        const h = handle(e);
+        variantResults.push({ ok: false, message: h.message ?? "Something went wrong.", errors: h.errors });
+      }
+    }
+    const variantFailures = variantResults.filter((r) => !r.ok);
+    if (variantFailures.length > 0) {
+      return {
+        ok: false,
+        message: variantFailures.map((f) => f.message).join(" "),
+        errors: variantFailures.flatMap((f) => f.errors ?? []),
+        productId,
+        variantResults,
+      };
     }
 
     if (input.catalog === "THRIFT" && input.thrift) {
@@ -498,7 +561,7 @@ export async function createFullProductAction(
         try {
           measurements = JSON.parse(raw);
         } catch {
-          return { ok: false, message: "Measurements must be valid JSON.", productId };
+          return { ok: false, message: "Measurements must be valid JSON.", productId, variantResults };
         }
       }
       await upsertThriftDetails(prisma, admin, productId, {
@@ -526,7 +589,13 @@ export async function createFullProductAction(
     }
   } catch (e) {
     const h = handle(e);
-    return { ok: false, message: h.message ?? "Something went wrong.", errors: h.errors, productId };
+    return {
+      ok: false,
+      message: h.message ?? "Something went wrong.",
+      errors: h.errors,
+      productId,
+      variantResults,
+    };
   }
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${productId}`);

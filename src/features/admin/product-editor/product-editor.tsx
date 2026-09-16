@@ -10,6 +10,7 @@ import type { getAdminProduct } from "@/server/catalog/admin";
 
 import { ActionForm } from "@/features/admin/action-form";
 import { DeleteProductConfirm } from "@/features/admin/delete-product-confirm";
+import { SwitchCatalogConfirm } from "@/features/admin/switch-catalog-confirm";
 import { ImageUploader } from "@/features/admin/image-uploader";
 import { Pill } from "@/features/admin/format";
 import { productPath } from "@/lib/catalog-routes";
@@ -21,6 +22,7 @@ import {
   reorderImageAction,
   setPrimaryImageAction,
   statusAction,
+  switchCatalogAction,
   thriftDetailsAction,
   toggleFeatureOnHomeAction,
   updateProductAction,
@@ -134,7 +136,8 @@ export function ProductEditor({
   async function handleSave() {
     setSaving(true);
     setBanner(null);
-    const variants = rows.filter((r) => !r.orphaned).map(rowToVariantInput);
+    const nonOrphanedRows = rows.filter((r) => !r.orphaned);
+    const variants = nonOrphanedRows.map(rowToVariantInput);
     const orphanedSaved = rows.filter((r) => r.orphaned && r.id);
     const thrift = isThrift
       ? {
@@ -175,8 +178,22 @@ export function ProductEditor({
       } else {
         // A partial failure after the product row itself was created still
         // hands back that real id — adopt it so a retry edits the real row
-        // instead of risking a second, duplicate product.
+        // instead of risking a second, duplicate product. Just as important:
+        // adopt each variant's real id too (`variantResults`, positionally
+        // matching `nonOrphanedRows`/`variants` above) — otherwise a retry
+        // re-`create()`s a row that already exists and permanently collides
+        // with its own SKU (D-124).
         if (result.productId) setProductId(result.productId);
+        if (result.variantResults) {
+          const vr = result.variantResults;
+          setRows((prev) =>
+            prev.map((row) => {
+              const i = nonOrphanedRows.findIndex((r) => r.key === row.key);
+              const res = i >= 0 ? vr[i] : undefined;
+              return res?.ok ? { ...row, id: res.variantId } : row;
+            }),
+          );
+        }
         setBanner({ ok: false, message: result.errors?.join(" ") || result.message });
       }
       return;
@@ -281,7 +298,7 @@ export function ProductEditor({
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         {/* ── Main column ── */}
         <div className="space-y-8">
-          {!initial && (
+          {!productId && (
             <section>
               <fieldset>
                 <legend className="text-xs font-medium">Catalogue *</legend>
@@ -533,6 +550,25 @@ export function ProductEditor({
                     </ActionForm>
                   );
                 })()}
+            </section>
+          )}
+
+          {productId && (
+            <section className="border-t border-line pt-6">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+                Catalogue
+              </h2>
+              <p className="mt-1 text-xs text-ink-soft">
+                Currently {isThrift ? "in the Closet" : "in the Label"}. Wrong catalogue?
+                Move it instead of deleting and re-listing.
+              </p>
+              <div className="mt-3">
+                <SwitchCatalogConfirm
+                  productTitle={title}
+                  fromCatalog={catalog}
+                  switchAction={(target) => switchCatalogAction(productId, target)}
+                />
+              </div>
             </section>
           )}
 
