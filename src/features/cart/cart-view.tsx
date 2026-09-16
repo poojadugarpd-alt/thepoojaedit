@@ -59,6 +59,7 @@ function Line({ line }: { line: CartLine }) {
             type="number"
             min={1}
             value={line.quantity}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => setQuantity(line.variantId, Number(e.target.value))}
             className="w-16 rounded-[10px] border border-line bg-transparent px-2 py-1.5 text-sm text-ink focus-visible:border-ink-strong"
           />

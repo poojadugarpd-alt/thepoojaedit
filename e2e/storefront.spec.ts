@@ -40,6 +40,25 @@ test.describe("guest browse", () => {
   });
 });
 
+test.describe("quantity picker (D-126)", () => {
+  test("typing a digit right after focusing replaces the pre-filled 1, doesn't append to it", async ({
+    page,
+  }) => {
+    await page.goto("/label");
+    await page.locator("ul.grid > li a").first().click();
+    const qty = page.getByLabel("Quantity");
+    await expect(qty).toHaveValue("1");
+    // A bare click (not a select-all) used to leave the existing "1" in
+    // place, so the very next digit typed appended onto it (e.g. "1" + "2"
+    // = "12") and silently clamped down to the picker's max — which looked
+    // identical no matter what digit was typed, exactly the owner's report
+    // ("press 2, 3, 4 on the keyboard, it jumps to 9").
+    await qty.click();
+    await page.keyboard.type("2");
+    await expect(qty).toHaveValue("2");
+  });
+});
+
 test.describe("mixed cart (AC-01)", () => {
   test("holds items from both catalogues and survives a reload", async ({ page }) => {
     // add a THE_POOJA_EDIT item

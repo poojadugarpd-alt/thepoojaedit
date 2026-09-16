@@ -101,6 +101,7 @@ export function AddToCart({
             min={1}
             max={maxQty}
             value={qty}
+            onFocus={(e) => e.target.select()}
             onChange={(e) =>
               setQty(Math.max(1, Math.min(Number(e.target.value) || 1, maxQty)))
             }
