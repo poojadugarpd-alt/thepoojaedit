@@ -57,6 +57,28 @@ test.describe("quantity picker (D-126)", () => {
     await page.keyboard.type("2");
     await expect(qty).toHaveValue("2");
   });
+
+  test("typing several digits in one sitting always lands on the last digit typed, not an accumulated number", async ({
+    page,
+  }) => {
+    // D-126 only fixed the *first* keystroke after focus (`onFocus` select()
+    // only re-arms on focus, not after every change) — pressing another
+    // digit right after, in the same sitting, still appended onto the
+    // previous one (e.g. "2" then "3" became "23", clamped down to the
+    // picker's max) and looked identical for every digit past the first.
+    // The max here is always a single digit, so there's never a legitimate
+    // 2-digit quantity — every keystroke should fully replace.
+    await page.goto("/label");
+    await page.locator("ul.grid > li a").first().click();
+    const qty = page.getByLabel("Quantity");
+    await qty.click();
+    await page.keyboard.type("2");
+    await expect(qty).toHaveValue("2");
+    await page.keyboard.type("3");
+    await expect(qty).toHaveValue("3");
+    await page.keyboard.type("4");
+    await expect(qty).toHaveValue("4");
+  });
 });
 
 test.describe("mixed cart (AC-01)", () => {

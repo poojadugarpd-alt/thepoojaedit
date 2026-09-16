@@ -102,9 +102,18 @@ export function AddToCart({
             max={maxQty}
             value={qty}
             onFocus={(e) => e.target.select()}
-            onChange={(e) =>
-              setQty(Math.max(1, Math.min(Number(e.target.value) || 1, maxQty)))
-            }
+            onChange={(e) => {
+              // The picker's max is always a single digit (MAX_ORDER_QTY =
+              // 9), so a raw value with more than one character can only be
+              // a stale digit that `onFocus`'s select() failed to clear
+              // before a second keystroke (e.g. typing "2" then "3" in one
+              // sitting can still land as "23" — select() only re-arms on
+              // focus, not after every change) — take the digit actually
+              // just typed (the last one), not the accumulated string.
+              const raw = e.target.value;
+              const digit = raw.length > 1 ? raw.slice(-1) : raw;
+              setQty(Math.max(1, Math.min(Number(digit) || 1, maxQty)));
+            }}
             className="mt-2 w-24 rounded-[10px] border border-line bg-transparent px-3 py-2.5 text-[0.95rem] text-ink focus-visible:border-ink-strong"
           />
         </div>
