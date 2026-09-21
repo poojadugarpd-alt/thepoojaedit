@@ -4,9 +4,38 @@ import { notFound } from "next/navigation";
 
 import type { CatalogType } from "@/lib/catalog-routes";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
+import { publicEnv } from "@/lib/public-env";
 import { SEGMENT_BY_CATALOG, getCollection } from "@/server/catalog";
 
 import { ProductGrid } from "./product-grid";
+
+function breadcrumbJsonLd(
+  catalog: CatalogType,
+  segment: string,
+  collectionName: string,
+  path: string,
+) {
+  const base = publicEnv.NEXT_PUBLIC_SITE_URL;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: base },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: CATALOG_LABEL[catalog],
+        item: `${base}/${segment}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: collectionName,
+        item: `${base}${path}`,
+      },
+    ],
+  };
+}
 
 export async function buildCollectionMetadata(
   catalog: CatalogType,
@@ -34,9 +63,16 @@ export async function CollectionPage({
   const col = await getCollection(catalog, slug);
   if (!col) notFound();
   const segment = SEGMENT_BY_CATALOG[catalog];
+  const path = `/${segment}/collections/${slug}`;
 
   return (
     <div className="u-page py-14 sm:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(catalog, segment, col.name, path)),
+        }}
+      />
       <nav aria-label="Breadcrumb" className="mb-8 text-[0.8125rem] text-ink-soft">
         <Link
           href={`/${segment}`}

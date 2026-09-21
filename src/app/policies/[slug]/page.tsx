@@ -5,31 +5,88 @@ import { LegalPage } from "@/features/site-content/legal-page";
 
 /**
  * Shipping / returns / privacy / terms. Text is adapted from the two legacy
- * stores and carries a "draft — pending review" banner; the owner reconciles it
- * (notably the two different return windows) before launch.
+ * stores and carries a "draft — pending review" banner. 2026-09-21: reconciled
+ * the two return windows (Label 48h / Closet 2 days were the same duration,
+ * just inconsistently worded — unified to 48 hours), removed a stale COD
+ * mention on `terms` left over from D-90 (COD turned off at checkout), and
+ * confirmed the refund turnaround (owner: 14 days from the return request,
+ * not from inspection) — `returns-exchanges` now also carries FAQPage
+ * JSON-LD alongside `shipping`.
  */
+/**
+ * Plain-text Q&A pairs, the single source of truth for both the visible
+ * shipping page and its FAQPage JSON-LD (see `shippingFaqJsonLd` below) —
+ * kept as plain strings, not JSX, specifically so the two can never drift
+ * apart.
+ */
+const SHIPPING_FAQ: { q: string; a: string }[] = [
+  { q: "Do you ship across India?", a: "Yes — we ship across India." },
+  {
+    q: "How long does The Label take to ship?",
+    a: "The Label pieces are slow-made or made to order and currently ship in about 5–10 business days.",
+  },
+  {
+    q: "How long does The Closet take to ship?",
+    a: "The Closet (pre-loved) pieces are dispatched within about 2 working days of your order; delivery time then depends on your location.",
+  },
+  {
+    q: "What payment methods do you accept?",
+    a: "We currently accept online payment only (UPI / card / netbanking) — cash on delivery isn't offered.",
+  },
+  {
+    q: "How can I track my order?",
+    a: "Tracking is via Shadowfax. Shipping charges and serviceable pincodes are shown at checkout.",
+  },
+];
+
+/**
+ * Same single-source-of-truth pattern as `SHIPPING_FAQ`, grouped by catalogue
+ * for display (`section`) but flattened for `FAQPage` JSON-LD.
+ */
+const RETURNS_FAQ: { section: string; q: string; a: string }[] = [
+  {
+    section: "The Label (new apparel)",
+    q: "Can I return or exchange a Label item?",
+    a: "Yes. Raise a return or exchange request within 48 hours of delivery via Instagram DM, WhatsApp or email, with a complete, uncut unboxing video showing the sealed package being opened and the item clearly visible.",
+  },
+  {
+    section: "The Label (new apparel)",
+    q: "When are Label returns accepted?",
+    a: "Returns are accepted when the item is damaged, dirty, stained, or the wrong item was sent. Shipping charges are non-refundable.",
+  },
+  {
+    section: "The Label (new apparel)",
+    q: "How long do Label refunds take?",
+    a: "Refunds are processed within 14 days of your return request.",
+  },
+  {
+    section: "The Label (new apparel)",
+    q: "Can I exchange a Label item for a different size?",
+    a: "Yes — exchanges are accepted for size issues. The item must be unused, unwashed and tagged. Two-way shipping is paid by the customer.",
+  },
+  {
+    section: "The Closet (pre-loved, one of one)",
+    q: "Can I return a Closet item?",
+    a: "No — Closet pieces are final sale, with no returns or cancellations. Please read the condition, measurements and flaws carefully before buying.",
+  },
+  {
+    section: "The Closet (pre-loved, one of one)",
+    q: "What if my Closet item arrives damaged in transit?",
+    a: "Damage-in-transit claims need a complete unboxing video and must be raised within 48 hours of delivery.",
+  },
+];
+
 const POLICIES = {
   shipping: {
     title: "Shipping",
     body: (
       <>
-        <p>We ship across India.</p>
-        <h2>The Label</h2>
-        <p>
-          Pieces are slow-made or made to order and currently ship in about
-          5–10 business days.
-        </p>
-        <h2>The Closet</h2>
-        <p>
-          Pre-loved pieces are dispatched within about 2 working days of your
-          order. Delivery time then depends on your location.
-        </p>
-        <h2>Charges &amp; payment</h2>
-        <p>
-          Shipping charges and serviceable pincodes are shown at checkout.
-          We currently accept online payment only (UPI / card / netbanking) —
-          cash on delivery isn&rsquo;t offered. Tracking is via Shadowfax.
-        </p>
+        {SHIPPING_FAQ.map(({ q, a }) => (
+          <div key={q}>
+            <h2>{q}</h2>
+            <p>{a}</p>
+          </div>
+        ))}
       </>
     ),
   },
@@ -41,38 +98,19 @@ const POLICIES = {
           Return rules differ by catalogue, and each item shows its own on the
           product page and in your cart.
         </p>
-        <h2>The Label (new apparel)</h2>
-        <ul>
-          <li>
-            Raise a return or exchange request within <strong>48 hours of
-            delivery</strong> (Instagram DM, WhatsApp or email).
-          </li>
-          <li>
-            Provide a <strong>complete, uncut unboxing video</strong> showing the
-            sealed package being opened and the item clearly visible.
-          </li>
-          <li>
-            Returns are accepted when the item is <strong>damaged, dirty,
-            stained, or the wrong item</strong> was sent. Shipping charges are
-            non-refundable. Refunds are processed after inspection.
-          </li>
-          <li>
-            Exchanges are for size issues; the item must be unused, unwashed and
-            tagged. Two-way shipping is paid by the customer.
-          </li>
-        </ul>
-        <h2>The Closet (pre-loved, one of one)</h2>
-        <ul>
-          <li>
-            Closet pieces are <strong>final sale</strong> — no returns or
-            cancellations. Please read the condition, measurements and flaws
-            carefully before buying.
-          </li>
-          <li>
-            Damage-in-transit claims need a complete unboxing video and must be
-            raised within <strong>2 days</strong> of delivery.
-          </li>
-        </ul>
+        {(["The Label (new apparel)", "The Closet (pre-loved, one of one)"] as const).map(
+          (section) => (
+            <div key={section}>
+              <h2>{section}</h2>
+              {RETURNS_FAQ.filter((item) => item.section === section).map(({ q, a }) => (
+                <div key={q}>
+                  <h3>{q}</h3>
+                  <p>{a}</p>
+                </div>
+              ))}
+            </div>
+          ),
+        )}
       </>
     ),
   },
@@ -120,8 +158,8 @@ const POLICIES = {
             briefly after a prepaid order is placed.
           </li>
           <li>
-            A cash-on-delivery order is confirmed by us before dispatch and is
-            not treated as paid until delivery.
+            All orders are prepaid — we accept online payment only (UPI /
+            card / netbanking). Cash on delivery isn&rsquo;t offered.
           </li>
           <li>
             Closet pieces are sold as described, one of one, and final sale.
@@ -142,6 +180,23 @@ export function generateStaticParams() {
   return Object.keys(POLICIES).map((slug) => ({ slug }));
 }
 
+function faqJsonLd(items: { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map(({ q, a }) => ({
+      "@type": "Question",
+      name: q,
+      acceptedAnswer: { "@type": "Answer", text: a },
+    })),
+  };
+}
+
+const FAQ_BY_SLUG: Partial<Record<Slug, { q: string; a: string }[]>> = {
+  shipping: SHIPPING_FAQ,
+  "returns-exchanges": RETURNS_FAQ,
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -161,9 +216,18 @@ export default async function PolicyPage({
   const { slug } = await params;
   const p = POLICIES[slug as Slug];
   if (!p) notFound();
+  const faq = FAQ_BY_SLUG[slug as Slug];
   return (
-    <LegalPage eyebrow="Policy" title={p.title} draft>
-      {p.body}
-    </LegalPage>
+    <>
+      {faq && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(faq)) }}
+        />
+      )}
+      <LegalPage eyebrow="Policy" title={p.title} draft>
+        {p.body}
+      </LegalPage>
+    </>
   );
 }

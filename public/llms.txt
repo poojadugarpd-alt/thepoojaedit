@@ -1,0 +1,43 @@
+# The Pooja Edit — by Pooja Dugar
+
+> Realistic, wearable Indian fashion from a solo Instagram-led brand
+> (@poojadugar_). Two catalogs: The Label (Pooja's own designs) and The
+> Closet (one-of-one pre-loved pieces from her own wardrobe). Ships across
+> India.
+
+## Catalogs
+
+- The Label (`/label`): Pooja's own designs — kurtis, co-ord sets and linen,
+  made in real sizes and small runs.
+- The Closet (`/closet`): Pooja's own wardrobe, passed on. Every piece is
+  one-of-one; once it's sold, it's gone. Sold as-is, final sale.
+
+## Ordering
+
+- Payment: online only (UPI / card / netbanking) via Razorpay. Cash on
+  delivery is not offered.
+- Shipping: ships across India via Shadowfax. The Label ships in about
+  5-10 business days (made to order/slow-made); The Closet dispatches within
+  about 2 working days.
+- Returns: differ by catalog — see `/policies/returns-exchanges` for current
+  terms (this page is still being finalized by the owner; treat it as
+  provisional, not final, as of this file's last update).
+
+## Links
+
+- Homepage: /
+- The Label: /label
+- The Closet: /closet
+- About: /about
+- Contact: /contact
+- Shipping policy: /policies/shipping
+- Returns & exchanges: /policies/returns-exchanges
+
+## Contact
+
+- Instagram: https://www.instagram.com/poojadugar_/ (fastest way to reach
+  the brand)
+
+---
+Last updated: 2026-09-21. Generated for AI/LLM crawlers per the llms.txt
+convention — for full detail, see the linked pages above.

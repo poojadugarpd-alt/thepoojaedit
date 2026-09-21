@@ -41,7 +41,7 @@ export function LegalPage({
           </p>
         )}
 
-        <div className="mt-10 space-y-5 text-[0.95rem] leading-relaxed text-ink [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-10 [&_h2]:text-ink-strong [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-[0.06em] [&_h2]:text-[0.8125rem] [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1">
+        <div className="mt-10 space-y-5 text-[0.95rem] leading-relaxed text-ink [&_a]:underline [&_a]:underline-offset-2 [&_h2]:mt-10 [&_h2]:text-ink-strong [&_h2]:font-bold [&_h2]:uppercase [&_h2]:tracking-[0.06em] [&_h2]:text-[0.8125rem] [&_h3]:mt-6 [&_h3]:font-bold [&_h3]:text-ink-strong [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1">
           {children}
         </div>
 

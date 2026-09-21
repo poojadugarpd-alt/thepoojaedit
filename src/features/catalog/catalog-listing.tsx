@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { rupeesToPaise } from "@/lib/money";
 import { CATALOG_LABEL, type CatalogType } from "@/lib/catalog-routes";
+import { publicEnv } from "@/lib/public-env";
 import {
   SEGMENT_BY_CATALOG,
   getFacets,
@@ -34,6 +35,23 @@ export interface CatalogSearchParams {
 }
 
 const SORTS = new Set<ProductSort>(["newest", "price_asc", "price_desc"]);
+
+function breadcrumbJsonLd(catalog: CatalogType, segment: string) {
+  const base = publicEnv.NEXT_PUBLIC_SITE_URL;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: base },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: CATALOG_LABEL[catalog],
+        item: `${base}/${segment}`,
+      },
+    ],
+  };
+}
 
 export async function CatalogListing({
   catalog,
@@ -81,6 +99,12 @@ export async function CatalogListing({
 
   return (
     <div className="u-page py-14 sm:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(catalog, segment)),
+        }}
+      />
       <header className="max-w-3xl">
         <h1 className="u-display">{CATALOG_LABEL[catalog]}</h1>
         <p

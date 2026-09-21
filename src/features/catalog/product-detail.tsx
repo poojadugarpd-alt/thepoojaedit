@@ -132,6 +132,24 @@ function ThriftDetailsBlock({
   );
 }
 
+function breadcrumbJsonLd(product: PublicProductDetail, segment: string, url: string) {
+  const base = publicEnv.NEXT_PUBLIC_SITE_URL;
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: base },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: CATALOG_LABEL[product.catalog],
+        item: `${base}/${segment}`,
+      },
+      { "@type": "ListItem", position: 3, name: product.title, item: url },
+    ],
+  };
+}
+
 function jsonLd(product: PublicProductDetail, url: string) {
   const availability =
     product.availability === "IN_STOCK"
@@ -176,6 +194,12 @@ export function ProductDetail({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(product, url)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJsonLd(product, segment, url)),
+        }}
       />
 
       <nav aria-label="Breadcrumb" className="mb-10 text-[0.8125rem] text-ink-soft">

@@ -7,6 +7,7 @@ import { RouteChrome } from "@/components/route-chrome";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { SkipLink } from "@/components/skip-link";
+import { organizationJsonLd } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
 
 import "./globals.css";
@@ -48,6 +49,10 @@ export default function RootLayout({
           storefront={
             <>
               <link rel="manifest" href="/manifest.webmanifest" />
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+              />
               <EnvironmentBanner />
               <AnnouncementTicker />
               <SiteHeader />
