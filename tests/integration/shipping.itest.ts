@@ -5,10 +5,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma";
 import { placeOrder, type AddressInput } from "../../src/server/checkout/place-order";
 import { computeQuote, QuoteError } from "../../src/server/checkout/quote";
-import { confirmCodOrder } from "../../src/server/orders/lifecycle";
+import { cancelOrder, confirmCodOrder } from "../../src/server/orders/lifecycle";
 import { ShippingError } from "../../src/server/shipping/port";
 import {
   applyTrackingEvent,
+  cancelShipmentsForOrder,
   createShipmentForOrder,
   ensureShipmentForConfirmedOrder,
   getShipmentLabel,
@@ -37,7 +38,10 @@ beforeEach(async () => {
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -189,7 +193,9 @@ describe("shipment creation is safe across retries (AC-13)", () => {
     expect(b.created).toBe(false);
     expect(b.shipment.id).toBe(a.shipment.id);
     expect(await db.shipment.count({ where: { orderId: order.id } })).toBe(1);
-    expect(await db.shipmentItem.count({ where: { shipmentId: a.shipment.id } })).toBe(1);
+    expect(await db.shipmentItem.count({ where: { shipmentId: a.shipment.id } })).toBe(
+      1,
+    );
     expect(fx.shipments.size).toBe(1);
     // order fulfilment moved to PROCESSING
     expect(
@@ -211,7 +217,9 @@ describe("shipment creation is safe across retries (AC-13)", () => {
       shippingPort: fx,
     });
     // not confirmed yet
-    const skipped = await ensureShipmentForConfirmedOrder(db, fx, { orderId: order.id });
+    const skipped = await ensureShipmentForConfirmedOrder(db, fx, {
+      orderId: order.id,
+    });
     expect(skipped.created).toBe(false);
 
     await confirmCodOrder(db, { orderId: order.id });
@@ -231,8 +239,16 @@ describe("tracking normalization (AC-13)", () => {
     const order = await placeConfirmedCod(fx, v);
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
 
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "PICKED_UP", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(13));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "PICKED_UP",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(13),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
     expect(
       (await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }))
@@ -240,7 +256,11 @@ describe("tracking normalization (AC-13)", () => {
     ).toBe("OUT_FOR_DELIVERY");
 
     // a late "in transit" scan from 11:00 arrives afterwards
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "IN_TRANSIT", T(11));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "IN_TRANSIT",
+      T(11),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     const s = await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } });
@@ -258,10 +278,26 @@ describe("tracking normalization (AC-13)", () => {
     const order = await placeConfirmedCod(fx, v);
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
 
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "UNDELIVERED", T(10));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(11));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "UNDELIVERED", T(12));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "UNDELIVERED",
+      T(10),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(11),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "UNDELIVERED",
+      T(12),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     const tasks = await db.operationalTask.findMany({
@@ -283,7 +319,11 @@ describe("tracking normalization (AC-13)", () => {
     const v = await makeVariant(5);
     const order = await placeConfirmedCod(fx, v);
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "PICKED_UP", T(9));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "PICKED_UP",
+      T(9),
+    );
 
     const bad = fx.buildWebhook(
       { merchantReference: shipment.merchantReference },
@@ -325,8 +365,16 @@ describe("RTO handling (AC-05/09/13)", () => {
     const order = await placeConfirmedCod(fx, v, 2); // committed COD stock: onHand 4 → 2
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
 
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "RTO_INITIATED", T(10));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "RTO_INITIATED",
+      T(10),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     expect(
@@ -341,7 +389,11 @@ describe("RTO handling (AC-05/09/13)", () => {
     ).toBe(2); // unchanged — no restock from in-transit
 
     // parcel received back
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "RTO_DELIVERED", T(11));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "RTO_DELIVERED",
+      T(11),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
     expect(
       (await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }))
@@ -404,19 +456,29 @@ describe("COD collection vs remittance (AC-09)", () => {
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
     const expected = order.totalPaise;
 
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "DELIVERED", T(12));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "DELIVERED",
+      T(12),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     let o = await db.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(o.fulfillmentStatus).toBe("DELIVERED");
     expect(o.paymentStatus).toBe("COD_PENDING"); // NOT paid from delivery alone
 
-    fx.simulateCodCollected({ merchantReference: shipment.merchantReference }, expected, T(12));
+    fx.simulateCodCollected(
+      { merchantReference: shipment.merchantReference },
+      expected,
+      T(12),
+    );
     const s1 = await syncCodRemittance(db, fx, { shipmentId: shipment.id });
     expect(s1?.status).toBe("COLLECTED");
     o = await db.order.findUniqueOrThrow({ where: { id: order.id } });
     expect(o.paymentStatus).toBe("COD_COLLECTED");
-    let rem = await db.codRemittance.findFirstOrThrow({ where: { shipmentId: shipment.id } });
+    let rem = await db.codRemittance.findFirstOrThrow({
+      where: { shipmentId: shipment.id },
+    });
     expect(rem.collectedPaise).toBe(expected);
     expect(rem.remittedPaise).toBeNull();
 
@@ -428,7 +490,9 @@ describe("COD collection vs remittance (AC-09)", () => {
     );
     const s2 = await syncCodRemittance(db, fx, { shipmentId: shipment.id });
     expect(s2?.status).toBe("REMITTED");
-    rem = await db.codRemittance.findFirstOrThrow({ where: { shipmentId: shipment.id } });
+    rem = await db.codRemittance.findFirstOrThrow({
+      where: { shipmentId: shipment.id },
+    });
     expect(rem.remittedPaise).toBe(expected);
     expect(rem.providerReference).toBe("UTR-8899");
     expect(rem.collectedAt?.getTime()).not.toBe(rem.remittedAt?.getTime());
@@ -487,9 +551,9 @@ describe("label access", () => {
         statusNormalized: "PENDING",
       },
     });
-    await expect(
-      getShipmentLabel(db, fx, { shipmentId: s.id }),
-    ).rejects.toBeInstanceOf(ShippingError);
+    await expect(getShipmentLabel(db, fx, { shipmentId: s.id })).rejects.toBeInstanceOf(
+      ShippingError,
+    );
   });
 });
 
@@ -519,5 +583,59 @@ describe("forward tracking progression", () => {
     expect(
       (await db.order.findUniqueOrThrow({ where: { id: order.id } })).fulfillmentStatus,
     ).toBe("DELIVERED");
+  });
+});
+
+describe("cancelling a booked-but-not-picked-up order (D-133)", () => {
+  it("cancels the carrier pickup, then the order, and restores stock exactly once", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v, 2);
+    const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
+
+    // The order can't be cancelled while the pickup is still booked.
+    await expect(
+      cancelOrder(db, { orderId: order.id, reason: "test" }),
+    ).rejects.toThrow(/cancel it with the carrier first/);
+
+    const r = await cancelShipmentsForOrder(db, fx, {
+      orderId: order.id,
+      actor: "admin@test",
+    });
+    expect(r.cancelled).toBe(1);
+    expect([...fx.shipments.values()][0]!.cancelled).toBe(true);
+    expect(
+      (await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }))
+        .statusNormalized,
+    ).toBe("CANCELLED");
+
+    // Retry is a no-op, not a second carrier call.
+    expect(
+      (await cancelShipmentsForOrder(db, fx, { orderId: order.id })).cancelled,
+    ).toBe(0);
+
+    const cancelled = await cancelOrder(db, { orderId: order.id, reason: "test" });
+    expect(cancelled.orderStatus).toBe("CANCELLED");
+    expect(cancelled.fulfillmentStatus).toBe("CANCELLED");
+    expect(
+      (await db.productVariant.findUniqueOrThrow({ where: { id: v } })).onHandQty,
+    ).toBe(5);
+  });
+
+  it("refuses once the parcel has been picked up", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
+    await applyTrackingEvent(db, {
+      shipmentId: shipment.id,
+      statusRaw: "PICKED_UP",
+      occurredAt: T(9),
+      source: "test",
+    });
+    await expect(
+      cancelShipmentsForOrder(db, fx, { orderId: order.id }),
+    ).rejects.toThrow(ShippingError);
+    expect([...fx.shipments.values()][0]!.cancelled).toBeFalsy();
   });
 });
