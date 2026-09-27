@@ -53,9 +53,63 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/the-pooja-edit", destination: "/label", permanent: true },
-      { source: "/the-pooja-edit/:path*", destination: "/label/:path*", permanent: true },
+      {
+        source: "/the-pooja-edit/:path*",
+        destination: "/label/:path*",
+        permanent: true,
+      },
       { source: "/thrift", destination: "/closet", permanent: true },
       { source: "/thrift/:path*", destination: "/closet/:path*", permanent: true },
+
+      // Legacy Shopify URLs (domain cutover, D-131). thepoojaedit.in served the
+      // old Shopify store; its URLs live on in Instagram bios, posts and search
+      // results. Product handles were carried over as slugs (migration keeps
+      // `source_slug`), and every Shopify product was a Label piece except the
+      // two untitled thrift drafts below. Specific rules must stay above the
+      // generic `/products/:handle` one.
+      { source: "/products/untitled-:rest", destination: "/closet", permanent: true },
+      { source: "/products/:handle", destination: "/label/:handle", permanent: true },
+      {
+        source: "/collections/:collection/products/:handle",
+        destination: "/label/:handle",
+        permanent: true,
+      },
+      { source: "/collections/thrift", destination: "/closet", permanent: true },
+      { source: "/collections/:path*", destination: "/label", permanent: true },
+      { source: "/pages/contact", destination: "/contact", permanent: true },
+      { source: "/pages/about-us", destination: "/about", permanent: true },
+      {
+        source: "/pages/returns-exchange",
+        destination: "/policies/returns-exchanges",
+        permanent: true,
+      },
+      {
+        source: "/pages/pooja-s-closet-thrifts-store",
+        destination: "/closet",
+        permanent: true,
+      },
+      {
+        source: "/policies/refund-policy",
+        destination: "/policies/returns-exchanges",
+        permanent: true,
+      },
+      {
+        source: "/policies/shipping-policy",
+        destination: "/policies/shipping",
+        permanent: true,
+      },
+      {
+        source: "/policies/privacy-policy",
+        destination: "/policies/privacy",
+        permanent: true,
+      },
+      {
+        source: "/policies/terms-of-service",
+        destination: "/policies/terms",
+        permanent: true,
+      },
+      { source: "/blogs/:path*", destination: "/", permanent: true },
+      { source: "/account/:path*", destination: "/", permanent: true },
     ];
   },
 };
