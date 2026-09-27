@@ -71,8 +71,23 @@ export async function cancelOrder(
   return db.$transaction(async (tx) => {
     const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId } });
     if (order.orderStatus === "CANCELLED") return order;
-    if (order.fulfillmentStatus !== "UNFULFILLED") {
-      throw new Error("Only an unshipped order can be cancelled here.");
+    // PROCESSING = a pickup was booked but nothing has moved yet; cancellable
+    // once every shipment is cancelled with the carrier (D-133).
+    const activeShipments =
+      order.fulfillmentStatus === "PROCESSING"
+        ? await tx.shipment.count({
+            where: { orderId: order.id, statusNormalized: { not: "CANCELLED" } },
+          })
+        : 0;
+    if (
+      order.fulfillmentStatus !== "UNFULFILLED" &&
+      !(order.fulfillmentStatus === "PROCESSING" && activeShipments === 0)
+    ) {
+      throw new Error(
+        order.fulfillmentStatus === "PROCESSING"
+          ? "This order has a booked shipment — cancel it with the carrier first."
+          : "Only an unshipped order can be cancelled here.",
+      );
     }
     assertTransition(
       "order",
