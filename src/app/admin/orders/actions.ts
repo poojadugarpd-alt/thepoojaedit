@@ -10,6 +10,7 @@ import { renderAndStoreInvoicePdf, issueInvoiceForOrder } from "@/server/invoice
 import { cancelOrder, confirmCodOrder } from "@/server/orders/lifecycle";
 import { requestRefundNow } from "@/server/refunds";
 import {
+  cancelShipmentsNow,
   checkPincodeServiceabilityNow,
   createShipmentForOrderNow,
   isShippingConfigured,
@@ -20,7 +21,10 @@ import {
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
 
 function fail(e: unknown): ActionState {
-  return { ok: false, message: e instanceof Error ? e.message : "Something went wrong." };
+  return {
+    ok: false,
+    message: e instanceof Error ? e.message : "Something went wrong.",
+  };
 }
 
 function revalidate(orderNumber: string) {
@@ -56,9 +60,18 @@ export async function cancelOrderAction(
   if (!reason) return { ok: false, message: "A cancellation reason is required." };
   try {
     const order = await prisma.order.findUniqueOrThrow({ where: { orderNumber } });
+    // A booked-but-not-picked-up pickup is cancelled with Shadowfax first (D-133).
+    let shipmentNote = "";
+    if (order.fulfillmentStatus === "PROCESSING" && isShippingConfigured()) {
+      const r = await cancelShipmentsNow(order.id, admin.email);
+      if (r.cancelled > 0) shipmentNote = " Shadowfax pickup cancelled.";
+    }
     await cancelOrder(prisma, { orderId: order.id, reason, actor: admin.email });
     revalidate(orderNumber);
-    return { ok: true, message: "Order cancelled. Any refund is a separate step." };
+    return {
+      ok: true,
+      message: `Order cancelled.${shipmentNote} Any refund is a separate step.`,
+    };
   } catch (e) {
     return fail(e);
   }
@@ -129,7 +142,10 @@ export async function generateInvoiceAction(
     const invoice = await issueInvoiceForOrder(order.id);
     await renderAndStoreInvoicePdf(invoice.id);
     revalidate(orderNumber);
-    return { ok: true, message: `Invoice ${invoice.financialYear}/${invoice.number} ready.` };
+    return {
+      ok: true,
+      message: `Invoice ${invoice.financialYear}/${invoice.number} ready.`,
+    };
   } catch (e) {
     return fail(e);
   }
