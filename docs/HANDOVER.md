@@ -46,7 +46,7 @@ Driven by two owner-supplied docs: `docs/01-master-specification.md`
 feature, it gets diagnosed/built/verified in one pass, logged, shipped.
 
 **Every non-trivial decision is logged in `docs/decisions.md`** (currently
-through **D-130**) — one row per decision with *what*, *when*, *why*. This is
+through **D-133**) — one row per decision with *what*, *when*, *why*. This is
 the single best file to skim for real history; it's more reliable than this
 handover doc for anything past 2026-09-28. `docs/build-progress.md` covers
 the original phase-by-phase build (stops at Phase 12 — later work lives in
@@ -71,7 +71,7 @@ Working norms observed throughout, worth continuing:
 | `01-master-specification.md` | Fixed architecture/spec |
 | `02-execution-playbook.md` | Original 14-phase build plan (historical) |
 | `build-progress.md` | Phase-by-phase build log through Phase 12 |
-| `decisions.md` | **The real changelog** — D-1 through D-130+, read this |
+| `decisions.md` | **The real changelog** — D-1 through D-133+, read this |
 | `acceptance-evidence.md` | AC-01..AC-18 status matrix |
 | `release-candidate.md` | 8 launch blockers + status (most now closed, see §6) |
 | `deferred-scope.md` | Explicitly out-of-scope items |
@@ -153,16 +153,15 @@ All shipped and live unless noted. Full detail in `docs/decisions.md`.
 | 09-27 | — (`72015b1`) | 308 redirects from legacy Shopify URLs, ahead of the `thepoojaedit.in` cutover |
 | 09-27 | D-133 (`d01938a`→`5f2479a`) | Cancel an order whose Shadowfax pickup is booked but not yet collected (cancels the pickup first; integration-tested) |
 
-**Note:** D-131, D-132 and D-133 are referenced in commit messages but are
-**not yet written into `docs/decisions.md`** (it stops at D-130) — the 09-27
-work was done from another machine. Backfill those rows first.
+D-131–D-133 were backfilled into `docs/decisions.md` on 2026-09-28 (the
+09-27 work was done on another machine and not logged at the time). D-132 has
+no known content — kept as a placeholder row.
 
 ## 8. What's planned / next up
 
 Rough priority order. Items 1–4 need the owner or a third party; 5+ can be
 picked up by a developer directly.
 
-0. **Backfill D-131–D-133 into `docs/decisions.md`** (see §7 note).
 1. **Owner GST/tax/legal config** (GSTIN, HSN + GST rates, registered legal
    name/address) → invoices and policy pages leave DRAFT. Biggest real
    launch blocker. Once done, the legal name/GST can also go into
@@ -179,7 +178,9 @@ picked up by a developer directly.
 5. **Fix local admin e2e auth** (§5) so `npm run verify` is fully green locally.
 6. **Phase 13 operational drills** — backup/restore rehearsal, rollback
    rehearsal, budget alerts, in an isolated environment.
-7. **Remaining live verifications**: a real Shadowfax push-callback, a real
+7. **Remaining live verifications**: a real Shadowfax pickup cancel (D-133,
+   only tested against a fake), every legacy Shopify product URL resolving
+   (D-131), a real Shadowfax push-callback, a real
    Inngest cron firing end-to-end, iPhone PWA install + push delivery,
    signed-URL upload / private-bucket download against the prod project
    (AC-12 remainder), Supabase Free-tier pause/backup check.
