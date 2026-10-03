@@ -64,6 +64,11 @@ export default async function AdminOrderDetail({
         <span className="w-full text-xs text-ink-soft sm:w-auto">
           {order.paymentMethod === "COD" ? "Cash on delivery" : "Prepaid"} · placed{" "}
           {ts(order.placedAt)}
+          {order.utmSource && (
+            <>
+              {" "}· via {[order.utmSource, order.utmMedium, order.utmCampaign].filter(Boolean).join(" / ")}
+            </>
+          )}
         </span>
       </div>
 

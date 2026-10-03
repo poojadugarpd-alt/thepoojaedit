@@ -1,5 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
+
+import { parseUtmCookie, UTM_COOKIE } from "@/lib/attribution";
 import { InMemoryRateLimiter } from "@/lib/rate-limit";
 import { publicEnv } from "@/lib/public-env";
 import {
@@ -156,6 +159,8 @@ export async function placeCheckoutAction(
     ? `customer:${customer.id}`
     : guestScope(input.contactPhone, email);
 
+  const utm = parseUtmCookie((await cookies()).get(UTM_COOKIE)?.value);
+
   try {
     const { order, guestAccessToken } = await checkout({
       idempotencyKey: input.idempotencyKey,
@@ -168,6 +173,7 @@ export async function placeCheckoutAction(
       billing: withStateName(input.billing),
       shipping: withStateName(input.shipping),
       source: input.source ?? null,
+      utm: utm ?? undefined,
       clientQuoteHash: input.clientQuoteHash,
     });
 
