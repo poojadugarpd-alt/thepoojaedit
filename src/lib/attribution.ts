@@ -37,13 +37,24 @@ export function utmFromSearchParams(params: URLSearchParams): Utm | null {
   };
 }
 
+/** `~` separates the parts: it's never percent-encoded in a cookie and can't
+ *  appear in a cleaned tag. (`|` was encoded to `%7C` by Next's cookie API,
+ *  which would have made every stored value unreadable.) */
+const SEP = "~";
+
 export function serializeUtm(utm: Utm): string {
-  return [utm.source, utm.medium ?? "", utm.campaign ?? ""].join("|");
+  return [utm.source, utm.medium ?? "", utm.campaign ?? ""].join(SEP);
 }
 
 export function parseUtmCookie(raw: string | null | undefined): Utm | null {
   if (!raw) return null;
-  const [source, medium, campaign] = raw.split("|");
+  let value = raw;
+  try {
+    value = decodeURIComponent(raw);
+  } catch {
+    // Malformed encoding: fall through with the raw value; clean() rejects it.
+  }
+  const [source, medium, campaign] = value.split(/[~|]/);
   const s = clean(source);
   if (!s) return null;
   return { source: s, medium: clean(medium), campaign: clean(campaign) };

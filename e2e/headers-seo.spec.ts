@@ -61,3 +61,21 @@ test("a PDP carries canonical, OG tags and Product JSON-LD", async ({ page }) =>
   });
   expect(types).toContain("Product");
 });
+
+/** D-136: a tagged landing URL is remembered for checkout in an httpOnly cookie. */
+test("UTM tags from the landing URL are stored for the order", async ({
+  page,
+  context,
+}) => {
+  await page.goto(
+    "/label?utm_source=Instagram&utm_medium=bio&utm_campaign=e4_closet_w1",
+  );
+  const cookie = (await context.cookies()).find((c) => c.name === "tpe_utm");
+  expect(cookie?.value).toBe("instagram~bio~e4_closet_w1");
+  expect(cookie?.httpOnly).toBe(true);
+
+  // Untagged navigation keeps the last tagged visit.
+  await page.goto("/closet");
+  const still = (await context.cookies()).find((c) => c.name === "tpe_utm");
+  expect(still?.value).toBe("instagram~bio~e4_closet_w1");
+});

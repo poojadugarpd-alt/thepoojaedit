@@ -4,8 +4,14 @@ import { parseUtmCookie, serializeUtm, utmFromSearchParams } from "./attribution
 
 describe("utmFromSearchParams", () => {
   it("reads and normalises the three tags", () => {
-    const p = new URLSearchParams("utm_source=Instagram&utm_medium=story&utm_campaign=e4_closet_w1");
-    expect(utmFromSearchParams(p)).toEqual({ source: "instagram", medium: "story", campaign: "e4_closet_w1" });
+    const p = new URLSearchParams(
+      "utm_source=Instagram&utm_medium=story&utm_campaign=e4_closet_w1",
+    );
+    expect(utmFromSearchParams(p)).toEqual({
+      source: "instagram",
+      medium: "story",
+      campaign: "e4_closet_w1",
+    });
   });
 
   it("returns null without a source", () => {
@@ -15,13 +21,19 @@ describe("utmFromSearchParams", () => {
 
   it("keeps the source when other tags are missing or unsafe", () => {
     const p = new URLSearchParams("utm_source=instagram&utm_campaign=<script>");
-    expect(utmFromSearchParams(p)).toEqual({ source: "instagram", medium: null, campaign: null });
+    expect(utmFromSearchParams(p)).toEqual({
+      source: "instagram",
+      medium: null,
+      campaign: null,
+    });
   });
 
   it("drops a source with unsafe characters and caps length", () => {
     expect(utmFromSearchParams(new URLSearchParams("utm_source=a|b"))).toBeNull();
     const long = "x".repeat(200);
-    expect(utmFromSearchParams(new URLSearchParams(`utm_source=${long}`))?.source).toHaveLength(64);
+    expect(
+      utmFromSearchParams(new URLSearchParams(`utm_source=${long}`))?.source,
+    ).toHaveLength(64);
   });
 });
 
@@ -32,11 +44,26 @@ describe("cookie round-trip", () => {
   });
 
   it("handles missing medium/campaign", () => {
-    expect(parseUtmCookie(serializeUtm({ source: "instagram", medium: null, campaign: null }))).toEqual({
+    expect(
+      parseUtmCookie(
+        serializeUtm({ source: "instagram", medium: null, campaign: null }),
+      ),
+    ).toEqual({
       source: "instagram",
       medium: null,
       campaign: null,
     });
+  });
+
+  it("reads a value whose separators were percent-encoded by the cookie API", () => {
+    expect(parseUtmCookie("instagram%7Cbio%7Ce4_closet_w1")).toEqual({
+      source: "instagram",
+      medium: "bio",
+      campaign: "e4_closet_w1",
+    });
+    expect(serializeUtm({ source: "instagram", medium: "bio", campaign: "x" })).toBe(
+      "instagram~bio~x",
+    );
   });
 
   it("rejects empty or tampered cookies", () => {
