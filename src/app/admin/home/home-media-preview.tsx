@@ -23,7 +23,9 @@ export function HomeMediaPreview({
   }
   if (slot.kind === "video") {
     return (
-      <div className={`relative ${aspectClassName} w-40 overflow-hidden rounded bg-fill`}>
+      <div
+        className={`relative ${aspectClassName} w-40 overflow-hidden rounded bg-fill`}
+      >
         {slot.url && (
           <video
             src={slot.url}
@@ -41,7 +43,13 @@ export function HomeMediaPreview({
   return (
     <div className={`relative ${aspectClassName} w-40 overflow-hidden rounded bg-fill`}>
       {slot.url && (
-        <Image src={slot.url} alt={slot.alt ?? ""} fill sizes="160px" className="object-cover" />
+        <Image
+          src={slot.url}
+          alt={slot.alt ?? ""}
+          fill
+          sizes="160px"
+          className="object-cover"
+        />
       )}
     </div>
   );

@@ -46,7 +46,8 @@ export function SwitchCatalogConfirm({
     <div className="space-y-3 rounded border border-line bg-fill p-3">
       <p className="text-sm text-ink">
         Move <strong>{productTitle}</strong> to {targetLabel}? It will be set back to
-        Draft so you can review it — {target === "THRIFT"
+        Draft so you can review it —{" "}
+        {target === "THRIFT"
           ? "you'll need to fill in condition and measurements before publishing again."
           : "its thrift condition/measurement details will be removed."}
       </p>

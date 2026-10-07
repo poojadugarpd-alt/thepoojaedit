@@ -21,8 +21,8 @@ export default function NotFound() {
         <p className="u-eyebrow">404</p>
         <h1 className="u-display mt-4">We can&rsquo;t find that page.</h1>
         <p className="u-lead mt-5">
-          The link may be out of date, or the page may have moved. Try one of
-          these instead.
+          The link may be out of date, or the page may have moved. Try one of these
+          instead.
         </p>
         <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
           <Link href={`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`} className="u-pill">

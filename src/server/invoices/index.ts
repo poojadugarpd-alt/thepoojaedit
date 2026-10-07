@@ -8,11 +8,7 @@ import "server-only";
 import { getDocumentStore } from "@/lib/documents";
 import { prisma } from "@/lib/db";
 
-import {
-  createInvoiceForOrder,
-  generateInvoicePdf,
-  issueCreditNote,
-} from "./service";
+import { createInvoiceForOrder, generateInvoicePdf, issueCreditNote } from "./service";
 
 export * from "./numbering";
 export {

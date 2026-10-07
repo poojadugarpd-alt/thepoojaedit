@@ -89,7 +89,9 @@ export function credentialHealth(): CredentialHealth[] {
     {
       group: "Supabase (auth + storage)",
       configured: isSupabaseConfigured(),
-      detail: isSupabaseConfigured() ? "configured" : "not set — admin uses DEV_ADMIN_AUTH",
+      detail: isSupabaseConfigured()
+        ? "configured"
+        : "not set — admin uses DEV_ADMIN_AUTH",
     },
     {
       group: "Razorpay (prepaid)",
@@ -102,12 +104,14 @@ export function credentialHealth(): CredentialHealth[] {
     {
       group: "Shadowfax (shipping)",
       configured: has(env.SHADOWFAX_API_TOKEN),
-      detail: "api token" + (has(env.SHADOWFAX_WEBHOOK_TOKEN) ? " / callback token" : ""),
+      detail:
+        "api token" + (has(env.SHADOWFAX_WEBHOOK_TOKEN) ? " / callback token" : ""),
     },
     {
       group: "Resend (email)",
       configured: has(env.RESEND_API_KEY) && has(env.EMAIL_FROM),
-      detail: "api key / from" + (has(env.RESEND_WEBHOOK_SECRET) ? " / webhook secret" : ""),
+      detail:
+        "api key / from" + (has(env.RESEND_WEBHOOK_SECRET) ? " / webhook secret" : ""),
     },
     {
       group: "WhatsApp (Meta)",

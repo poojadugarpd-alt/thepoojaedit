@@ -112,7 +112,10 @@ export function metaWhatsAppTransport(): WhatsAppTransport {
                 ? [
                     {
                       type: "body",
-                      parameters: msg.bodyParams.map((t) => ({ type: "text", text: t })),
+                      parameters: msg.bodyParams.map((t) => ({
+                        type: "text",
+                        text: t,
+                      })),
                     },
                   ]
                 : [],
@@ -163,7 +166,8 @@ export function dbInAppTransport(db: PrismaClient): InAppTransport {
           preferenceField,
           title: msg.title,
           body: msg.message,
-          path: msg.entityType === "Order" ? `/admin/orders?q=${msg.entityId}` : "/admin",
+          path:
+            msg.entityType === "Order" ? `/admin/orders?q=${msg.entityId}` : "/admin",
         }).catch(() => {});
       }
 

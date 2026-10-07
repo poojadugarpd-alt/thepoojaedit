@@ -68,11 +68,20 @@ const STATUS_TONE: Record<string, keyof typeof TONE_CLASS> = {
 // and the collection product list (owner feedback, 2026-09-13).
 export function Thumb({ url, alt }: { url: string | null; alt: string }) {
   if (!url) {
-    return <div aria-hidden="true" className="h-14 w-[45px] shrink-0 rounded bg-fill" />;
+    return (
+      <div aria-hidden="true" className="h-14 w-[45px] shrink-0 rounded bg-fill" />
+    );
   }
   return (
     <div className="relative h-14 w-[45px] shrink-0 overflow-hidden rounded bg-fill">
-      <Image src={url} alt={alt} fill sizes="45px" loading="lazy" className="object-cover" />
+      <Image
+        src={url}
+        alt={alt}
+        fill
+        sizes="45px"
+        loading="lazy"
+        className="object-cover"
+      />
     </div>
   );
 }

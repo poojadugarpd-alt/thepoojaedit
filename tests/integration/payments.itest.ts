@@ -5,9 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "../../src/generated/prisma";
 import { placeOrder, type AddressInput } from "../../src/server/checkout/place-order";
 import { expireReservations } from "../../src/server/inventory/reservations";
-import {
-  CashfreeProvider,
-} from "../../src/server/payments/cashfree";
+import { CashfreeProvider } from "../../src/server/payments/cashfree";
 import {
   PaymentError,
   PaymentMismatchError,
@@ -42,12 +40,19 @@ beforeEach(async () => {
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
 let seq = 0;
-async function makeVariant(opts: { onHand: number; pricePaise?: number; oneOfOne?: boolean }) {
+async function makeVariant(opts: {
+  onHand: number;
+  pricePaise?: number;
+  oneOfOne?: boolean;
+}) {
   const isThrift = opts.oneOfOne ?? false;
   const p = await db.product.create({
     data: {
@@ -239,7 +244,9 @@ describe("prepaid checkout callback (AC-06/07/08)", () => {
     const rzp = new FakeRazorpay();
 
     rzp.failNextCreateOrder = true;
-    await expect(createPaymentAttempt(db, rzp, { orderId: order.id })).rejects.toThrow();
+    await expect(
+      createPaymentAttempt(db, rzp, { orderId: order.id }),
+    ).rejects.toThrow();
     // one attempt row claimed, no provider order attached yet
     const after1 = await db.paymentAttempt.findMany({ where: { orderId: order.id } });
     expect(after1).toHaveLength(1);
@@ -310,7 +317,11 @@ describe("razorpay webhook inbox (AC-07)", () => {
     await handleProviderWebhook(
       db,
       rzp,
-      rzp.buildWebhook("payment.captured", { payment: captured }, { eventId: "evt_cap" }),
+      rzp.buildWebhook(
+        "payment.captured",
+        { payment: captured },
+        { eventId: "evt_cap" },
+      ),
     );
     expect(
       (await db.order.findUniqueOrThrow({ where: { id: order.id } })).paymentStatus,
@@ -321,7 +332,11 @@ describe("razorpay webhook inbox (AC-07)", () => {
     const res = await handleProviderWebhook(
       db,
       rzp,
-      rzp.buildWebhook("payment.failed", { payment: staleFail }, { eventId: "evt_fail" }),
+      rzp.buildWebhook(
+        "payment.failed",
+        { payment: staleFail },
+        { eventId: "evt_fail" },
+      ),
     );
     expect(res.httpStatus).toBe(200);
     const fresh = await db.order.findUniqueOrThrow({ where: { id: order.id } });

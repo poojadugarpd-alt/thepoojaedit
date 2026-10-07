@@ -84,7 +84,10 @@ export async function sendNotification(
     (input.channel === "EMAIL" && !transports.email.configured) ||
     (input.channel === "WHATSAPP" && !transports.whatsapp.configured)
   ) {
-    return { status: "skipped", reason: `${input.channel.toLowerCase()} not configured` };
+    return {
+      status: "skipped",
+      reason: `${input.channel.toLowerCase()} not configured`,
+    };
   }
 
   // Eligibility
@@ -143,11 +146,20 @@ export async function sendNotification(
       const msg: EmailMessage = { to: input.recipient, ...r };
       ({ providerMessageId } = await transports.email.send(msg));
     } else if (input.channel === "WHATSAPP") {
-      const r = rendered as { templateName: string; bodyParams: string[]; text: string };
+      const r = rendered as {
+        templateName: string;
+        bodyParams: string[];
+        text: string;
+      };
       const msg: WhatsAppMessage = { to: input.recipient, ...r };
       ({ providerMessageId } = await transports.whatsapp.send(msg));
     } else {
-      const r = rendered as { type: string; title: string; message: string; priority: number };
+      const r = rendered as {
+        type: string;
+        title: string;
+        message: string;
+        priority: number;
+      };
       const msg: InAppMessage = {
         entityType: input.entityType ?? "Order",
         entityId: input.entityId ?? input.orderId ?? delivery.id,
@@ -288,7 +300,12 @@ export async function notifyForDomainEvent(
         recipient: custEmail,
         orderId: order.id,
         customerId: order.customerId,
-        variables: { orderNumber: order.orderNumber, orderUrl, totalPaise: order.totalPaise, itemCount: 1 },
+        variables: {
+          orderNumber: order.orderNumber,
+          orderUrl,
+          totalPaise: order.totalPaise,
+          itemCount: 1,
+        },
       });
       await run({
         dedupeSeed: `order-confirmed:${order.id}`,
@@ -297,7 +314,12 @@ export async function notifyForDomainEvent(
         recipient: custPhone,
         orderId: order.id,
         customerId: order.customerId,
-        variables: { orderNumber: order.orderNumber, orderUrl, totalPaise: order.totalPaise, itemCount: 1 },
+        variables: {
+          orderNumber: order.orderNumber,
+          orderUrl,
+          totalPaise: order.totalPaise,
+          itemCount: 1,
+        },
       });
       await run({
         dedupeSeed: `admin-new-order:${order.id}`,
@@ -394,7 +416,8 @@ export async function notifyForDomainEvent(
 
     case "shipment.ndr": {
       const reason =
-        (event.payload as { statusRaw?: string })?.statusRaw ?? "delivery could not be completed";
+        (event.payload as { statusRaw?: string })?.statusRaw ??
+        "delivery could not be completed";
       for (const ch of ["EMAIL", "WHATSAPP"] as const) {
         await run({
           dedupeSeed: `ndr:${shipment?.id ?? order.id}:${reason}`,
@@ -441,7 +464,9 @@ export async function notifyForDomainEvent(
     }
 
     case "refund.completed": {
-      const amountPaise = Number((event.payload as { amountPaise?: number })?.amountPaise ?? 0);
+      const amountPaise = Number(
+        (event.payload as { amountPaise?: number })?.amountPaise ?? 0,
+      );
       if (amountPaise > 0) {
         for (const ch of ["EMAIL", "WHATSAPP"] as const) {
           await run({
@@ -469,7 +494,9 @@ export async function retryNotification(
   transports: Transports,
   input: { deliveryId: string; adminUserId: string },
 ): Promise<SendOutcome> {
-  const d = await db.notificationDelivery.findUniqueOrThrow({ where: { id: input.deliveryId } });
+  const d = await db.notificationDelivery.findUniqueOrThrow({
+    where: { id: input.deliveryId },
+  });
   if (d.status !== "FAILED") {
     return { status: "skipped", reason: `delivery is ${d.status}, not FAILED` };
   }

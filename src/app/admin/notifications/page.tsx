@@ -28,18 +28,27 @@ export default async function AdminNotificationsPage() {
       </div>
 
       <section>
-        <h2 className="text-sm font-semibold text-ink-strong">Failed ({failed.length})</h2>
+        <h2 className="text-sm font-semibold text-ink-strong">
+          Failed ({failed.length})
+        </h2>
         {failed.length === 0 ? (
           <p className="text-xs text-ink-soft">None.</p>
         ) : (
           <ul className="mt-2 space-y-2 text-xs">
             {failed.map((d) => (
-              <li key={d.id} className="rounded border border-stop/30 bg-stop-bg/40 p-2">
+              <li
+                key={d.id}
+                className="rounded border border-stop/30 bg-stop-bg/40 p-2"
+              >
                 <p className="text-ink">
                   {d.channel} · {d.templateKey} v{d.templateVersion} · {d.recipient}
                 </p>
                 <p className="text-stop">{d.lastError}</p>
-                <ActionForm action={retryNotificationAction} submitLabel="Retry" compact>
+                <ActionForm
+                  action={retryNotificationAction}
+                  submitLabel="Retry"
+                  compact
+                >
                   <input type="hidden" name="deliveryId" value={d.id} />
                 </ActionForm>
               </li>

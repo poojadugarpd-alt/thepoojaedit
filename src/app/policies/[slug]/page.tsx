@@ -95,22 +95,22 @@ const POLICIES = {
     body: (
       <>
         <p>
-          Return rules differ by catalogue, and each item shows its own on the
-          product page and in your cart.
+          Return rules differ by catalogue, and each item shows its own on the product
+          page and in your cart.
         </p>
-        {(["The Label (new apparel)", "The Closet (pre-loved, one of one)"] as const).map(
-          (section) => (
-            <div key={section}>
-              <h2>{section}</h2>
-              {RETURNS_FAQ.filter((item) => item.section === section).map(({ q, a }) => (
-                <div key={q}>
-                  <h3>{q}</h3>
-                  <p>{a}</p>
-                </div>
-              ))}
-            </div>
-          ),
-        )}
+        {(
+          ["The Label (new apparel)", "The Closet (pre-loved, one of one)"] as const
+        ).map((section) => (
+          <div key={section}>
+            <h2>{section}</h2>
+            {RETURNS_FAQ.filter((item) => item.section === section).map(({ q, a }) => (
+              <div key={q}>
+                <h3>{q}</h3>
+                <p>{a}</p>
+              </div>
+            ))}
+          </div>
+        ))}
       </>
     ),
   },
@@ -119,18 +119,22 @@ const POLICIES = {
     body: (
       <>
         <p>
-          We collect only what we need to fulfil an order: your name, delivery
-          address, phone number and (if you give it) email. Payment is handled
-          by Razorpay — we never see or store your card or UPI details.
+          We collect only what we need to fulfil an order: your name, delivery address,
+          phone number and (if you give it) email. Payment is handled by Razorpay — we
+          never see or store your card or UPI details.
         </p>
         <p>
-          We use your contact details to send order and delivery updates. We
-          don&rsquo;t sell your data. Shipping details are shared with our
-          courier (Shadowfax) to deliver your order.
+          We use your contact details to send order and delivery updates. We don&rsquo;t
+          sell your data. Shipping details are shared with our courier (Shadowfax) to
+          deliver your order.
         </p>
         <p>
           To ask what we hold about you, or to have it deleted, message{" "}
-          <a href="https://www.instagram.com/poojadugar_/" target="_blank" rel="noreferrer noopener">
+          <a
+            href="https://www.instagram.com/poojadugar_/"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
             @poojadugar_
           </a>
           .
@@ -143,31 +147,26 @@ const POLICIES = {
     body: (
       <>
         <p>
-          By placing an order you confirm the details you provide are accurate
-          and that you&rsquo;ve read the item&rsquo;s description, price and
-          return policy.
+          By placing an order you confirm the details you provide are accurate and that
+          you&rsquo;ve read the item&rsquo;s description, price and return policy.
         </p>
         <ul>
           <li>
-            Prices are in Indian Rupees and shown inclusive of taxes where
-            applicable. The price, shipping and any fees are confirmed at
-            checkout before payment.
+            Prices are in Indian Rupees and shown inclusive of taxes where applicable.
+            The price, shipping and any fees are confirmed at checkout before payment.
           </li>
           <li>
-            Adding an item to your cart does not reserve it. Stock is only held
-            briefly after a prepaid order is placed.
+            Adding an item to your cart does not reserve it. Stock is only held briefly
+            after a prepaid order is placed.
           </li>
           <li>
-            All orders are prepaid — we accept online payment only (UPI /
-            card / netbanking). Cash on delivery isn&rsquo;t offered.
+            All orders are prepaid — we accept online payment only (UPI / card /
+            netbanking). Cash on delivery isn&rsquo;t offered.
           </li>
-          <li>
-            Closet pieces are sold as described, one of one, and final sale.
-          </li>
+          <li>Closet pieces are sold as described, one of one, and final sale.</li>
         </ul>
         <p className="text-ink-soft">
-          Full legal terms and the registered business details will be added
-          here.
+          Full legal terms and the registered business details will be added here.
         </p>
       </>
     ),

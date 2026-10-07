@@ -85,7 +85,11 @@ describe("archiveSoldClosetPieces (D-143)", () => {
 
   it("leaves pieces still in stock, Label products, and drafts alone", async () => {
     const inStock = await piece({ onHand: 1 });
-    const label = await piece({ catalog: "THE_POOJA_EDIT", onHand: 0, soldDaysAgo: 10 });
+    const label = await piece({
+      catalog: "THE_POOJA_EDIT",
+      onHand: 0,
+      soldDaysAgo: 10,
+    });
     const draft = await piece({ status: "DRAFT", onHand: 0, soldDaysAgo: 10 });
     const { archived } = await archiveSoldClosetPieces(db, { now: NOW });
     expect(archived).toEqual([]);

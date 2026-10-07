@@ -31,7 +31,14 @@ export default function GlobalError({
         }}
       >
         <div style={{ maxWidth: "440px", textAlign: "center" }}>
-          <p style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+          <p
+            style={{
+              fontSize: "13px",
+              fontWeight: 700,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
             The Pooja Edit
           </p>
           <h1 style={{ fontSize: "28px", marginTop: "16px", fontWeight: 600 }}>
@@ -39,7 +46,10 @@ export default function GlobalError({
           </h1>
           <p style={{ marginTop: "16px", lineHeight: 1.6, color: "#6a6762" }}>
             This is on us. Please reload the page, or message{" "}
-            <a href="https://www.instagram.com/poojadugar_/" style={{ color: "inherit" }}>
+            <a
+              href="https://www.instagram.com/poojadugar_/"
+              style={{ color: "inherit" }}
+            >
               @poojadugar_
             </a>{" "}
             if it keeps happening.

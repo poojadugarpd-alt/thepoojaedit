@@ -74,7 +74,10 @@ export function PushSettings() {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
-      const result = await subscribePushAction(sub.toJSON() as never, navigator.userAgent);
+      const result = await subscribePushAction(
+        sub.toJSON() as never,
+        navigator.userAgent,
+      );
       if (!result.ok) {
         setMessage(result.message);
         await sub.unsubscribe();
@@ -121,8 +124,8 @@ export function PushSettings() {
       )}
       {state === "denied" && (
         <p className="text-xs text-stop">
-          Notifications are blocked for this app in iOS Settings → Notifications →
-          Pooja Admin. Turn them on there, then reopen this page.
+          Notifications are blocked for this app in iOS Settings → Notifications → Pooja
+          Admin. Turn them on there, then reopen this page.
         </p>
       )}
       {(state === "on" || state === "off") && (
@@ -132,7 +135,11 @@ export function PushSettings() {
           disabled={busy}
           className="min-h-11 rounded border border-line px-3 text-sm disabled:opacity-50"
         >
-          {busy ? "Working…" : state === "on" ? "Turn off on this device" : "Turn on for this device"}
+          {busy
+            ? "Working…"
+            : state === "on"
+              ? "Turn off on this device"
+              : "Turn on for this device"}
         </button>
       )}
       {message && <p className="text-xs text-stop">{message}</p>}

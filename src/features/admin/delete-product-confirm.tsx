@@ -38,8 +38,8 @@ export function DeleteProductConfirm({
   return (
     <div className="space-y-3 rounded border border-stop/40 bg-stop-bg/30 p-3">
       <p className="text-sm text-ink">
-        Permanently delete <strong>{productTitle}</strong>? Its photos are removed
-        from storage too. This cannot be undone.
+        Permanently delete <strong>{productTitle}</strong>? Its photos are removed from
+        storage too. This cannot be undone.
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <ActionForm action={deleteAction} submitLabel="Yes, delete permanently" compact>

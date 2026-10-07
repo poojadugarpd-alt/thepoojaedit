@@ -39,7 +39,11 @@ export async function generateUniqueSlug(
   // A product catalogue is small (tens to low hundreds of items) — a loop of
   // sequential existence checks is simple and correct; this is not a hot
   // path (product creation is a rare, admin-only action).
-  while (await db.product.findUnique({ where: { catalog_slug: { catalog, slug: candidate } } })) {
+  while (
+    await db.product.findUnique({
+      where: { catalog_slug: { catalog, slug: candidate } },
+    })
+  ) {
     candidate = `${base}-${suffix}`;
     suffix += 1;
   }
@@ -59,7 +63,9 @@ export async function generateUniqueCollectionSlug(
   let candidate = base;
   let suffix = 2;
   while (
-    await db.collection.findUnique({ where: { catalog_slug: { catalog, slug: candidate } } })
+    await db.collection.findUnique({
+      where: { catalog_slug: { catalog, slug: candidate } },
+    })
   ) {
     candidate = `${base}-${suffix}`;
     suffix += 1;

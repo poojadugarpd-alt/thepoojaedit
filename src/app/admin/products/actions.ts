@@ -157,7 +157,12 @@ export async function reorderImageAction(
   const imageId = str(form.get("imageId"));
   const direction = str(form.get("direction"));
   try {
-    await moveProductImage(prisma, productId, imageId, direction === "up" ? "up" : "down");
+    await moveProductImage(
+      prisma,
+      productId,
+      imageId,
+      direction === "up" ? "up" : "down",
+    );
   } catch (e) {
     return handle(e);
   }

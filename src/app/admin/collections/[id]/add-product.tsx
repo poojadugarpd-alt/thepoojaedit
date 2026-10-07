@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import type { CatalogType } from "@/generated/prisma";
 import { ActionForm } from "@/features/admin/action-form";
 
-import { addProductToCollectionAction, searchAddableProductsAction, type AddableProduct } from "../actions";
+import {
+  addProductToCollectionAction,
+  searchAddableProductsAction,
+  type AddableProduct,
+} from "../actions";
 
 /**
  * Live search-as-you-type over published, not-yet-member products in this
@@ -64,7 +68,10 @@ export function AddProduct({
       {results.length > 0 && (
         <ul className="divide-y divide-line rounded border border-line">
           {results.map((p) => (
-            <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2">
+            <li
+              key={p.id}
+              className="flex items-center justify-between gap-3 px-3 py-2"
+            >
               <span className="truncate text-sm text-ink-strong">{p.title}</span>
               <ActionForm
                 action={addProductToCollectionAction.bind(null, collectionId)}

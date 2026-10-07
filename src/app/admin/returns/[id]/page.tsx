@@ -84,7 +84,10 @@ export default async function AdminReturnDetail({
             </ActionForm>
           )}
           {rr.status === "RECEIVED" && allInspected && (
-            <ActionForm action={finalizeInspectionAction} submitLabel="Finalise inspection">
+            <ActionForm
+              action={finalizeInspectionAction}
+              submitLabel="Finalise inspection"
+            >
               {hid}
             </ActionForm>
           )}
@@ -104,7 +107,11 @@ export default async function AdminReturnDetail({
           )}
           {!["REQUESTED", "APPROVED", "IN_TRANSIT", "RECEIVED", "INSPECTED"].includes(
             rr.status,
-          ) && <p className="text-sm text-ink-soft">No action pending — {rr.status.toLowerCase()}.</p>}
+          ) && (
+            <p className="text-sm text-ink-soft">
+              No action pending — {rr.status.toLowerCase()}.
+            </p>
+          )}
         </div>
       </section>
 
@@ -118,8 +125,9 @@ export default async function AdminReturnDetail({
               <p>
                 {it.orderItem.title} · qty {it.quantity} ·{" "}
                 {money(
-                  Math.round(it.orderItem.totalPaise / Math.max(1, it.orderItem.quantity)) *
-                    it.quantity,
+                  Math.round(
+                    it.orderItem.totalPaise / Math.max(1, it.orderItem.quantity),
+                  ) * it.quantity,
                 )}
               </p>
               <p className="mt-1 flex items-center gap-2">
@@ -129,7 +137,11 @@ export default async function AdminReturnDetail({
                 ) : null}
               </p>
               {rr.status === "RECEIVED" && it.inspectionOutcome === "PENDING" && (
-                <ActionForm action={inspectItemAction} submitLabel="Record inspection" compact>
+                <ActionForm
+                  action={inspectItemAction}
+                  submitLabel="Record inspection"
+                  compact
+                >
                   {hid}
                   <input type="hidden" name="returnItemId" value={it.id} />
                   <div className="flex flex-col gap-2 sm:flex-row">

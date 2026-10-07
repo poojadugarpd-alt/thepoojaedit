@@ -21,10 +21,7 @@ import {
   makeShipmentReconcilePort,
 } from "@/server/shipping";
 import { getDocumentStore } from "@/lib/documents";
-import {
-  createInvoiceForOrder,
-  generateInvoicePdf,
-} from "@/server/invoices/service";
+import { createInvoiceForOrder, generateInvoicePdf } from "@/server/invoices/service";
 import {
   makeRefundReconcilePort,
   refundLateCaptureShortfall,
@@ -194,7 +191,9 @@ export const generateInvoice = inngest.createFunction(
     };
     if (
       aggregateType !== "Order" ||
-      !["order.payment_settled", "order.cod_confirmed", "order.confirmed"].includes(type)
+      !["order.payment_settled", "order.cod_confirmed", "order.confirmed"].includes(
+        type,
+      )
     ) {
       return { skipped: "not a confirmation event" };
     }
@@ -209,9 +208,8 @@ export const generateInvoice = inngest.createFunction(
         },
       }),
     );
-    const invoiceId = (
-      invoice as { result?: { invoiceId?: string } }
-    )?.result?.invoiceId;
+    const invoiceId = (invoice as { result?: { invoiceId?: string } })?.result
+      ?.invoiceId;
     if (!invoiceId) return { skipped: "no invoice id (deduped)" };
     return step.run("render-pdf", async () => {
       const store = await getDocumentStore();

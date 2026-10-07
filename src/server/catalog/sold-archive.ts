@@ -54,13 +54,20 @@ export async function archiveSoldClosetPieces(
   for (const p of sold) {
     const [lastDecrease, lastMarked] = await Promise.all([
       db.inventoryTransaction.findFirst({
-        where: { variantId: { in: p.variants.map((v) => v.id) }, onHandDelta: { lt: 0 } },
+        where: {
+          variantId: { in: p.variants.map((v) => v.id) },
+          onHandDelta: { lt: 0 },
+        },
         orderBy: { createdAt: "desc" },
         select: { createdAt: true },
       }),
       p.markedSoldOut
         ? db.adminActivityLog.findFirst({
-            where: { entityType: "Product", entityId: p.id, action: "product.marked_sold_out" },
+            where: {
+              entityType: "Product",
+              entityId: p.id,
+              action: "product.marked_sold_out",
+            },
             orderBy: { createdAt: "desc" },
             select: { createdAt: true },
           })

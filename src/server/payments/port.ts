@@ -65,7 +65,10 @@ export class PaymentMismatchError extends PaymentError {
 
 /** A refund would exceed the captured amount (counting pending + completed). */
 export class RefundLimitError extends PaymentError {
-  constructor(readonly requestedPaise: number, readonly availablePaise: number) {
+  constructor(
+    readonly requestedPaise: number,
+    readonly availablePaise: number,
+  ) {
     super(
       `Refund of ${requestedPaise} paise exceeds the ${availablePaise} paise still refundable.`,
     );
@@ -74,11 +77,7 @@ export class RefundLimitError extends PaymentError {
 }
 
 export type NormalizedPaymentStatus =
-  | "created"
-  | "authorized"
-  | "captured"
-  | "failed"
-  | "refunded";
+  "created" | "authorized" | "captured" | "failed" | "refunded";
 
 export interface NormalizedPayment {
   providerPaymentId: string;

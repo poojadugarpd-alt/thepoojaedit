@@ -25,10 +25,7 @@ export interface VerifiedWebhook {
 }
 
 /** Provider-specific: validate the raw bytes and pull out the stable event id. */
-export type WebhookVerifier = (
-  rawBody: Buffer,
-  headers: Headers,
-) => VerifiedWebhook;
+export type WebhookVerifier = (rawBody: Buffer, headers: Headers) => VerifiedWebhook;
 
 export interface IngestResult {
   isNew: boolean;
@@ -37,7 +34,12 @@ export interface IngestResult {
 
 export async function ingestWebhook(
   db: PrismaClient,
-  input: { provider: string; rawBody: Buffer; headers: Headers; verify: WebhookVerifier },
+  input: {
+    provider: string;
+    rawBody: Buffer;
+    headers: Headers;
+    verify: WebhookVerifier;
+  },
 ): Promise<IngestResult> {
   const verified = input.verify(input.rawBody, input.headers); // throws WebhookVerificationError
   const payloadHash = createHash("sha256").update(input.rawBody).digest("hex");
@@ -98,5 +100,7 @@ export async function markWebhookFailed(
  */
 export interface ReconcilePort {
   readonly name: string;
-  reconcilePending(now: Date): Promise<{ checked: number; updated: number; unresolved: number }>;
+  reconcilePending(
+    now: Date,
+  ): Promise<{ checked: number; updated: number; unresolved: number }>;
 }

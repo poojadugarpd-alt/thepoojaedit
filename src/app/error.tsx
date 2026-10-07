@@ -29,8 +29,8 @@ export default function Error({
         <p className="u-eyebrow">Something went wrong</p>
         <h1 className="u-display mt-4">That didn&rsquo;t load right.</h1>
         <p className="u-lead mt-5">
-          This is on us, not something you did. Try again, or head back to
-          the shop — if it keeps happening, message{" "}
+          This is on us, not something you did. Try again, or head back to the shop — if
+          it keeps happening, message{" "}
           <a
             href="https://www.instagram.com/poojadugar_/"
             target="_blank"

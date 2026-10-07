@@ -87,7 +87,11 @@ export function Poll({
       >
         refresh now
       </button>
-      {lastAt && <span className="hidden sm:inline">· {new Date(lastAt).toLocaleTimeString("en-IN")}</span>}
+      {lastAt && (
+        <span className="hidden sm:inline">
+          · {new Date(lastAt).toLocaleTimeString("en-IN")}
+        </span>
+      )}
     </div>
   );
 }

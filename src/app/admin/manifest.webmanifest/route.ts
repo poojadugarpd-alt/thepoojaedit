@@ -31,7 +31,8 @@ export function GET() {
       id: "/admin",
       name: "The Pooja Edit Admin",
       short_name: "Pooja Admin",
-      description: "Run The Pooja Edit — orders, products, inventory, returns — from your phone.",
+      description:
+        "Run The Pooja Edit — orders, products, inventory, returns — from your phone.",
       start_url: "/admin",
       scope: "/admin",
       display: "standalone",
@@ -39,8 +40,18 @@ export function GET() {
       background_color: "#EDE0CC",
       theme_color: "#EDE0CC",
       icons: [
-        { src: "/brand/admin-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-        { src: "/brand/admin-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        {
+          src: "/brand/admin-icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/brand/admin-icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
       ],
     },
     { headers: { "Content-Type": "application/manifest+json" } },

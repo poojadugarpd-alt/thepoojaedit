@@ -35,7 +35,9 @@ export function GET(req: Request): Response {
 
 function verifySignature(rawBody: Buffer, header: string | null): boolean {
   if (!env.META_APP_SECRET || !header?.startsWith("sha256=")) return false;
-  const expected = createHmac("sha256", env.META_APP_SECRET).update(rawBody).digest("hex");
+  const expected = createHmac("sha256", env.META_APP_SECRET)
+    .update(rawBody)
+    .digest("hex");
   const got = header.slice("sha256=".length);
   if (got.length !== expected.length) return false;
   return timingSafeEqual(Buffer.from(got, "hex"), Buffer.from(expected, "hex"));
@@ -56,7 +58,9 @@ export async function POST(req: Request): Promise<Response> {
 
   let body: {
     entry?: {
-      changes?: { value?: { statuses?: { id?: string; status?: string; timestamp?: string }[] } }[];
+      changes?: {
+        value?: { statuses?: { id?: string; status?: string; timestamp?: string }[] };
+      }[];
     }[];
   };
   try {

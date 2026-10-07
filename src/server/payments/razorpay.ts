@@ -122,9 +122,7 @@ export class RazorpayProvider implements PaymentProvider {
 
   verifyWebhook(rawBody: Buffer, headers: Headers): VerifiedProviderWebhook {
     const signature = headers.get("x-razorpay-signature") ?? "";
-    if (
-      !pureVerifyWebhook({ rawBody, signature, webhookSecret: this.webhookSecret })
-    ) {
+    if (!pureVerifyWebhook({ rawBody, signature, webhookSecret: this.webhookSecret })) {
       throw new WebhookVerificationError("razorpay webhook signature mismatch");
     }
     let body: unknown;

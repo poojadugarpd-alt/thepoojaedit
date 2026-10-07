@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma";
-import { openOperationalTask, resolveOperationalTask } from "@/server/events/operational-tasks";
+import {
+  openOperationalTask,
+  resolveOperationalTask,
+} from "@/server/events/operational-tasks";
 
 import { InsufficientStockError } from "./errors";
 
@@ -35,7 +38,12 @@ export async function adjustStock(
   const result = await db.$transaction(async (tx) => {
     const before = await tx.productVariant.findUniqueOrThrow({
       where: { id: input.variantId },
-      select: { onHandQty: true, reservedQty: true, lowStockThreshold: true, sku: true },
+      select: {
+        onHandQty: true,
+        reservedQty: true,
+        lowStockThreshold: true,
+        sku: true,
+      },
     });
     const nextOnHand = before.onHandQty + input.delta;
     if (nextOnHand < 0 || nextOnHand < before.reservedQty) {

@@ -2,7 +2,10 @@ import "server-only";
 
 import type { CreditNote, Invoice, PrismaClient } from "@/generated/prisma";
 import { DOCUMENTS_BUCKET, type DocumentStore } from "@/lib/documents";
-import { openOperationalTask, resolveOperationalTask } from "@/server/events/operational-tasks";
+import {
+  openOperationalTask,
+  resolveOperationalTask,
+} from "@/server/events/operational-tasks";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import { getBusinessProfile } from "@/server/settings";
 
@@ -39,7 +42,9 @@ export async function createInvoiceForOrder(
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       return await db.$transaction(async (tx) => {
-        const again = await tx.invoice.findUnique({ where: { orderId: input.orderId } });
+        const again = await tx.invoice.findUnique({
+          where: { orderId: input.orderId },
+        });
         if (again) return again;
 
         const order = await tx.order.findUniqueOrThrow({
@@ -57,7 +62,10 @@ export async function createInvoiceForOrder(
         const financialYear = financialYearFor(
           order.confirmedAt ?? order.placedAt ?? issuedAt,
         );
-        const number = await allocateInvoiceNumber(tx, { financialYear, series: SERIES });
+        const number = await allocateInvoiceNumber(tx, {
+          financialYear,
+          series: SERIES,
+        });
         const snaps = buildInvoiceSnapshots({
           order,
           items: order.items,
@@ -95,7 +103,9 @@ export async function createInvoiceForOrder(
       });
     } catch (e) {
       if (isP2002(e)) {
-        const winner = await db.invoice.findUnique({ where: { orderId: input.orderId } });
+        const winner = await db.invoice.findUnique({
+          where: { orderId: input.orderId },
+        });
         if (winner) return winner;
         continue;
       }
@@ -116,7 +126,9 @@ export async function generateInvoicePdf(
   store: DocumentStore,
   input: { invoiceId: string },
 ): Promise<{ generated: boolean; key: string }> {
-  const invoice = await db.invoice.findUniqueOrThrow({ where: { id: input.invoiceId } });
+  const invoice = await db.invoice.findUniqueOrThrow({
+    where: { id: input.invoiceId },
+  });
   const key = invoicePdfKey(invoice);
 
   if (invoice.pdfPath === key && (await store.exists(key))) {
@@ -191,7 +203,8 @@ export async function issueCreditNote(
       if (again) return again;
     }
 
-    const seq = (await tx.creditNote.count({ where: { invoiceId: input.invoiceId } })) + 1;
+    const seq =
+      (await tx.creditNote.count({ where: { invoiceId: input.invoiceId } })) + 1;
     const number = `CN/${inv.financialYear}/${inv.series}${String(inv.number).padStart(6, "0")}-${seq}`;
 
     const taxSnap = inv.taxSnapshot as { interState?: boolean; mode?: string };
@@ -223,7 +236,12 @@ export async function issueCreditNote(
     await appendOrderTimeline(tx, {
       orderId: inv.orderId,
       type: "credit_note.issued",
-      payload: { creditNoteId: cn.id, number, amountPaise: input.amountPaise, reason: input.reason },
+      payload: {
+        creditNoteId: cn.id,
+        number,
+        amountPaise: input.amountPaise,
+        reason: input.reason,
+      },
     });
     return cn;
   });

@@ -120,7 +120,9 @@ describe("transactional outbox", () => {
     await dispatchPending(db, { transport: t, owner: "B", now: t1 });
 
     expect(effect).toBe(1);
-    expect(await db.outboxEvent.findUniqueOrThrow({ where: { id: outboxEventId } })).toMatchObject({
+    expect(
+      await db.outboxEvent.findUniqueOrThrow({ where: { id: outboxEventId } }),
+    ).toMatchObject({
       status: "DISPATCHED",
     });
     const se = await db.sideEffectExecution.findUniqueOrThrow({
@@ -151,7 +153,11 @@ describe("transactional outbox", () => {
 
     // retry (advance past backoff)
     t.mode = "ok";
-    await dispatchPending(db, { transport: t, owner: "W", now: new Date(t0.getTime() + 60_000) });
+    await dispatchPending(db, {
+      transport: t,
+      owner: "W",
+      now: new Date(t0.getTime() + 60_000),
+    });
     expect(effect).toBe(1); // deduped by execution key
     const se = await db.sideEffectExecution.findUniqueOrThrow({
       where: { executionKey: `${domainEventId}:pay` },
@@ -190,7 +196,9 @@ describe("runOnce — durable consumer dedup", () => {
     ).rejects.toThrow("boom");
     const ok = await runOnce(db, { executionKey: key, handlerName: "h", eventId, run });
     expect(ok).toMatchObject({ ran: true });
-    const se = await db.sideEffectExecution.findUniqueOrThrow({ where: { executionKey: key } });
+    const se = await db.sideEffectExecution.findUniqueOrThrow({
+      where: { executionKey: key },
+    });
     expect(se.status).toBe("SUCCEEDED");
     expect(se.attempts).toBe(2);
   });
@@ -210,7 +218,9 @@ describe("retry exhaustion → one operational task", () => {
 
     const ev = await db.outboxEvent.findUniqueOrThrow({ where: { id: outboxEventId } });
     expect(ev.status).toBe("FAILED");
-    const tasks = await db.operationalTask.findMany({ where: { dedupeKey: `outbox:${outboxEventId}` } });
+    const tasks = await db.operationalTask.findMany({
+      where: { dedupeKey: `outbox:${outboxEventId}` },
+    });
     expect(tasks).toHaveLength(1);
     expect(tasks[0].status).toBe("OPEN");
   });
@@ -241,7 +251,9 @@ describe("authorised, audited replay", () => {
     const ev = await db.outboxEvent.findUniqueOrThrow({ where: { id: outboxEventId } });
     expect(ev.status).toBe("PENDING");
     expect(ev.attempts).toBe(0);
-    const log = await db.adminActivityLog.findFirstOrThrow({ where: { action: "outbox.replay" } });
+    const log = await db.adminActivityLog.findFirstOrThrow({
+      where: { action: "outbox.replay" },
+    });
     expect(log.entityId).toBe(outboxEventId);
     const task = await db.operationalTask.findUniqueOrThrow({
       where: { dedupeKey: `outbox:${outboxEventId}` },
@@ -253,10 +265,20 @@ describe("authorised, audited replay", () => {
 describe("scheduled recovery", () => {
   it("the reservation sweep releases expired reservations while the storefront is idle", async () => {
     const p = await db.product.create({
-      data: { catalog: "THRIFT", slug: `s-${randomUUID().slice(0, 8)}`, title: "s", status: "PUBLISHED" },
+      data: {
+        catalog: "THRIFT",
+        slug: `s-${randomUUID().slice(0, 8)}`,
+        title: "s",
+        status: "PUBLISHED",
+      },
     });
     const v = await db.productVariant.create({
-      data: { productId: p.id, sku: `SKU-${randomUUID().slice(0, 8)}`, pricePaise: 1000, onHandQty: 2 },
+      data: {
+        productId: p.id,
+        sku: `SKU-${randomUUID().slice(0, 8)}`,
+        pricePaise: 1000,
+        onHandQty: 2,
+      },
     });
     const order = await db.order.create({
       data: {
@@ -268,13 +290,21 @@ describe("scheduled recovery", () => {
       },
     });
     await db.$transaction((tx) =>
-      reserveAll(tx, { orderId: order.id, lines: [{ variantId: v.id, quantity: 2 }], ttlSeconds: -1 }),
+      reserveAll(tx, {
+        orderId: order.id,
+        lines: [{ variantId: v.id, quantity: 2 }],
+        ttlSeconds: -1,
+      }),
     );
-    expect((await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).reservedQty).toBe(2);
+    expect(
+      (await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).reservedQty,
+    ).toBe(2);
 
     const { released } = await runReservationSweep(db);
     expect(released).toBe(1);
-    expect((await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).reservedQty).toBe(0);
+    expect(
+      (await db.productVariant.findUniqueOrThrow({ where: { id: v.id } })).reservedQty,
+    ).toBe(0);
   });
 });
 

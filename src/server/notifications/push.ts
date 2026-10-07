@@ -25,7 +25,9 @@ export type PushPreferenceField = keyof Omit<
 
 export function isPushConfigured(): boolean {
   return Boolean(
-    publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT,
+    publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
+    env.VAPID_PRIVATE_KEY &&
+    env.VAPID_SUBJECT,
   );
 }
 
@@ -45,7 +47,11 @@ export interface PushSubscriptionInput {
 /** Called once from the browser right after `pushManager.subscribe()` succeeds. */
 export async function subscribeAdminPush(
   db: PrismaClient,
-  input: { adminUserId: string; subscription: PushSubscriptionInput; userAgent?: string | null },
+  input: {
+    adminUserId: string;
+    subscription: PushSubscriptionInput;
+    userAgent?: string | null;
+  },
 ) {
   return db.adminPushSubscription.upsert({
     where: { endpoint: input.subscription.endpoint },
@@ -163,7 +169,9 @@ export async function sendAdminPush(
           if (statusCode === 404 || statusCode === 410) {
             // The push service says this install no longer exists — prune
             // it rather than retry it forever.
-            await db.adminPushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+            await db.adminPushSubscription
+              .delete({ where: { id: sub.id } })
+              .catch(() => {});
             pruned += 1;
           }
           // Any other failure (network blip, payload too large) is simply

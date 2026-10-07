@@ -37,9 +37,7 @@ function createPrismaClient(): PrismaClient {
   const dev = process.env.NODE_ENV === "development";
   const client = new PrismaClient({
     adapter,
-    log: dev
-      ? [{ emit: "event", level: "query" }, "warn", "error"]
-      : ["error"],
+    log: dev ? [{ emit: "event", level: "query" }, "warn", "error"] : ["error"],
   });
 
   // Dev-only query-timing log (admin speed audit, 2026-09-13) — one line per
@@ -50,13 +48,14 @@ function createPrismaClient(): PrismaClient {
   if (dev) {
     // Prisma 7's generated types don't include the event-emitter overloads
     // for the driver-adapter client; the event shape itself is unchanged.
-    (client as unknown as { $on(event: "query", cb: (e: { query: string; duration: number }) => void): void }).$on(
-      "query",
-      (e) => {
-        const compact = e.query.replace(/\s+/g, " ").slice(0, 100);
-        console.log(`  ↳ ${e.duration}ms  ${compact}`);
-      },
-    );
+    (
+      client as unknown as {
+        $on(event: "query", cb: (e: { query: string; duration: number }) => void): void;
+      }
+    ).$on("query", (e) => {
+      const compact = e.query.replace(/\s+/g, " ").slice(0, 100);
+      console.log(`  ↳ ${e.duration}ms  ${compact}`);
+    });
   }
 
   return client;
@@ -85,6 +84,8 @@ export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
     const client = getPrisma();
     const value = Reflect.get(client, prop, receiver);
-    return typeof value === "function" ? (value as (...a: unknown[]) => unknown).bind(client) : value;
+    return typeof value === "function"
+      ? (value as (...a: unknown[]) => unknown).bind(client)
+      : value;
   },
 });

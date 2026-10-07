@@ -40,8 +40,8 @@ export const PAYMENT_PROVIDERS = [
 export function isPrepaidConfigured(): boolean {
   return Boolean(
     publicEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID &&
-      env.RAZORPAY_KEY_SECRET &&
-      env.RAZORPAY_WEBHOOK_SECRET,
+    env.RAZORPAY_KEY_SECRET &&
+    env.RAZORPAY_WEBHOOK_SECRET,
   );
 }
 

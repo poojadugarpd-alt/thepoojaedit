@@ -38,15 +38,24 @@ export async function subscribePushAction(
 ): Promise<SubscribeResult> {
   const admin = await requireAdmin();
   try {
-    await subscribeAdminPush(prisma, { adminUserId: admin.id, subscription, userAgent });
+    await subscribeAdminPush(prisma, {
+      adminUserId: admin.id,
+      subscription,
+      userAgent,
+    });
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Could not save subscription." };
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save subscription.",
+    };
   }
   return { ok: true };
 }
 
 /** Called when the admin explicitly turns push off on this device. */
-export async function unsubscribePushAction(endpoint: string): Promise<SubscribeResult> {
+export async function unsubscribePushAction(
+  endpoint: string,
+): Promise<SubscribeResult> {
   await requireAdmin();
   await unsubscribeAdminPush(prisma, endpoint);
   return { ok: true };

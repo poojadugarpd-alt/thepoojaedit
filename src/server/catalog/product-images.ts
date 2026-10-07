@@ -196,7 +196,9 @@ export async function confirmProductImageUpload(
     // `toPublicImage`'s relative `/bucket/path` string, which no route
     // resolves in production, so the image just never rendered). Computed
     // here, at write time, exactly like every other real upload.
-    publicUrl: deps.supabaseUrl ? productImagePublicUrl(deps.supabaseUrl, input.path) : null,
+    publicUrl: deps.supabaseUrl
+      ? productImagePublicUrl(deps.supabaseUrl, input.path)
+      : null,
     altText: input.altText,
     type: makePrimary ? ("PRIMARY" as const) : (input.type ?? "GALLERY"),
     isPrimary: makePrimary,

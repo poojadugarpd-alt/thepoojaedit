@@ -40,8 +40,8 @@ export function StandaloneStatus() {
 
   return (
     <p className="rounded border border-wait/30 bg-wait-bg px-3 py-2 text-sm text-wait">
-      You&rsquo;re viewing this in a regular browser tab, not the installed app.
-      Follow the steps below.
+      You&rsquo;re viewing this in a regular browser tab, not the installed app. Follow
+      the steps below.
     </p>
   );
 }

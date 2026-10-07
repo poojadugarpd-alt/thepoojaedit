@@ -63,14 +63,20 @@ async function conditionCleared(
     });
     return bad === 0;
   }
-  if (key.startsWith("payment-review:") && task.entityType === "Order" && task.entityId) {
+  if (
+    key.startsWith("payment-review:") &&
+    task.entityType === "Order" &&
+    task.entityId
+  ) {
     const o = await db.order.findUnique({ where: { id: task.entityId } });
     return o ? o.orderStatus !== "NEEDS_REVIEW" : true;
   }
   if (key.startsWith("low-stock:") && task.entityId) {
     const v = await db.productVariant.findUnique({ where: { id: task.entityId } });
     if (!v) return true;
-    return v.lowStockThreshold <= 0 || v.onHandQty - v.reservedQty > v.lowStockThreshold;
+    return (
+      v.lowStockThreshold <= 0 || v.onHandQty - v.reservedQty > v.lowStockThreshold
+    );
   }
   if (key.startsWith("cod-remittance:") && task.entityId) {
     const disputed = await db.codRemittance.count({
@@ -78,7 +84,11 @@ async function conditionCleared(
     });
     return disputed === 0;
   }
-  if (key.startsWith("shipment-failure:") && task.entityType === "Order" && task.entityId) {
+  if (
+    key.startsWith("shipment-failure:") &&
+    task.entityType === "Order" &&
+    task.entityId
+  ) {
     const s = await db.shipment.findFirst({
       where: { orderId: task.entityId, providerShipmentId: { not: null } },
     });
@@ -89,7 +99,9 @@ async function conditionCleared(
     return Boolean(inv?.pdfPath);
   }
   if (key.startsWith("notification:") && task.entityId) {
-    const d = await db.notificationDelivery.findUnique({ where: { id: task.entityId } });
+    const d = await db.notificationDelivery.findUnique({
+      where: { id: task.entityId },
+    });
     return d ? d.status !== "FAILED" : true;
   }
   return null; // NDR / RTO_INSPECTION / refund-failure / etc. — operator judgement
@@ -101,7 +113,9 @@ export async function resolveTaskChecked(
   db: PrismaClient,
   input: { taskId: string; adminUserId: string; reason?: string; force?: boolean },
 ): Promise<{ resolved: boolean }> {
-  const task = await db.operationalTask.findUniqueOrThrow({ where: { id: input.taskId } });
+  const task = await db.operationalTask.findUniqueOrThrow({
+    where: { id: input.taskId },
+  });
   if (task.status === "RESOLVED") return { resolved: true };
 
   const cleared = await conditionCleared(db, task);
@@ -122,7 +136,10 @@ export async function resolveTaskChecked(
     action: "task.resolve",
     entityType: "OperationalTask",
     entityId: task.id,
-    after: { dedupeKey: task.dedupeKey, forced: Boolean(input.force) && cleared !== true },
+    after: {
+      dedupeKey: task.dedupeKey,
+      forced: Boolean(input.force) && cleared !== true,
+    },
     reason: input.reason ?? null,
   });
   return { resolved: true };

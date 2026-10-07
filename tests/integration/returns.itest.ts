@@ -37,11 +37,19 @@ beforeEach(async () => {
   await db.storeSettings.create({
     data: {
       key: "business.profile",
-      value: { legalName: "Fixture Co", gstin: "08AAAAA0000A1Z5", stateName: "Rajasthan", stateCode: "08" },
+      value: {
+        legalName: "Fixture Co",
+        gstin: "08AAAAA0000A1Z5",
+        stateName: "Rajasthan",
+        stateCode: "08",
+      },
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -57,7 +65,12 @@ async function makeVariant(onHand = 10, pricePaise = 100000) {
     },
   });
   const v = await db.productVariant.create({
-    data: { productId: p.id, sku: `SKU-${randomUUID().slice(0, 8)}`, pricePaise, onHandQty: onHand },
+    data: {
+      productId: p.id,
+      sku: `SKU-${randomUUID().slice(0, 8)}`,
+      pricePaise,
+      onHandQty: onHand,
+    },
   });
   return v.id;
 }
@@ -160,8 +173,12 @@ describe("refund workflow (AC-05/07/11)", () => {
       operationKey: "full",
     });
 
-    const invoice = await db.invoice.findUniqueOrThrow({ where: { orderId: order.id } });
-    const cn = await db.creditNote.findFirstOrThrow({ where: { invoiceId: invoice.id } });
+    const invoice = await db.invoice.findUniqueOrThrow({
+      where: { orderId: order.id },
+    });
+    const cn = await db.creditNote.findFirstOrThrow({
+      where: { invoiceId: invoice.id },
+    });
     expect(cn.reason).toBe("REFUND");
     expect(
       await db.domainEvent.count({
@@ -214,10 +231,16 @@ describe("returns lifecycle (AC-05/09)", () => {
       reason: "size",
       items: [{ orderItemId: item.id, quantity: 2 }],
     });
-    await decideReturn(db, { returnRequestId: rr.id, approve: true, adminUserId: a.id });
+    await decideReturn(db, {
+      returnRequestId: rr.id,
+      approve: true,
+      adminUserId: a.id,
+    });
     await markReturnReceived(db, { returnRequestId: rr.id, adminUserId: a.id });
 
-    const ri = await db.returnItem.findFirstOrThrow({ where: { returnRequestId: rr.id } });
+    const ri = await db.returnItem.findFirstOrThrow({
+      where: { returnRequestId: rr.id },
+    });
     const first = await inspectReturnItem(db, {
       returnItemId: ri.id,
       outcome: "RESTOCK",
@@ -253,16 +276,24 @@ describe("returns lifecycle (AC-05/09)", () => {
       reason: "faulty",
       items: [{ orderItemId: item.id, quantity: 1 }],
     });
-    await decideReturn(db, { returnRequestId: rr.id, approve: true, adminUserId: a.id });
+    await decideReturn(db, {
+      returnRequestId: rr.id,
+      approve: true,
+      adminUserId: a.id,
+    });
     await markReturnReceived(db, { returnRequestId: rr.id, adminUserId: a.id });
-    const ri = await db.returnItem.findFirstOrThrow({ where: { returnRequestId: rr.id } });
+    const ri = await db.returnItem.findFirstOrThrow({
+      where: { returnRequestId: rr.id },
+    });
     const r = await inspectReturnItem(db, {
       returnItemId: ri.id,
       outcome: "DAMAGED_DISCARD",
       adminUserId: a.id,
     });
     expect(r.restocked).toBe(false);
-    expect(await db.inventoryTransaction.count({ where: { type: "RETURN_RESTOCK" } })).toBe(0);
+    expect(
+      await db.inventoryTransaction.count({ where: { type: "RETURN_RESTOCK" } }),
+    ).toBe(0);
   });
 
   it("resolving a return as REFUND creates a refund for the line value", async () => {
@@ -275,10 +306,20 @@ describe("returns lifecycle (AC-05/09)", () => {
       reason: "changed mind",
       items: [{ orderItemId: item.id, quantity: 1 }],
     });
-    await decideReturn(db, { returnRequestId: rr.id, approve: true, adminUserId: a.id });
+    await decideReturn(db, {
+      returnRequestId: rr.id,
+      approve: true,
+      adminUserId: a.id,
+    });
     await markReturnReceived(db, { returnRequestId: rr.id, adminUserId: a.id });
-    const ri = await db.returnItem.findFirstOrThrow({ where: { returnRequestId: rr.id } });
-    await inspectReturnItem(db, { returnItemId: ri.id, outcome: "RESTOCK", adminUserId: a.id });
+    const ri = await db.returnItem.findFirstOrThrow({
+      where: { returnRequestId: rr.id },
+    });
+    await inspectReturnItem(db, {
+      returnItemId: ri.id,
+      outcome: "RESTOCK",
+      adminUserId: a.id,
+    });
     await finalizeReturnInspection(db, { returnRequestId: rr.id, adminUserId: a.id });
 
     const resolved = await resolveReturn(db, rzp, {
@@ -307,11 +348,18 @@ describe("returns lifecycle (AC-05/09)", () => {
         title: "Thrift piece",
         status: "PUBLISHED",
         publishedAt: new Date(),
-        thriftDetails: { create: { conditionGrade: "GOOD", measurements: {}, isOneOfOne: true } },
+        thriftDetails: {
+          create: { conditionGrade: "GOOD", measurements: {}, isOneOfOne: true },
+        },
       },
     });
     const variant = await db.productVariant.create({
-      data: { productId: p.id, sku: `T-${randomUUID().slice(0, 8)}`, pricePaise: 50000, onHandQty: 1 },
+      data: {
+        productId: p.id,
+        sku: `T-${randomUUID().slice(0, 8)}`,
+        pricePaise: 50000,
+        onHandQty: 1,
+      },
     });
     const { order } = await deliveredPaidOrder(variant.id, 1);
     const item = await db.orderItem.findFirstOrThrow({ where: { orderId: order.id } });

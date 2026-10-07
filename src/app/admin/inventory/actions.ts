@@ -18,7 +18,12 @@ export async function adjustStockAction(
   const delta = Number(str(form.get("delta")));
   const reason = str(form.get("reason"));
   try {
-    const r = await adjustStock(prisma, { variantId, delta, reason, adminUserId: admin.id });
+    const r = await adjustStock(prisma, {
+      variantId,
+      delta,
+      reason,
+      adminUserId: admin.id,
+    });
     revalidatePath("/admin/inventory");
     revalidatePath("/admin");
     return {
@@ -26,6 +31,9 @@ export async function adjustStockAction(
       message: `On-hand now ${r.onHandQty} (available ${r.availableQty}).`,
     };
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Adjustment failed." };
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Adjustment failed.",
+    };
   }
 }

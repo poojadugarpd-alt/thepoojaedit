@@ -215,7 +215,9 @@ export class FakeRazorpay extends RazorpayProvider {
     const body: Record<string, unknown> = { event: eventType, payload: {} };
     const payload = body.payload as Record<string, unknown>;
     if (entities.payment) {
-      payload.payment = { entity: (entities.payment.raw as object) ?? entities.payment };
+      payload.payment = {
+        entity: (entities.payment.raw as object) ?? entities.payment,
+      };
     }
     if (entities.refund) {
       payload.refund = { entity: (entities.refund.raw as object) ?? entities.refund };
@@ -224,8 +226,7 @@ export class FakeRazorpay extends RazorpayProvider {
     const headers = new Headers({
       "content-type": "application/json",
       "x-razorpay-signature": webhookSignature(rawBody, this.webhookSecret),
-      "x-razorpay-event-id":
-        opts?.eventId ?? `evt_${this.id("wh")}`,
+      "x-razorpay-event-id": opts?.eventId ?? `evt_${this.id("wh")}`,
     });
     return { rawBody, headers };
   }

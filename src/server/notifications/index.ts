@@ -25,9 +25,7 @@ export {
 } from "./service";
 export type { SendNotificationInput, SendOutcome, Transports } from "./service";
 
-export function sendNotificationNow(
-  input: Parameters<typeof sendNotification>[2],
-) {
+export function sendNotificationNow(input: Parameters<typeof sendNotification>[2]) {
   return sendNotification(prisma, getTransports(prisma), input);
 }
 
@@ -37,7 +35,10 @@ export function notifyForDomainEventNow(
   return notifyForDomainEvent(prisma, event);
 }
 
-export function retryNotificationNow(input: { deliveryId: string; adminUserId: string }) {
+export function retryNotificationNow(input: {
+  deliveryId: string;
+  adminUserId: string;
+}) {
   return retryNotification(prisma, getTransports(prisma), input);
 }
 

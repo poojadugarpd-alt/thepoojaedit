@@ -2,7 +2,11 @@ import "server-only";
 
 import type { PrismaClient, ReturnRequest } from "@/generated/prisma";
 import { restockUnits } from "@/server/inventory/restock";
-import { assertTransition, RETURN_TRANSITIONS, type ReturnStatus } from "@/server/orders/state";
+import {
+  assertTransition,
+  RETURN_TRANSITIONS,
+  type ReturnStatus,
+} from "@/server/orders/state";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import { requestRefund } from "@/server/refunds/service";
 import type { PaymentProvider } from "@/server/payments";
@@ -85,10 +89,15 @@ async function transitionReturn(
   returnRequestId: string,
   to: ReturnStatus,
   adminUserId: string,
-  extra: { adminNotes?: string; resolution?: "REFUND" | "REPLACEMENT" | "REJECTED" } = {},
+  extra: {
+    adminNotes?: string;
+    resolution?: "REFUND" | "REPLACEMENT" | "REJECTED";
+  } = {},
 ): Promise<ReturnRequest> {
   return db.$transaction(async (tx) => {
-    const rr = await tx.returnRequest.findUniqueOrThrow({ where: { id: returnRequestId } });
+    const rr = await tx.returnRequest.findUniqueOrThrow({
+      where: { id: returnRequestId },
+    });
     assertTransition("return", RETURN_TRANSITIONS, rr.status as ReturnStatus, to);
     const updated = await tx.returnRequest.update({
       where: { id: rr.id },
@@ -120,7 +129,12 @@ async function transitionReturn(
 
 export function decideReturn(
   db: PrismaClient,
-  input: { returnRequestId: string; approve: boolean; adminUserId: string; notes?: string },
+  input: {
+    returnRequestId: string;
+    approve: boolean;
+    adminUserId: string;
+    notes?: string;
+  },
 ) {
   return transitionReturn(
     db,
@@ -247,7 +261,9 @@ export async function resolveReturn(
 
   if (input.resolution === "REFUND") {
     const amountPaise = rr.items.reduce((sum, ri) => {
-      const perUnit = Math.round(ri.orderItem.totalPaise / Math.max(1, ri.orderItem.quantity));
+      const perUnit = Math.round(
+        ri.orderItem.totalPaise / Math.max(1, ri.orderItem.quantity),
+      );
       return sum + perUnit * ri.quantity;
     }, 0);
     if (amountPaise > 0) {

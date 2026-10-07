@@ -37,7 +37,10 @@ beforeEach(async () => {
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -158,9 +161,15 @@ describe("invoice immutability + tax (AC-11)", () => {
       sgstPaise: number;
       igstPaise: number;
       taxPaise: number;
-      breakdownByRate: { taxableValuePaise: number; cgstPaise: number; sgstPaise: number }[];
+      breakdownByRate: {
+        taxableValuePaise: number;
+        cgstPaise: number;
+        sgstPaise: number;
+      }[];
     };
-    expect(taxSnap.cgstPaise + taxSnap.sgstPaise + taxSnap.igstPaise).toBe(order.taxPaise);
+    expect(taxSnap.cgstPaise + taxSnap.sgstPaise + taxSnap.igstPaise).toBe(
+      order.taxPaise,
+    );
     expect(taxSnap.taxPaise).toBe(order.taxPaise);
     const lineSnap = invoice.lineSnapshot as { totalPaise: number }[];
     const before = JSON.stringify(lineSnap);
@@ -168,7 +177,9 @@ describe("invoice immutability + tax (AC-11)", () => {
     // edit the live product + variant + tax rule
     await db.productVariant.update({ where: { id: v }, data: { pricePaise: 999999 } });
     await db.product.update({
-      where: { id: (await db.productVariant.findUniqueOrThrow({ where: { id: v } })).productId },
+      where: {
+        id: (await db.productVariant.findUniqueOrThrow({ where: { id: v } })).productId,
+      },
       data: { title: "RENAMED" },
     });
 
@@ -262,7 +273,9 @@ describe("credit notes (AC-11/12)", () => {
     expect(cn1.number).toMatch(/^CN\//);
     expect(await db.creditNote.count({ where: { invoiceId: invoice.id } })).toBe(1);
 
-    const invoiceAfter = await db.invoice.findUniqueOrThrow({ where: { id: invoice.id } });
+    const invoiceAfter = await db.invoice.findUniqueOrThrow({
+      where: { id: invoice.id },
+    });
     expect(JSON.stringify(invoiceAfter)).toBe(invoiceBefore);
   });
 });

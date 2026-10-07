@@ -4,10 +4,7 @@ import { createHash } from "node:crypto";
 
 import { WebhookVerificationError } from "@/server/webhooks/inbox";
 
-import type {
-  ShippingQuote,
-  ShippingQuoteRequest,
-} from "./index";
+import type { ShippingQuote, ShippingQuoteRequest } from "./index";
 import {
   ShippingApiError,
   type CodRemittanceRecord,
@@ -246,15 +243,13 @@ export class ShadowfaxProvider implements ShippingProvider {
         location?: string;
       }[];
     }>("GET", `/v4/clients/orders/${encodeURIComponent(ref.awb)}/track/`);
-    const events: NormalizedTrackingEvent[] = (res.tracking_details ?? []).map(
-      (s) => ({
-        externalEventId: null,
-        statusRaw: s.status_id ?? s.status ?? "UNKNOWN",
-        occurredAt: parseTs(s.created),
-        note: s.remarks ?? null,
-        raw: s,
-      }),
-    );
+    const events: NormalizedTrackingEvent[] = (res.tracking_details ?? []).map((s) => ({
+      externalEventId: null,
+      statusRaw: s.status_id ?? s.status ?? "UNKNOWN",
+      occurredAt: parseTs(s.created),
+      note: s.remarks ?? null,
+      raw: s,
+    }));
     return {
       awb: ref.awb,
       statusRaw: res.order_details?.status ?? "UNKNOWN",
@@ -328,10 +323,7 @@ export class ShadowfaxProvider implements ShippingProvider {
     }
     const statusRaw = (body.event ?? body.status ?? "UNKNOWN").toString();
     const occurredAt = parseTs(body.event_timestamp);
-    const fingerprint = createHash("sha256")
-      .update(rawBody)
-      .digest("hex")
-      .slice(0, 40);
+    const fingerprint = createHash("sha256").update(rawBody).digest("hex").slice(0, 40);
     return {
       merchantReference: body.order_id ?? null,
       awb: body.awb_number ?? null,

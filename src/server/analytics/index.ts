@@ -62,41 +62,52 @@ export async function getFinancialSummary(
     },
   };
 
-  const [placedAgg, placedByMethod, lineByCatalog, prepaidCaptured, codCollected, refundAgg, codRows] =
-    await Promise.all([
-      db.order.aggregate({ where: placedWhere, _count: true, _sum: { totalPaise: true } }),
-      db.order.groupBy({
-        by: ["paymentMethod"],
-        where: placedWhere,
-        _sum: { totalPaise: true },
-      }),
-      db.orderItem.groupBy({
-        by: ["catalog"],
-        where: { order: placedWhere },
-        _sum: { totalPaise: true },
-      }),
-      db.paymentAttempt.aggregate({
-        where: { status: "CAPTURED", order: placedWhere },
-        _sum: { amountPaise: true },
-      }),
-      db.codRemittance.aggregate({
-        where: {
-          status: { in: ["COLLECTED", "REMITTED", "RECONCILED"] },
-          order: placedWhere,
-        },
-        _sum: { collectedPaise: true },
-      }),
-      db.refund.aggregate({
-        where: { status: "COMPLETED", order: placedWhere },
-        _count: true,
-        _sum: { amountPaise: true },
-      }),
-      db.codRemittance.groupBy({
-        by: ["status"],
-        where: { order: placedWhere },
-        _sum: { expectedPaise: true, collectedPaise: true, remittedPaise: true },
-      }),
-    ]);
+  const [
+    placedAgg,
+    placedByMethod,
+    lineByCatalog,
+    prepaidCaptured,
+    codCollected,
+    refundAgg,
+    codRows,
+  ] = await Promise.all([
+    db.order.aggregate({
+      where: placedWhere,
+      _count: true,
+      _sum: { totalPaise: true },
+    }),
+    db.order.groupBy({
+      by: ["paymentMethod"],
+      where: placedWhere,
+      _sum: { totalPaise: true },
+    }),
+    db.orderItem.groupBy({
+      by: ["catalog"],
+      where: { order: placedWhere },
+      _sum: { totalPaise: true },
+    }),
+    db.paymentAttempt.aggregate({
+      where: { status: "CAPTURED", order: placedWhere },
+      _sum: { amountPaise: true },
+    }),
+    db.codRemittance.aggregate({
+      where: {
+        status: { in: ["COLLECTED", "REMITTED", "RECONCILED"] },
+        order: placedWhere,
+      },
+      _sum: { collectedPaise: true },
+    }),
+    db.refund.aggregate({
+      where: { status: "COMPLETED", order: placedWhere },
+      _count: true,
+      _sum: { amountPaise: true },
+    }),
+    db.codRemittance.groupBy({
+      by: ["status"],
+      where: { order: placedWhere },
+      _sum: { expectedPaise: true, collectedPaise: true, remittedPaise: true },
+    }),
+  ]);
 
   const byMethod = { PREPAID_RAZORPAY: 0, COD: 0 };
   for (const row of placedByMethod) {
@@ -239,11 +250,14 @@ export async function getOverview(
     getLowStock(db, { limit: 20 }),
     db.order.groupBy({ by: ["orderStatus"], where: { isTest: false }, _count: true }),
     db.order.count({
-      where: { orderStatus: "CONFIRMED", fulfillmentStatus: "UNFULFILLED", isTest: false },
+      where: {
+        orderStatus: "CONFIRMED",
+        fulfillmentStatus: "UNFULFILLED",
+        isTest: false,
+      },
     }),
   ]);
-  const count = (s: string) =>
-    statuses.find((r) => r.orderStatus === s)?._count ?? 0;
+  const count = (s: string) => statuses.find((r) => r.orderStatus === s)?._count ?? 0;
   return {
     financial,
     attention,

@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 
 type SP = Promise<{ q?: string; variant?: string }>;
 
-export default async function AdminInventoryPage({ searchParams }: { searchParams: SP }) {
+export default async function AdminInventoryPage({
+  searchParams,
+}: {
+  searchParams: SP;
+}) {
   const sp = await searchParams;
   // Fixed waterfall (speed audit, 2026-09-13): the ledger only needs
   // `sp.variant` from the URL, never the variant list's own result, so the
@@ -75,7 +79,9 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
               </div>
               <div>
                 <dt className="text-ink-soft">Reserved</dt>
-                <dd className="text-sm font-semibold text-ink-strong">{v.reservedQty}</dd>
+                <dd className="text-sm font-semibold text-ink-strong">
+                  {v.reservedQty}
+                </dd>
               </div>
               <div>
                 <dt className="text-ink-soft">Available</dt>
@@ -160,7 +166,10 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
                 </ActionForm>
               </td>
               <td className="py-2">
-                <Link href={`/admin/inventory?variant=${v.id}`} className="text-xs underline">
+                <Link
+                  href={`/admin/inventory?variant=${v.id}`}
+                  className="text-xs underline"
+                >
                   view
                 </Link>
               </td>
@@ -183,7 +192,9 @@ export default async function AdminInventoryPage({ searchParams }: { searchParam
                 {l.reason ? ` — ${l.reason}` : ""}
               </li>
             ))}
-            {ledger.length === 0 && <li className="text-ink-soft">No adjustments yet.</li>}
+            {ledger.length === 0 && (
+              <li className="text-ink-soft">No adjustments yet.</li>
+            )}
           </ul>
         </section>
       )}

@@ -74,7 +74,9 @@ describe("getHomeContent — media slots", () => {
     await db.storeSettings.create({
       data: {
         key: "home.content",
-        value: { media: { editorial: { kind: "image", path: "home/editorial/x.webp" } } },
+        value: {
+          media: { editorial: { kind: "image", path: "home/editorial/x.webp" } },
+        },
       },
     });
     const content = await getHomeContent(db);
@@ -130,8 +132,13 @@ describe("getHomeContent — section layout", () => {
     expect(content.sections[1]).toEqual({ key: "newIn", enabled: false });
     // ...and every other known section is appended, enabled, so a section
     // never silently disappears just because an old save predates it.
-    const remaining = content.sections.slice(2).map((s) => s.key).sort();
-    expect(remaining).toEqual(["editBlocks", "editorial", "fromCloset", "instagram"].sort());
+    const remaining = content.sections
+      .slice(2)
+      .map((s) => s.key)
+      .sort();
+    expect(remaining).toEqual(
+      ["editBlocks", "editorial", "fromCloset", "instagram"].sort(),
+    );
     expect(content.sections.slice(2).every((s) => s.enabled)).toBe(true);
     expect(content.sections).toHaveLength(DEFAULT_HOME_SECTIONS.length);
   });

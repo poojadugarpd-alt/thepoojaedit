@@ -19,9 +19,9 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
         ? "Sold out"
         : product.availability === "ON_HOLD"
           ? "On hold"
-        : product.isThrift && product.isOneOfOne
-          ? "One of one"
-          : null;
+          : product.isThrift && product.isOneOfOne
+            ? "One of one"
+            : null;
 
   return (
     <Link href={href} className="group flex flex-col">

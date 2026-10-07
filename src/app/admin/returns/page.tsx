@@ -45,7 +45,9 @@ export default async function AdminReturnsPage({
             </option>
           ))}
         </select>
-        <button className="min-h-11 rounded border border-line px-3 text-sm">Filter</button>
+        <button className="min-h-11 rounded border border-line px-3 text-sm">
+          Filter
+        </button>
       </form>
 
       {/* Mobile: card list */}
@@ -58,7 +60,8 @@ export default async function AdminReturnsPage({
                 <Pill value={r.status} />
               </div>
               <p className="mt-0.5 text-xs text-ink-soft">
-                Order {r.order.orderNumber} · {r.items.length} item(s) · {ts(r.createdAt)}
+                Order {r.order.orderNumber} · {r.items.length} item(s) ·{" "}
+                {ts(r.createdAt)}
               </p>
               <p className="mt-1 text-xs text-ink">{r.reason}</p>
             </Link>
@@ -85,12 +88,18 @@ export default async function AdminReturnsPage({
           {rows.map((r) => (
             <tr key={r.id} className="border-b border-line/60">
               <td className="py-2">
-                <Link href={`/admin/returns/${r.id}`} className="font-medium hover:underline">
+                <Link
+                  href={`/admin/returns/${r.id}`}
+                  className="font-medium hover:underline"
+                >
                   {r.id.slice(0, 8)}
                 </Link>
               </td>
               <td className="py-2">
-                <Link href={`/admin/orders/${r.order.orderNumber}`} className="hover:underline">
+                <Link
+                  href={`/admin/orders/${r.order.orderNumber}`}
+                  className="hover:underline"
+                >
                   {r.order.orderNumber}
                 </Link>
               </td>

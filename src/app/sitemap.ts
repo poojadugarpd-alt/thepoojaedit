@@ -12,8 +12,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticEntries: MetadataRoute.Sitemap = [
     { url: u("/"), changeFrequency: "weekly", priority: 1 },
-    { url: u(`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`), changeFrequency: "daily", priority: 0.9 },
-    { url: u(`/${SEGMENT_BY_CATALOG.THRIFT}`), changeFrequency: "daily", priority: 0.9 },
+    {
+      url: u(`/${SEGMENT_BY_CATALOG.THE_POOJA_EDIT}`),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: u(`/${SEGMENT_BY_CATALOG.THRIFT}`),
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
     { url: u("/about"), changeFrequency: "monthly", priority: 0.4 },
     { url: u("/contact"), changeFrequency: "monthly", priority: 0.4 },
     { url: u("/size-guide"), changeFrequency: "monthly", priority: 0.3 },
@@ -31,8 +39,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // the build — fall back to the static entries only. This is a try/catch rather
   // than `.catch()` because a missing DATABASE_URL throws synchronously the first
   // time the Prisma client is touched.
-  let products: { catalog: keyof typeof SEGMENT_BY_CATALOG; slug: string; updatedAt: Date }[] = [];
-  let collections: { catalog: keyof typeof SEGMENT_BY_CATALOG; slug: string; updatedAt: Date }[] = [];
+  let products: {
+    catalog: keyof typeof SEGMENT_BY_CATALOG;
+    slug: string;
+    updatedAt: Date;
+  }[] = [];
+  let collections: {
+    catalog: keyof typeof SEGMENT_BY_CATALOG;
+    slug: string;
+    updatedAt: Date;
+  }[] = [];
   try {
     [products, collections] = await Promise.all([
       prisma.product.findMany({

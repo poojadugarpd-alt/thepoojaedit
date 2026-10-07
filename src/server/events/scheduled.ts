@@ -57,7 +57,8 @@ export async function runReconciliation(
   ports: ReconcilePort[],
   now: Date = new Date(),
 ): Promise<Record<string, { checked: number; updated: number; unresolved: number }>> {
-  const out: Record<string, { checked: number; updated: number; unresolved: number }> = {};
+  const out: Record<string, { checked: number; updated: number; unresolved: number }> =
+    {};
   for (const port of ports) {
     out[port.name] = await port.reconcilePending(now);
   }

@@ -48,11 +48,19 @@ export function buildInvoiceSnapshots(input: {
   const shipping = addresses.find((a) => a.type === "SHIPPING");
 
   const isFixture =
-    !business || business.legalName.toLowerCase().includes("fixture") || !business.gstin;
+    !business ||
+    business.legalName.toLowerCase().includes("fixture") ||
+    !business.gstin;
 
   const byRate = new Map<
     number,
-    { rateBps: number; taxableValuePaise: number; cgstPaise: number; sgstPaise: number; igstPaise: number }
+    {
+      rateBps: number;
+      taxableValuePaise: number;
+      cgstPaise: number;
+      sgstPaise: number;
+      igstPaise: number;
+    }
   >();
   for (const i of items) {
     const g = byRate.get(i.taxRateBps) ?? {

@@ -5,7 +5,11 @@ import { prisma } from "@/lib/db";
 import { getHomeContent, type HomeSectionKey } from "@/server/settings";
 import { requireAdmin } from "@/server/auth/require-admin";
 
-import { reorderHomeSectionAction, toggleHomeSectionAction, updateHomeContentAction } from "./actions";
+import {
+  reorderHomeSectionAction,
+  toggleHomeSectionAction,
+  updateHomeContentAction,
+} from "./actions";
 import { HomeMediaUploader } from "./home-media-uploader";
 import { HomeMediaPreview } from "./home-media-preview";
 
@@ -39,9 +43,9 @@ export default async function AdminHomePage() {
         </Link>
       </div>
       <p className="text-xs text-ink-soft">
-        Every word here is what shoppers see on the home page, right now. Save
-        updates it immediately — no need to wait, and no code or deploy involved.
-        Which products show in the rails below is set from{" "}
+        Every word here is what shoppers see on the home page, right now. Save updates
+        it immediately — no need to wait, and no code or deploy involved. Which products
+        show in the rails below is set from{" "}
         <Link href="/admin/collections" className="underline">
           Collections
         </Link>
@@ -53,14 +57,19 @@ export default async function AdminHomePage() {
           Layout
         </h2>
         <p className="text-xs text-ink-soft">
-          The order below is the order shoppers see, top to bottom, under the
-          opening headline. Hide a section instead of deleting anything in it —
-          nothing is lost, and turning it back on restores it exactly as it was.
+          The order below is the order shoppers see, top to bottom, under the opening
+          headline. Hide a section instead of deleting anything in it — nothing is lost,
+          and turning it back on restores it exactly as it was.
         </p>
         <ul className="divide-y divide-line rounded border border-line">
           {c.sections.map((s, i) => (
-            <li key={s.key} className="flex items-center justify-between gap-3 px-3 py-2">
-              <span className={`text-sm ${s.enabled ? "text-ink-strong" : "text-ink-soft"}`}>
+            <li
+              key={s.key}
+              className="flex items-center justify-between gap-3 px-3 py-2"
+            >
+              <span
+                className={`text-sm ${s.enabled ? "text-ink-strong" : "text-ink-soft"}`}
+              >
                 {SECTION_LABEL[s.key]}
                 {!s.enabled && " (hidden)"}
               </span>
@@ -142,18 +151,22 @@ export default async function AdminHomePage() {
             Big image
           </h2>
           <p className="text-xs text-ink-soft">
-            This band changes shape by screen size — wide on a laptop, tall on a
-            phone — so one photo or video rarely frames perfectly on both. Upload
-            the desktop version below; add a phone-specific version underneath it
-            only if the crop cuts off something important.
+            This band changes shape by screen size — wide on a laptop, tall on a phone —
+            so one photo or video rarely frames perfectly on both. Upload the desktop
+            version below; add a phone-specific version underneath it only if the crop
+            cuts off something important.
           </p>
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-ink-strong">
-              Desktop / default — shoot or crop to <strong>16:9</strong> (e.g. 1920×1080px).
-              This is what every visitor sees unless a phone-specific version is set below.
+              Desktop / default — shoot or crop to <strong>16:9</strong> (e.g.
+              1920×1080px). This is what every visitor sees unless a phone-specific
+              version is set below.
             </p>
-            <HomeMediaPreview slot={c.media.editorial} aspectClassName="aspect-[16/9]" />
+            <HomeMediaPreview
+              slot={c.media.editorial}
+              aspectClassName="aspect-[16/9]"
+            />
             <HomeMediaUploader slot="editorial" currentKind={c.media.editorial.kind} />
           </div>
 
@@ -276,7 +289,10 @@ export default async function AdminHomePage() {
             The Closet block
           </h2>
           <HomeMediaPreview slot={c.media.closetBlock} />
-          <HomeMediaUploader slot="closetBlock" currentKind={c.media.closetBlock.kind} />
+          <HomeMediaUploader
+            slot="closetBlock"
+            currentKind={c.media.closetBlock.kind}
+          />
           <Field
             label="Heading"
             name="closetBlock.heading"

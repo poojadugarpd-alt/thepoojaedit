@@ -45,11 +45,19 @@ beforeEach(async () => {
   await db.storeSettings.create({
     data: {
       key: "business.profile",
-      value: { legalName: "Fixture Co", gstin: "08AAAAA0000A1Z5", stateName: "Rajasthan", stateCode: "08" },
+      value: {
+        legalName: "Fixture Co",
+        gstin: "08AAAAA0000A1Z5",
+        stateName: "Rajasthan",
+        stateCode: "08",
+      },
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -153,9 +161,21 @@ describe("operator drives a prepaid lifecycle", () => {
 
     const fx = new FakeShadowfax();
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "PICKED_UP", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(12));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "DELIVERED", T(15));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "PICKED_UP",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(12),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "DELIVERED",
+      T(15),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     detail = await getAdminOrder(db, order.orderNumber);
@@ -187,15 +207,27 @@ describe("operator drives a COD lifecycle", () => {
 
     const fx = new FakeShadowfax();
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "PICKED_UP", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "DELIVERED", T(15));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "PICKED_UP",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "DELIVERED",
+      T(15),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     let detail = await getAdminOrder(db, order.orderNumber);
     expect(detail?.fulfillmentStatus).toBe("DELIVERED");
     expect(detail?.paymentStatus).toBe("COD_PENDING"); // not paid from delivery
 
-    fx.simulateCodCollected({ merchantReference: shipment.merchantReference }, order.totalPaise, T(15));
+    fx.simulateCodCollected(
+      { merchantReference: shipment.merchantReference },
+      order.totalPaise,
+      T(15),
+    );
     await syncCodRemittance(db, fx, { shipmentId: shipment.id });
 
     detail = await getAdminOrder(db, order.orderNumber);
@@ -205,16 +237,46 @@ describe("operator drives a COD lifecycle", () => {
 
 describe("order item thumbnails", () => {
   it("picks the primary photo, else the first by position; falls back via the variant; skips products without photos", async () => {
-    const [a, b, c] = await Promise.all([makeVariant({}), makeVariant({}), makeVariant({})]);
+    const [a, b, c] = await Promise.all([
+      makeVariant({}),
+      makeVariant({}),
+      makeVariant({}),
+    ]);
     const pid = async (variantId: string) =>
-      (await db.productVariant.findUniqueOrThrow({ where: { id: variantId } })).productId;
+      (await db.productVariant.findUniqueOrThrow({ where: { id: variantId } }))
+        .productId;
     const [pa, pb, pc] = await Promise.all([pid(a), pid(b), pid(c)]);
     await db.productImage.createMany({
       data: [
-        { productId: pa, bucket: "product-images", path: "a/first.jpg", altText: "", sortPosition: 0 },
-        { productId: pa, bucket: "product-images", path: "a/primary.jpg", altText: "", sortPosition: 1, isPrimary: true },
-        { productId: pb, bucket: "product-images", path: "b/second.jpg", altText: "", sortPosition: 1 },
-        { productId: pb, bucket: "product-images", path: "b/first.jpg", altText: "", sortPosition: 0 },
+        {
+          productId: pa,
+          bucket: "product-images",
+          path: "a/first.jpg",
+          altText: "",
+          sortPosition: 0,
+        },
+        {
+          productId: pa,
+          bucket: "product-images",
+          path: "a/primary.jpg",
+          altText: "",
+          sortPosition: 1,
+          isPrimary: true,
+        },
+        {
+          productId: pb,
+          bucket: "product-images",
+          path: "b/second.jpg",
+          altText: "",
+          sortPosition: 1,
+        },
+        {
+          productId: pb,
+          bucket: "product-images",
+          path: "b/first.jpg",
+          altText: "",
+          sortPosition: 0,
+        },
       ],
     });
 
@@ -247,8 +309,16 @@ describe("Needs Attention queue", () => {
     await confirmCodOrder(db, { orderId: order.id });
     const fx = new FakeShadowfax();
     const { shipment } = await createShipmentForOrder(db, fx, { orderId: order.id });
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "OUT_FOR_DELIVERY", T(9));
-    fx.simulateScan({ merchantReference: shipment.merchantReference }, "UNDELIVERED", T(10));
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "OUT_FOR_DELIVERY",
+      T(9),
+    );
+    fx.simulateScan(
+      { merchantReference: shipment.merchantReference },
+      "UNDELIVERED",
+      T(10),
+    );
     await reconcileShipment(db, fx, { shipmentId: shipment.id });
 
     const tasks = await listOpenTasks(db, { type: "NDR" });
@@ -267,16 +337,27 @@ describe("Needs Attention queue", () => {
     });
     expect(r.resolved).toBe(true);
     expect(
-      await db.operationalTask.count({ where: { dedupeKey: `ndr:${shipment.id}`, status: "RESOLVED" } }),
+      await db.operationalTask.count({
+        where: { dedupeKey: `ndr:${shipment.id}`, status: "RESOLVED" },
+      }),
     ).toBe(1);
-    expect(await db.adminActivityLog.count({ where: { action: "task.resolve" } })).toBe(1);
+    expect(await db.adminActivityLog.count({ where: { action: "task.resolve" } })).toBe(
+      1,
+    );
   });
 
   it("a low-stock task resolves automatically once stock is back above threshold", async () => {
     const v = await makeVariant({ onHand: 5, lowStockThreshold: 3 });
     const a = await admin();
-    await adjustStock(db, { variantId: v, delta: -3, reason: "damaged units", adminUserId: a.id });
-    let task = await db.operationalTask.findUnique({ where: { dedupeKey: `low-stock:${v}` } });
+    await adjustStock(db, {
+      variantId: v,
+      delta: -3,
+      reason: "damaged units",
+      adminUserId: a.id,
+    });
+    let task = await db.operationalTask.findUnique({
+      where: { dedupeKey: `low-stock:${v}` },
+    });
     expect(task?.status).toBe("OPEN");
 
     // still low → refuse
@@ -284,16 +365,26 @@ describe("Needs Attention queue", () => {
       resolveTaskChecked(db, { taskId: task!.id, adminUserId: a.id }),
     ).rejects.toBeInstanceOf(TaskStillActiveError);
 
-    await adjustStock(db, { variantId: v, delta: +10, reason: "restock delivery", adminUserId: a.id });
+    await adjustStock(db, {
+      variantId: v,
+      delta: +10,
+      reason: "restock delivery",
+      adminUserId: a.id,
+    });
     // adjustStock resolves it itself, but resolveTaskChecked must also accept it now
-    task = await db.operationalTask.findUnique({ where: { dedupeKey: `low-stock:${v}` } });
+    task = await db.operationalTask.findUnique({
+      where: { dedupeKey: `low-stock:${v}` },
+    });
     expect(task?.status).toBe("RESOLVED");
   });
 
   it("a payment-review task refuses to resolve while the order is NEEDS_REVIEW", async () => {
     const v = await makeVariant({ onHand: 1 });
     const order = await place("PREPAID_RAZORPAY", [{ variantId: v, quantity: 1 }]);
-    await db.order.update({ where: { id: order.id }, data: { orderStatus: "NEEDS_REVIEW" } });
+    await db.order.update({
+      where: { id: order.id },
+      data: { orderStatus: "NEEDS_REVIEW" },
+    });
     const task = await db.operationalTask.create({
       data: {
         dedupeKey: `payment-review:${order.id}`,
@@ -308,7 +399,10 @@ describe("Needs Attention queue", () => {
       resolveTaskChecked(db, { taskId: task.id, adminUserId: a.id }),
     ).rejects.toBeInstanceOf(TaskStillActiveError);
 
-    await db.order.update({ where: { id: order.id }, data: { orderStatus: "CONFIRMED" } });
+    await db.order.update({
+      where: { id: order.id },
+      data: { orderStatus: "CONFIRMED" },
+    });
     const r = await resolveTaskChecked(db, { taskId: task.id, adminUserId: a.id });
     expect(r.resolved).toBe(true);
   });
@@ -322,10 +416,19 @@ describe("bulk actions report per-record results", () => {
     await adjustStock(db, { variantId: v1, delta: -3, reason: "x", adminUserId: a.id });
     await adjustStock(db, { variantId: v2, delta: -3, reason: "x", adminUserId: a.id });
     // fix v1 only
-    await adjustStock(db, { variantId: v1, delta: +10, reason: "restock", adminUserId: a.id });
+    await adjustStock(db, {
+      variantId: v1,
+      delta: +10,
+      reason: "restock",
+      adminUserId: a.id,
+    });
 
-    const t1 = await db.operationalTask.findUniqueOrThrow({ where: { dedupeKey: `low-stock:${v1}` } });
-    const t2 = await db.operationalTask.findUniqueOrThrow({ where: { dedupeKey: `low-stock:${v2}` } });
+    const t1 = await db.operationalTask.findUniqueOrThrow({
+      where: { dedupeKey: `low-stock:${v1}` },
+    });
+    const t2 = await db.operationalTask.findUniqueOrThrow({
+      where: { dedupeKey: `low-stock:${v2}` },
+    });
 
     const result = await runBulk([t1.id, t2.id], async (id) => {
       await resolveTaskChecked(db, { taskId: id, adminUserId: a.id, reason: "bulk" });
@@ -364,8 +467,17 @@ describe("order list pagination is stable under inserts", () => {
 
 describe("analytics", () => {
   it("allocates a mixed order's revenue by line and never exposes cost data", async () => {
-    const tpe = await makeVariant({ catalog: "THE_POOJA_EDIT", price: 150000, onHand: 5 });
-    const thr = await makeVariant({ catalog: "THRIFT", price: 90000, onHand: 1, acquisitionCostPaise: 40000 });
+    const tpe = await makeVariant({
+      catalog: "THE_POOJA_EDIT",
+      price: 150000,
+      onHand: 5,
+    });
+    const thr = await makeVariant({
+      catalog: "THRIFT",
+      price: 90000,
+      onHand: 1,
+      acquisitionCostPaise: 40000,
+    });
     const order = await place("COD", [
       { variantId: tpe, quantity: 1 },
       { variantId: thr, quantity: 1 },
@@ -391,7 +503,12 @@ describe("analytics", () => {
 describe("authorization", () => {
   it("an inactive admin is rejected by the active-admin guard", async () => {
     const inactive = await db.adminUser.create({
-      data: { authUserId: randomUUID(), email: `${randomUUID()}@x.com`, role: "ADMIN", isActive: false },
+      data: {
+        authUserId: randomUUID(),
+        email: `${randomUUID()}@x.com`,
+        role: "ADMIN",
+        isActive: false,
+      },
     });
     expect(() => assertActiveAdmin(inactive)).toThrow(AuthorizationError);
   });
@@ -405,16 +522,28 @@ describe("inventory corrections", () => {
     await place("PREPAID_RAZORPAY", [{ variantId: v, quantity: 3 }]);
 
     await expect(
-      adjustStock(db, { variantId: v, delta: -3, reason: "shrinkage", adminUserId: a.id }),
+      adjustStock(db, {
+        variantId: v,
+        delta: -3,
+        reason: "shrinkage",
+        adminUserId: a.id,
+      }),
     ).rejects.toThrow(); // would leave onHand 2 < reserved 3
 
-    const ok = await adjustStock(db, { variantId: v, delta: -1, reason: "shrinkage", adminUserId: a.id });
+    const ok = await adjustStock(db, {
+      variantId: v,
+      delta: -1,
+      reason: "shrinkage",
+      adminUserId: a.id,
+    });
     expect(ok.onHandQty).toBe(4);
     expect(
       await db.inventoryTransaction.count({ where: { variantId: v, type: "ADJUST" } }),
     ).toBe(1);
     expect(
-      await db.adminActivityLog.count({ where: { action: "inventory.adjust", entityId: v } }),
+      await db.adminActivityLog.count({
+        where: { action: "inventory.adjust", entityId: v },
+      }),
     ).toBe(1);
   });
 });

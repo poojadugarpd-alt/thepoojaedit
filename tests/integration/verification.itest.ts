@@ -28,11 +28,19 @@ beforeEach(async () => {
   await db.storeSettings.create({
     data: {
       key: "business.profile",
-      value: { legalName: "Fixture", gstin: "08AAAAA0000A1Z5", stateName: "Rajasthan", stateCode: "08" },
+      value: {
+        legalName: "Fixture",
+        gstin: "08AAAAA0000A1Z5",
+        stateName: "Rajasthan",
+        stateCode: "08",
+      },
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -48,7 +56,12 @@ async function makeVariant(onHand = 5) {
     },
   });
   const v = await db.productVariant.create({
-    data: { productId: p.id, sku: `SKU-${randomUUID().slice(0, 8)}`, pricePaise: 100000, onHandQty: onHand },
+    data: {
+      productId: p.id,
+      sku: `SKU-${randomUUID().slice(0, 8)}`,
+      pricePaise: 100000,
+      onHandQty: onHand,
+    },
   });
   return v.id;
 }
@@ -97,7 +110,11 @@ describe("prepaid settlement is order-independent (AC-07)", () => {
     expect(cb.outcome).toBe("confirmed");
 
     // (2) the webhook arrives later
-    const hook = rzp.buildWebhook("payment.captured", { payment: pay }, { eventId: "evt_after" });
+    const hook = rzp.buildWebhook(
+      "payment.captured",
+      { payment: pay },
+      { eventId: "evt_after" },
+    );
     const wh = await handleProviderWebhook(db, rzp, hook);
     expect(wh.httpStatus).toBe(200);
 
@@ -118,7 +135,11 @@ describe("prepaid settlement is order-independent (AC-07)", () => {
     const pay = rzp.simulateCaptured(attempt.providerOrderId!);
 
     // (1) webhook first
-    const hook = rzp.buildWebhook("payment.captured", { payment: pay }, { eventId: "evt_first" });
+    const hook = rzp.buildWebhook(
+      "payment.captured",
+      { payment: pay },
+      { eventId: "evt_first" },
+    );
     const wh = await handleProviderWebhook(db, rzp, hook);
     expect(wh.httpStatus).toBe(200);
     expect(
@@ -152,7 +173,10 @@ describe("order-view authorization", () => {
     const bobOrder = await placePrepaid(v2, bob.id);
 
     await expect(
-      getViewableOrder(db, { orderNumber: aliceOrder.orderNumber, customerId: alice.id }),
+      getViewableOrder(db, {
+        orderNumber: aliceOrder.orderNumber,
+        customerId: alice.id,
+      }),
     ).resolves.toMatchObject({ orderNumber: aliceOrder.orderNumber });
 
     await expect(
@@ -174,7 +198,10 @@ describe("order-view authorization", () => {
     ).resolves.toMatchObject({ orderNumber: order.orderNumber });
 
     await expect(
-      getViewableOrder(db, { orderNumber: order.orderNumber, token: "not-a-real-token" }),
+      getViewableOrder(db, {
+        orderNumber: order.orderNumber,
+        token: "not-a-real-token",
+      }),
     ).rejects.toBeInstanceOf(ResourceNotFoundError);
 
     // a customer id that doesn't own it → not-found (no contact-based linking)
@@ -190,9 +217,8 @@ describe("order-view authorization", () => {
 describe("invoice PDF route authorization (AC-12)", () => {
   it("denies without a token / with a wrong token, allows with the ORDER_VIEW token", async () => {
     const { GET } = await import("../../src/app/order/[orderNumber]/invoice/route");
-    const { issueInvoiceForOrder, renderAndStoreInvoicePdf } = await import(
-      "../../src/server/invoices"
-    );
+    const { issueInvoiceForOrder, renderAndStoreInvoicePdf } =
+      await import("../../src/server/invoices");
     const { confirmCodOrder } = await import("../../src/server/orders/lifecycle");
 
     const v = await makeVariant();

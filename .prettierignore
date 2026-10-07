@@ -13,3 +13,8 @@ package-lock.json
 
 # Working records + specs are hand-maintained Markdown; Prettier reflows tables.
 docs
+
+# Not app code: design mockups/research, agent configs.
+design
+.claude
+.mcp.json

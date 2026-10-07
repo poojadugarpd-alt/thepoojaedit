@@ -41,7 +41,8 @@ export async function bulkResolveTasksAction(
   const ids = form.getAll("taskIds").map(String).filter(Boolean);
   const reason = str(form.get("reason"));
   if (ids.length === 0) return { ok: false, message: "Select at least one task." };
-  if (!reason) return { ok: false, message: "A reason is required for a bulk resolve." };
+  if (!reason)
+    return { ok: false, message: "A reason is required for a bulk resolve." };
 
   const result = await runBulk(ids, async (id) => {
     // bulk resolve only clears tasks whose condition is verifiably gone

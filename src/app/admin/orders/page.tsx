@@ -21,7 +21,14 @@ const ORDER_STATUSES = [
   "COMPLETED",
 ];
 
-const FULFILMENT_STATUSES = ["UNFULFILLED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "NDR", "RTO_IN_TRANSIT"];
+const FULFILMENT_STATUSES = [
+  "UNFULFILLED",
+  "SHIPPED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "NDR",
+  "RTO_IN_TRANSIT",
+];
 
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -50,9 +57,11 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     return s ? `?${s}` : "";
   };
 
-  const activeFilterCount = [sp.orderStatus, sp.paymentMethod, sp.fulfillmentStatus].filter(
-    Boolean,
-  ).length;
+  const activeFilterCount = [
+    sp.orderStatus,
+    sp.paymentMethod,
+    sp.fulfillmentStatus,
+  ].filter(Boolean).length;
 
   const filterFields = (
     <form method="get" className="flex flex-col gap-3 text-sm">
@@ -122,10 +131,16 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <Poll />
       </div>
       <p className="flex flex-wrap gap-4 text-xs text-ink-soft">
-        <Link href={qs({ view: sp.view === "unpaid" ? undefined : "unpaid" })} className="underline">
+        <Link
+          href={qs({ view: sp.view === "unpaid" ? undefined : "unpaid" })}
+          className="underline"
+        >
           {sp.view === "unpaid" ? "Back to orders" : "Unpaid checkouts"}
         </Link>
-        <Link href={qs({ test: sp.test === "1" ? undefined : "1" })} className="underline">
+        <Link
+          href={qs({ test: sp.test === "1" ? undefined : "1" })}
+          className="underline"
+        >
           {sp.test === "1" ? "Hide test orders" : "Show test orders"}
         </Link>
       </p>
@@ -159,12 +174,18 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
           HTML and browsers silently mis-handle it. */}
       <div className="flex flex-wrap items-center gap-2">
         <form method="get" className="flex min-w-0 flex-1 items-center gap-2">
-          {sp.orderStatus && <input type="hidden" name="orderStatus" value={sp.orderStatus} />}
+          {sp.orderStatus && (
+            <input type="hidden" name="orderStatus" value={sp.orderStatus} />
+          )}
           {sp.paymentMethod && (
             <input type="hidden" name="paymentMethod" value={sp.paymentMethod} />
           )}
           {sp.fulfillmentStatus && (
-            <input type="hidden" name="fulfillmentStatus" value={sp.fulfillmentStatus} />
+            <input
+              type="hidden"
+              name="fulfillmentStatus"
+              value={sp.fulfillmentStatus}
+            />
           )}
           <input
             name="q"
@@ -203,7 +224,8 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                 </span>
               </div>
               <p className="mt-0.5 text-xs text-ink-soft">
-                {ts(r.placedAt ?? r.createdAt)} · {r.paymentMethod === "COD" ? "COD" : "prepaid"}
+                {ts(r.placedAt ?? r.createdAt)} ·{" "}
+                {r.paymentMethod === "COD" ? "COD" : "prepaid"}
                 {r.isTest && " · test"}
               </p>
               <p className="text-xs text-ink-soft">
@@ -251,10 +273,14 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                   {r.isTest && " · test"}
                 </span>
               </td>
-              <td className="py-2 text-xs text-ink-soft">{ts(r.placedAt ?? r.createdAt)}</td>
+              <td className="py-2 text-xs text-ink-soft">
+                {ts(r.placedAt ?? r.createdAt)}
+              </td>
               <td className="py-2 text-xs">
                 {r.contactPhone}
-                {r.contactEmail ? <span className="block text-ink-soft">{r.contactEmail}</span> : null}
+                {r.contactEmail ? (
+                  <span className="block text-ink-soft">{r.contactEmail}</span>
+                ) : null}
               </td>
               <td className="py-2">
                 <Pill value={r.orderStatus} />

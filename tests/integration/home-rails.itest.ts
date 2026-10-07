@@ -116,7 +116,10 @@ describe("getHomeRailProducts", () => {
     const col = await db.collection.findUniqueOrThrow({
       where: { catalog_slug: { catalog: "THE_POOJA_EDIT", slug: "home-label" } },
     });
-    const onlyMember = await publishedProduct("THE_POOJA_EDIT", "Curated then archived");
+    const onlyMember = await publishedProduct(
+      "THE_POOJA_EDIT",
+      "Curated then archived",
+    );
     await addProductToCollection(db, admin, col.id, onlyMember.id);
     await setProductStatus(db, admin, onlyMember.id, "ARCHIVED");
     const fallbackItem = await publishedProduct("THE_POOJA_EDIT", "Newest fallback");
@@ -172,9 +175,9 @@ describe("internal collections are invisible to every public read", () => {
 
     const entries = await sitemap();
     const urls = entries.map((e) => e.url);
-    expect(urls.some((u) => u.includes("/home-label") || u.includes("/home-closet"))).toBe(
-      false,
-    );
+    expect(
+      urls.some((u) => u.includes("/home-label") || u.includes("/home-closet")),
+    ).toBe(false);
     expect(urls.some((u) => u.includes(`/collections/${real.slug}`))).toBe(true);
   });
 });

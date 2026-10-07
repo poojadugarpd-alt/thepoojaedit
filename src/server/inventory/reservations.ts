@@ -176,7 +176,13 @@ export async function expireReservations(
   const now = input.now ?? new Date();
   const limit = Math.min(Math.max(input.limit ?? 100, 1), 500);
   const rows = await tx.$queryRawUnsafe<
-    { id: string; variantId: string; quantity: number; orderId: string; expiresAt: Date }[]
+    {
+      id: string;
+      variantId: string;
+      quantity: number;
+      orderId: string;
+      expiresAt: Date;
+    }[]
   >(
     `SELECT "id", "variantId", "quantity", "orderId", "expiresAt" FROM "InventoryReservation"
        WHERE "status" = 'ACTIVE' AND "expiresAt" <= $1
@@ -239,7 +245,13 @@ export async function renewHold(
   const fresh = new Date(now.getTime() + input.ttlSeconds * 1000);
   const topUpBefore = new Date(now.getTime() + HOLD_TOP_UP_BELOW_SECONDS * 1000);
   const rows = await tx.$queryRawUnsafe<
-    { id: string; variantId: string; quantity: number; status: string; expiresAt: Date }[]
+    {
+      id: string;
+      variantId: string;
+      quantity: number;
+      status: string;
+      expiresAt: Date;
+    }[]
   >(
     `SELECT "id", "variantId", "quantity", "status", "expiresAt" FROM "InventoryReservation"
        WHERE "orderId" = $1::uuid AND "status" <> 'CONVERTED'

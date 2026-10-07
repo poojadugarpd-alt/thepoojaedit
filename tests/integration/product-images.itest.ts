@@ -203,7 +203,10 @@ describe("setPrimaryProductImage", () => {
 
   it("leaves no two images sharing a position (the old code forced the primary to 0)", async () => {
     const product = await makeProduct();
-    const [, second] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }]);
+    const [, second] = await seedImages(product.id, [
+      { pos: 0, primary: true },
+      { pos: 1 },
+    ]);
     await setPrimaryProductImage(db, product.id, second);
     const positions = (await gallery(product.id)).map((g) => g.pos);
     expect(new Set(positions).size).toBe(positions.length);
@@ -213,15 +216,27 @@ describe("setPrimaryProductImage", () => {
 describe("moveProductImage", () => {
   it("swaps with the neighbour", async () => {
     const product = await makeProduct();
-    const [, , third] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }, { pos: 2 }]);
+    const [, , third] = await seedImages(product.id, [
+      { pos: 0, primary: true },
+      { pos: 1 },
+      { pos: 2 },
+    ]);
     await moveProductImage(db, product.id, third, "up");
-    expect((await gallery(product.id)).map((g) => g.alt)).toEqual(["photo 1", "photo 3", "photo 2"]);
+    expect((await gallery(product.id)).map((g) => g.alt)).toEqual([
+      "photo 1",
+      "photo 3",
+      "photo 2",
+    ]);
   });
 
   it("still moves an image whose position is shared with its neighbour", async () => {
     const product = await makeProduct();
     // What production had after "Primary" forced a photo to 0: a tie.
-    const [first, second] = await seedImages(product.id, [{ pos: 0 }, { pos: 0, primary: true }, { pos: 1 }]);
+    const [first, second] = await seedImages(product.id, [
+      { pos: 0 },
+      { pos: 0, primary: true },
+      { pos: 1 },
+    ]);
     const before = (await gallery(product.id)).map((g) => g.alt);
     const lower = before[1] === "photo 1" ? first : second;
     await moveProductImage(db, product.id, lower, "up");
@@ -232,9 +247,17 @@ describe("moveProductImage", () => {
 
   it("is a no-op at either end", async () => {
     const product = await makeProduct();
-    const [first, , last] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }, { pos: 2 }]);
+    const [first, , last] = await seedImages(product.id, [
+      { pos: 0, primary: true },
+      { pos: 1 },
+      { pos: 2 },
+    ]);
     await moveProductImage(db, product.id, first, "up");
     await moveProductImage(db, product.id, last, "down");
-    expect((await gallery(product.id)).map((g) => g.alt)).toEqual(["photo 1", "photo 2", "photo 3"]);
+    expect((await gallery(product.id)).map((g) => g.alt)).toEqual([
+      "photo 1",
+      "photo 2",
+      "photo 3",
+    ]);
   });
 });

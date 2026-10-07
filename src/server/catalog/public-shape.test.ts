@@ -81,6 +81,8 @@ describe("deriveAvailability while an unpaid checkout holds the stock (D-150)", 
     const gone = [{ isActive: true, onHandQty: 0, reservedQty: 0 }];
     expect(deriveAvailability("THRIFT", true, gone)).toBe("SOLD");
     expect(variantOnHold(gone[0])).toBe(false);
-    expect(deriveAvailability("THE_POOJA_EDIT", false, held, true)).toBe("OUT_OF_STOCK");
+    expect(deriveAvailability("THE_POOJA_EDIT", false, held, true)).toBe(
+      "OUT_OF_STOCK",
+    );
   });
 });

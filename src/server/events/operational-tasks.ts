@@ -17,14 +17,15 @@ type Db = PrismaClient | Prisma.TransactionClient;
 // field in that model (not part of the decided preference set) and simply
 // don't push — the task itself still opens and still shows in Needs
 // Attention either way, this only affects the phone alert.
-const TASK_PUSH_PREFERENCE: Partial<Record<OperationalTaskType, PushPreferenceField>> = {
-  PAYMENT_REVIEW: "paymentIssue",
-  SHIPMENT_FAILURE: "shipmentFailure",
-  JOB_FAILURE: "jobExhausted",
-  LOW_STOCK: "lowStock",
-  NDR: "ndrRto",
-  RTO_INSPECTION: "ndrRto",
-};
+const TASK_PUSH_PREFERENCE: Partial<Record<OperationalTaskType, PushPreferenceField>> =
+  {
+    PAYMENT_REVIEW: "paymentIssue",
+    SHIPMENT_FAILURE: "shipmentFailure",
+    JOB_FAILURE: "jobExhausted",
+    LOW_STOCK: "lowStock",
+    NDR: "ndrRto",
+    RTO_INSPECTION: "ndrRto",
+  };
 
 const TASK_PUSH_TITLE: Partial<Record<OperationalTaskType, string>> = {
   PAYMENT_REVIEW: "Payment needs review",
@@ -55,7 +56,9 @@ export async function openOperationalTask(
     reason?: string | null;
   },
 ) {
-  const before = await db.operationalTask.findUnique({ where: { dedupeKey: input.dedupeKey } });
+  const before = await db.operationalTask.findUnique({
+    where: { dedupeKey: input.dedupeKey },
+  });
 
   const task = await db.operationalTask.upsert({
     where: { dedupeKey: input.dedupeKey },

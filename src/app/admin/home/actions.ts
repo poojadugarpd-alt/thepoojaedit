@@ -142,9 +142,13 @@ export async function toggleHomeSectionAction(
   const enabled = form.get("enabled") === "on";
   const sections = current.sections.map((s) => (s.key === key ? { ...s, enabled } : s));
   try {
-    await saveHomeContent(admin.id, `${enabled ? "showed" : "hid"} home page section "${key}"`, {
-      sections,
-    });
+    await saveHomeContent(
+      admin.id,
+      `${enabled ? "showed" : "hid"} home page section "${key}"`,
+      {
+        sections,
+      },
+    );
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : "Save failed." };
   }
@@ -159,10 +163,18 @@ export async function toggleHomeSectionAction(
 // written to `home.content`. Called directly from client JS (image-uploader
 // pattern), not a <form action>.
 
-export type HomeMediaSlotName = "editorial" | "editorialMobile" | "labelBlock" | "closetBlock";
+export type HomeMediaSlotName =
+  "editorial" | "editorialMobile" | "labelBlock" | "closetBlock";
 
 export type HomeMediaUploadTicketResult =
-  | { ok: true; mediaId: string; bucket: string; path: string; signedUrl: string; token: string }
+  | {
+      ok: true;
+      mediaId: string;
+      bucket: string;
+      path: string;
+      signedUrl: string;
+      token: string;
+    }
   | { ok: false; message: string };
 
 export async function requestHomeMediaUploadAction(
@@ -173,10 +185,17 @@ export async function requestHomeMediaUploadAction(
   const admin = await requireAdmin();
   try {
     const storage = await createSupabaseStoragePort();
-    const ticket = await requestHomeMediaUpload(storage, admin, { slot, kind, contentType });
+    const ticket = await requestHomeMediaUpload(storage, admin, {
+      slot,
+      kind,
+      contentType,
+    });
     return { ok: true, ...ticket, bucket: HOME_MEDIA_BUCKET };
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Could not start the upload." };
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not start the upload.",
+    };
   }
 }
 
@@ -215,7 +234,10 @@ export async function confirmHomeMediaUploadAction(
       await storage.deleteObjects(HOME_MEDIA_BUCKET, [previous.path]).catch(() => {});
     }
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Could not save the upload." };
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Could not save the upload.",
+    };
   }
   return { ok: true };
 }

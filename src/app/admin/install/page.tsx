@@ -14,9 +14,9 @@ export default function AdminInstallPage() {
       <div>
         <h1 className="text-xl font-semibold text-ink-strong">Install on iPhone</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Adds a Pooja Admin icon to your Home Screen, separate from The Pooja Edit
-          shop icon, that opens straight into the admin — full screen, no browser
-          address bar.
+          Adds a Pooja Admin icon to your Home Screen, separate from The Pooja Edit shop
+          icon, that opens straight into the admin — full screen, no browser address
+          bar.
         </p>
       </div>
 
@@ -32,13 +32,13 @@ export default function AdminInstallPage() {
             <strong>Safari</strong> and sign in.
           </li>
           <li>
-            Tap the <strong>Share</strong> icon (the square with an arrow pointing up) in
-            the toolbar.
+            Tap the <strong>Share</strong> icon (the square with an arrow pointing up)
+            in the toolbar.
           </li>
           <li>
-            Scroll down and tap <strong>Add to Home Screen</strong>. (Since iOS 16.4 some
-            other browsers offer this too, but Safari is the one every step here was
-            checked against.)
+            Scroll down and tap <strong>Add to Home Screen</strong>. (Since iOS 16.4
+            some other browsers offer this too, but Safari is the one every step here
+            was checked against.)
           </li>
           <li>
             The name will already say <strong>Pooja Admin</strong> — leave it, so it
@@ -58,8 +58,8 @@ export default function AdminInstallPage() {
         <p className="text-sm text-ink">
           Right now this only exists at the address above. When{" "}
           <span className="font-mono text-xs">thepoojaedit.in</span> is switched over
-          from the current Shopify store to this app, that&rsquo;s a different address as
-          far as your iPhone is concerned — the icon you add today won&rsquo;t start
+          from the current Shopify store to this app, that&rsquo;s a different address
+          as far as your iPhone is concerned — the icon you add today won&rsquo;t start
           pointing at the new address by itself. Delete it and add it again from{" "}
           <span className="font-mono text-xs">thepoojaedit.in/admin</span> once that
           happens. You&rsquo;ll be told when it&rsquo;s time.
@@ -73,14 +73,21 @@ export default function AdminInstallPage() {
         <ul className="list-inside list-disc space-y-1 text-sm text-ink">
           <li>Its own icon and app-switcher entry — separate from the shop.</li>
           <li>Opens straight to the dashboard, no address bar or Safari tabs.</li>
-          <li>Faster on a slow connection (see below) — everything else still needs the internet.</li>
-          <li>Push notifications, once turned on in Settings — the icon has to be installed first; a browser tab can&rsquo;t receive them.</li>
+          <li>
+            Faster on a slow connection (see below) — everything else still needs the
+            internet.
+          </li>
+          <li>
+            Push notifications, once turned on in Settings — the icon has to be
+            installed first; a browser tab can&rsquo;t receive them.
+          </li>
         </ul>
         <p className="text-xs text-ink-soft">
           This is still a website running inside its own window, not a native app —
           there is nothing to review or approve in the App Store, and no separate
-          download. Nothing works offline except a plain &ldquo;no connection&rdquo; screen — every
-          real screen (orders, stock, prices) always needs the internet, on purpose.
+          download. Nothing works offline except a plain &ldquo;no connection&rdquo;
+          screen — every real screen (orders, stock, prices) always needs the internet,
+          on purpose.
         </p>
       </section>
     </div>

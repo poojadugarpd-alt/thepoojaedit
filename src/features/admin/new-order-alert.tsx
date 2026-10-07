@@ -27,7 +27,8 @@ function audio(): AudioContext | null {
   if (typeof window === "undefined") return null;
   const AC =
     window.AudioContext ??
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
   if (!AC) return null;
   ctx ??= new AC();
   return ctx;
@@ -68,7 +69,8 @@ export function playChaChing(): void {
   // "ka" — a short metallic click
   const noise = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.04), ac.sampleRate);
   const data = noise.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  for (let i = 0; i < data.length; i++)
+    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
   const src = ac.createBufferSource();
   const ng = ac.createGain();
   ng.gain.value = 0.25;
@@ -120,7 +122,10 @@ export function NewOrderAlert() {
         // Offline or signed out — try again next tick.
       }
       if (!stopped) {
-        timer = setTimeout(check, document.visibilityState === "visible" ? 15_000 : 30_000);
+        timer = setTimeout(
+          check,
+          document.visibilityState === "visible" ? 15_000 : 30_000,
+        );
       }
     };
     void check();
@@ -147,7 +152,9 @@ export function NewOrderAlert() {
           🛍
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink-strong">New order {banner.orderNumber}</p>
+          <p className="text-sm font-semibold text-ink-strong">
+            New order {banner.orderNumber}
+          </p>
           <p className="text-xs text-ink-soft">
             {formatPaiseINR(banner.totalPaise)} ·{" "}
             {banner.paymentMethod === "COD" ? "Cash on delivery" : "Paid online"}

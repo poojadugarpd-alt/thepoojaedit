@@ -41,9 +41,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} flex min-h-dvh flex-col antialiased`}
-      >
+      <body className={`${inter.variable} flex min-h-dvh flex-col antialiased`}>
         <SkipLink />
         <RouteChrome
           storefront={
@@ -51,7 +49,9 @@ export default function RootLayout({
               <link rel="manifest" href="/manifest.webmanifest" />
               <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
+                dangerouslySetInnerHTML={{
+                  __html: JSON.stringify(organizationJsonLd()),
+                }}
               />
               <EnvironmentBanner />
               <AnnouncementTicker />

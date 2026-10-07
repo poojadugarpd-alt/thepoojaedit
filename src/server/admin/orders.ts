@@ -143,10 +143,14 @@ const DETAIL_INCLUDE = {
     include: { items: { include: { orderItem: true } } },
   },
   codRemittances: true,
-  customer: { include: { notes: { orderBy: { createdAt: "desc" }, include: { author: true } } } },
+  customer: {
+    include: { notes: { orderBy: { createdAt: "desc" }, include: { author: true } } },
+  },
 } as const;
 
-export type AdminOrderDetail = Prisma.OrderGetPayload<{ include: typeof DETAIL_INCLUDE }>;
+export type AdminOrderDetail = Prisma.OrderGetPayload<{
+  include: typeof DETAIL_INCLUDE;
+}>;
 
 export async function getAdminOrder(
   db: PrismaClient,
@@ -170,7 +174,9 @@ export async function getOrderItemImages(
   items: { id: string; productId: string | null; variantId: string | null }[],
 ): Promise<Map<string, string>> {
   const out = new Map<string, string>();
-  const missing = items.filter((i) => !i.productId && i.variantId).map((i) => i.variantId!);
+  const missing = items
+    .filter((i) => !i.productId && i.variantId)
+    .map((i) => i.variantId!);
   const variantProduct = new Map<string, string>();
   if (missing.length > 0) {
     const variants = await db.productVariant.findMany({

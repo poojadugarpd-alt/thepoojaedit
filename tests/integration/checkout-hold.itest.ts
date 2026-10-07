@@ -37,7 +37,10 @@ beforeEach(async () => {
     },
   });
   await db.storeSettings.create({
-    data: { key: "checkout.rules", value: { reservationTtlSeconds: 600, codFeePaise: 3000 } },
+    data: {
+      key: "checkout.rules",
+      value: { reservationTtlSeconds: 600, codFeePaise: 3000 },
+    },
   });
 });
 
@@ -104,13 +107,17 @@ describe("holdForPayment", () => {
   it("a fresh order keeps its hold; the payment window closes 30 s before it ends", async () => {
     const v = await makePiece();
     const order = await placePrepaid(v);
-    const before = await db.inventoryReservation.findFirstOrThrow({ where: { orderId: order.id } });
+    const before = await db.inventoryReservation.findFirstOrThrow({
+      where: { orderId: order.id },
+    });
 
     const r = await holdForPayment(db, { orderId: order.id });
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.paymentWindowSeconds).toBeGreaterThan(500);
     expect(r.ok && r.paymentWindowSeconds).toBeLessThanOrEqual(570);
-    const after = await db.inventoryReservation.findFirstOrThrow({ where: { orderId: order.id } });
+    const after = await db.inventoryReservation.findFirstOrThrow({
+      where: { orderId: order.id },
+    });
     expect(after.expiresAt).toEqual(before.expiresAt); // not extended
     expect(await reserved(v)).toBe(1);
   });
@@ -124,7 +131,9 @@ describe("holdForPayment", () => {
     const r = await holdForPayment(db, { orderId: order.id });
     expect(r.ok).toBe(true);
     expect(await reserved(v)).toBe(1);
-    const row = await db.inventoryReservation.findFirstOrThrow({ where: { orderId: order.id } });
+    const row = await db.inventoryReservation.findFirstOrThrow({
+      where: { orderId: order.id },
+    });
     expect(row.status).toBe("ACTIVE");
 
     // Second expiry gets its own ledger entry (keys carry the hold's end).
@@ -145,7 +154,9 @@ describe("holdForPayment", () => {
     const r = await holdForPayment(db, { orderId: order.id });
     expect(r.ok).toBe(true);
     expect(await reserved(v)).toBe(1); // not double-counted
-    const row = await db.inventoryReservation.findFirstOrThrow({ where: { orderId: order.id } });
+    const row = await db.inventoryReservation.findFirstOrThrow({
+      where: { orderId: order.id },
+    });
     expect(row.expiresAt.getTime()).toBeGreaterThan(Date.now() + 500_000);
   });
 
@@ -174,7 +185,10 @@ describe("holdForPayment", () => {
   it("refuses an order that is no longer awaiting payment", async () => {
     const v = await makePiece();
     const order = await placePrepaid(v);
-    await db.order.update({ where: { id: order.id }, data: { orderStatus: "CANCELLED" } });
+    await db.order.update({
+      where: { id: order.id },
+      data: { orderStatus: "CANCELLED" },
+    });
     expect(await holdForPayment(db, { orderId: order.id })).toEqual({
       ok: false,
       reason: "not_awaiting_payment",
@@ -197,11 +211,13 @@ describe("refundLateCaptureShortfall", () => {
       rzp,
       rzp.buildWebhook("payment.captured", { payment: pay }, { eventId: "evt_late" }),
     );
-    expect((await db.order.findUniqueOrThrow({ where: { id: order.id } })).orderStatus).toBe(
-      "NEEDS_REVIEW",
-    );
     expect(
-      await db.orderEvent.count({ where: { orderId: order.id, type: "order.late_capture_review" } }),
+      (await db.order.findUniqueOrThrow({ where: { id: order.id } })).orderStatus,
+    ).toBe("NEEDS_REVIEW");
+    expect(
+      await db.orderEvent.count({
+        where: { orderId: order.id, type: "order.late_capture_review" },
+      }),
     ).toBe(1);
 
     const r = await refundLateCaptureShortfall(db, rzp, { orderId: order.id });
@@ -215,9 +231,9 @@ describe("refundLateCaptureShortfall", () => {
     expect(refunds[0].status).toBe("COMPLETED");
 
     // Redelivery is a no-op.
-    expect((await refundLateCaptureShortfall(db, rzp, { orderId: order.id })).outcome).toBe(
-      "skipped",
-    );
+    expect(
+      (await refundLateCaptureShortfall(db, rzp, { orderId: order.id })).outcome,
+    ).toBe("skipped");
     expect(await db.refund.count({ where: { orderId: order.id } })).toBe(1);
   });
 
@@ -225,8 +241,8 @@ describe("refundLateCaptureShortfall", () => {
     const v = await makePiece();
     const order = await placePrepaid(v);
     const rzp = new FakeRazorpay();
-    expect((await refundLateCaptureShortfall(db, rzp, { orderId: order.id })).outcome).toBe(
-      "skipped",
-    );
+    expect(
+      (await refundLateCaptureShortfall(db, rzp, { orderId: order.id })).outcome,
+    ).toBe("skipped");
   });
 });

@@ -20,13 +20,17 @@ import {
 
 export * from "./service";
 
-export function createReturnRequestNow(input: Parameters<typeof createReturnRequest>[1]) {
+export function createReturnRequestNow(
+  input: Parameters<typeof createReturnRequest>[1],
+) {
   return createReturnRequest(prisma, input);
 }
 export function decideReturnNow(input: Parameters<typeof decideReturn>[1]) {
   return decideReturn(prisma, input);
 }
-export function markReturnInTransitNow(input: Parameters<typeof markReturnInTransit>[1]) {
+export function markReturnInTransitNow(
+  input: Parameters<typeof markReturnInTransit>[1],
+) {
   return markReturnInTransit(prisma, input);
 }
 export function markReturnReceivedNow(input: Parameters<typeof markReturnReceived>[1]) {

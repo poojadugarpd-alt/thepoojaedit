@@ -44,9 +44,9 @@ describe("buildHomeMediaPath", () => {
     expect(() => buildHomeMediaPath("editorial", "m1", "image", "image/gif")).toThrow(
       HomeMediaValidationError,
     );
-    expect(() => buildHomeMediaPath("editorial", "m1", "video", "video/quicktime")).toThrow(
-      HomeMediaValidationError,
-    );
+    expect(() =>
+      buildHomeMediaPath("editorial", "m1", "video", "video/quicktime"),
+    ).toThrow(HomeMediaValidationError);
   });
 });
 
@@ -82,7 +82,10 @@ describe("requestHomeMediaUpload", () => {
 describe("confirmHomeMediaUpload", () => {
   it("requires an active admin", async () => {
     await expect(
-      confirmHomeMediaUpload(fakeStorage(), null, { path: "home/editorial/x.webp", kind: "image" }),
+      confirmHomeMediaUpload(fakeStorage(), null, {
+        path: "home/editorial/x.webp",
+        kind: "image",
+      }),
     ).rejects.toBeInstanceOf(AuthorizationError);
   });
 
@@ -94,26 +97,38 @@ describe("confirmHomeMediaUpload", () => {
       },
     };
     await expect(
-      confirmHomeMediaUpload(storage, admin, { path: "home/editorial/x.webp", kind: "image" }),
+      confirmHomeMediaUpload(storage, admin, {
+        path: "home/editorial/x.webp",
+        kind: "image",
+      }),
     ).rejects.toBeInstanceOf(HomeMediaValidationError);
   });
 
   it("enforces the 8MB image limit and the separate, larger 15MB video limit", async () => {
     const bigImage = fakeStorage(9 * 1024 * 1024);
     await expect(
-      confirmHomeMediaUpload(bigImage, admin, { path: "home/editorial/x.webp", kind: "image" }),
+      confirmHomeMediaUpload(bigImage, admin, {
+        path: "home/editorial/x.webp",
+        kind: "image",
+      }),
     ).rejects.toThrow(/8MB/);
 
     // The same byte size is fine for video — a real, deliberately larger cap
     // since a short clip is naturally bigger than a photo.
     const sameSizeVideo = fakeStorage(9 * 1024 * 1024);
     await expect(
-      confirmHomeMediaUpload(sameSizeVideo, admin, { path: "home/editorial/x.mp4", kind: "video" }),
+      confirmHomeMediaUpload(sameSizeVideo, admin, {
+        path: "home/editorial/x.mp4",
+        kind: "video",
+      }),
     ).resolves.toBeUndefined();
 
     const bigVideo = fakeStorage(16 * 1024 * 1024);
     await expect(
-      confirmHomeMediaUpload(bigVideo, admin, { path: "home/editorial/x.mp4", kind: "video" }),
+      confirmHomeMediaUpload(bigVideo, admin, {
+        path: "home/editorial/x.mp4",
+        kind: "video",
+      }),
     ).rejects.toThrow(/15MB/);
   });
 
@@ -129,7 +144,9 @@ describe("confirmHomeMediaUpload", () => {
 
 describe("homeMediaPublicUrl", () => {
   it("builds the same public-object URL shape Supabase Storage itself uses", () => {
-    expect(homeMediaPublicUrl("https://abcd.supabase.co", "home/editorial/x.webp")).toBe(
+    expect(
+      homeMediaPublicUrl("https://abcd.supabase.co", "home/editorial/x.webp"),
+    ).toBe(
       "https://abcd.supabase.co/storage/v1/object/public/site-media/home/editorial/x.webp",
     );
   });

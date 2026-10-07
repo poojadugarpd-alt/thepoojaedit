@@ -32,7 +32,11 @@ export async function runBulk(
       await fn(id);
       results.push({ id, ok: true });
     } catch (e) {
-      results.push({ id, ok: false, error: e instanceof Error ? e.message : String(e) });
+      results.push({
+        id,
+        ok: false,
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
   }
   const succeeded = results.filter((r) => r.ok).length;

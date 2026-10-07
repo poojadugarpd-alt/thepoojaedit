@@ -12,7 +12,8 @@ import type { PrismaClient } from "@/generated/prisma";
 const PREFIX = "CLO-";
 
 export async function generateClosetSku(db: PrismaClient): Promise<string> {
-  let n = (await db.productVariant.count({ where: { sku: { startsWith: PREFIX } } })) + 1;
+  let n =
+    (await db.productVariant.count({ where: { sku: { startsWith: PREFIX } } })) + 1;
   let candidate = `${PREFIX}${String(n).padStart(6, "0")}`;
   while (await db.productVariant.findUnique({ where: { sku: candidate } })) {
     n += 1;

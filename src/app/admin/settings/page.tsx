@@ -5,7 +5,10 @@ import { OrderSoundSettings } from "@/features/admin/order-sound-settings";
 import { PushSettings } from "@/features/admin/push-settings";
 import { credentialHealth, listSettings } from "@/server/admin";
 import { requireAdmin } from "@/server/auth/require-admin";
-import { getNotificationPreference, type PushPreferenceField } from "@/server/notifications/push";
+import {
+  getNotificationPreference,
+  type PushPreferenceField,
+} from "@/server/notifications/push";
 
 import { updateNotificationPreferenceAction, updateSettingAction } from "./actions";
 
@@ -49,7 +52,11 @@ export default async function AdminSettingsPage() {
           <div className="space-y-1">
             {(Object.keys(PREFERENCE_LABELS) as PushPreferenceField[]).map((field) => (
               <label key={field} className="flex min-h-11 items-center gap-2 text-sm">
-                <input type="checkbox" name={field} defaultChecked={preference[field]} />
+                <input
+                  type="checkbox"
+                  name={field}
+                  defaultChecked={preference[field]}
+                />
                 {PREFERENCE_LABELS[field]}
               </label>
             ))}
@@ -95,32 +102,32 @@ export default async function AdminSettingsPage() {
         {settings
           .filter((s) => s.key !== "home.content")
           .map((s) => (
-          <div key={s.key} className="rounded border border-line p-3">
-            <p className="text-xs font-medium text-ink-strong">
-              {s.key}{" "}
-              <span className="text-ink-soft">
-                v{s.version} · {s.updatedAt ? ts(s.updatedAt) : "not set"}
-              </span>
-            </p>
-            <ActionForm action={updateSettingAction} submitLabel="Save" compact>
-              <input type="hidden" name="key" value={s.key} />
-              <textarea
-                name="value"
-                rows={8}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                defaultValue={JSON.stringify(s.value ?? {}, null, 2)}
-                className="w-full rounded border border-line bg-transparent px-2 py-2 font-mono text-base leading-relaxed sm:text-sm"
-              />
-              <input
-                name="reason"
-                placeholder="reason for change"
-                className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
-              />
-            </ActionForm>
-          </div>
-        ))}
+            <div key={s.key} className="rounded border border-line p-3">
+              <p className="text-xs font-medium text-ink-strong">
+                {s.key}{" "}
+                <span className="text-ink-soft">
+                  v{s.version} · {s.updatedAt ? ts(s.updatedAt) : "not set"}
+                </span>
+              </p>
+              <ActionForm action={updateSettingAction} submitLabel="Save" compact>
+                <input type="hidden" name="key" value={s.key} />
+                <textarea
+                  name="value"
+                  rows={8}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  defaultValue={JSON.stringify(s.value ?? {}, null, 2)}
+                  className="w-full rounded border border-line bg-transparent px-2 py-2 font-mono text-base leading-relaxed sm:text-sm"
+                />
+                <input
+                  name="reason"
+                  placeholder="reason for change"
+                  className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+                />
+              </ActionForm>
+            </div>
+          ))}
       </section>
     </div>
   );

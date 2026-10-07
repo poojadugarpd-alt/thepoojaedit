@@ -72,11 +72,20 @@ type ResolvedMedia =
 
 function resolveMedia(
   slot: HomeMediaSlot,
-  autoPick: { image: PublicProductCard["primaryImage"]; product: PublicProductCard } | null,
+  autoPick: {
+    image: PublicProductCard["primaryImage"];
+    product: PublicProductCard;
+  } | null,
 ): ResolvedMedia {
-  if (slot.kind === "image" && slot.url) return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
+  if (slot.kind === "image" && slot.url)
+    return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
   if (slot.kind === "video" && slot.url) {
-    return { kind: "video", url: slot.url, posterUrl: slot.posterUrl, alt: slot.alt ?? "" };
+    return {
+      kind: "video",
+      url: slot.url,
+      posterUrl: slot.posterUrl,
+      alt: slot.alt ?? "",
+    };
   }
   if (autoPick?.image) {
     return {
@@ -96,9 +105,15 @@ function resolveMedia(
  * this override existed (owner follow-up, 2026-09-13 — a video framed for
  * the wide desktop band "looks cropped, even worse on mobile"). */
 function resolveMobileOverride(slot: HomeMediaSlot): ResolvedMedia {
-  if (slot.kind === "image" && slot.url) return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
+  if (slot.kind === "image" && slot.url)
+    return { kind: "image", url: slot.url, alt: slot.alt ?? "" };
   if (slot.kind === "video" && slot.url) {
-    return { kind: "video", url: slot.url, posterUrl: slot.posterUrl, alt: slot.alt ?? "" };
+    return {
+      kind: "video",
+      url: slot.url,
+      posterUrl: slot.posterUrl,
+      alt: slot.alt ?? "",
+    };
   }
   return null;
 }
@@ -181,11 +196,20 @@ export default async function HomePage() {
   ]);
 
   const editAutoPick = pickImage(editItems);
-  const editorial = resolveMedia(home.media.editorial, editAutoPick ?? pickImage(thriftItems));
+  const editorial = resolveMedia(
+    home.media.editorial,
+    editAutoPick ?? pickImage(thriftItems),
+  );
   const editorialMobile = resolveMobileOverride(home.media.editorialMobile);
   const skipSlug = editorial?.kind === "auto" ? editorial.product.slug : undefined;
-  const labelMedia = resolveMedia(home.media.labelBlock, pickImage(editItems, skipSlug));
-  const closetMedia = resolveMedia(home.media.closetBlock, pickImage(thriftItems, skipSlug));
+  const labelMedia = resolveMedia(
+    home.media.labelBlock,
+    pickImage(editItems, skipSlug),
+  );
+  const closetMedia = resolveMedia(
+    home.media.closetBlock,
+    pickImage(thriftItems, skipSlug),
+  );
 
   const usedSlugs = new Set(
     [editorial, labelMedia, closetMedia]
@@ -208,7 +232,10 @@ export default async function HomePage() {
     editorial: editorial && (
       <section key="editorial" className="u-page pb-4">
         {editorial.kind === "auto" ? (
-          <Link href={productPath(editorial.product.catalog, editorial.product.slug)} className="group block">
+          <Link
+            href={productPath(editorial.product.catalog, editorial.product.slug)}
+            className="group block"
+          >
             <EditorialMedia editorial={editorial} mobile={editorialMobile} />
             <div className="mt-4 flex items-center justify-between gap-4">
               <p className="u-label">{editorial.product.title}</p>
@@ -349,11 +376,7 @@ function EditorialMedia({
   return (
     <>
       <div className="sm:hidden">
-        <EditorialFrame
-          media={mobile}
-          aspectClassName="aspect-[4/5]"
-          sizes="100vw"
-        />
+        <EditorialFrame media={mobile} aspectClassName="aspect-[4/5]" sizes="100vw" />
       </div>
       <div className="hidden sm:block">
         <EditorialFrame media={editorial} aspectClassName="aspect-[16/9]" />

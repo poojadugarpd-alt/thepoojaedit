@@ -5,10 +5,7 @@ import { openOperationalTask } from "@/server/events/operational-tasks";
 import { createInvoiceForOrder, issueCreditNote } from "@/server/invoices/service";
 import { cancelOrder } from "@/server/orders/lifecycle";
 import { appendOrderTimeline } from "@/server/orders/timeline";
-import {
-  createOrderRefund,
-  type PaymentProvider,
-} from "@/server/payments";
+import { createOrderRefund, type PaymentProvider } from "@/server/payments";
 import type { ReconcilePort } from "@/server/webhooks/inbox";
 
 /**
@@ -70,7 +67,10 @@ export async function refundLateCaptureShortfall(
   input: { orderId: string },
 ): Promise<{ outcome: "refunded" | "skipped"; refundId?: string }> {
   const order = await db.order.findUniqueOrThrow({ where: { id: input.orderId } });
-  if (order.orderStatus !== "NEEDS_REVIEW" || order.fulfillmentStatus !== "UNFULFILLED") {
+  if (
+    order.orderStatus !== "NEEDS_REVIEW" ||
+    order.fulfillmentStatus !== "UNFULFILLED"
+  ) {
     return { outcome: "skipped" };
   }
   const [captured, refunded] = await Promise.all([
@@ -79,11 +79,15 @@ export async function refundLateCaptureShortfall(
       _sum: { amountPaise: true },
     }),
     db.refund.aggregate({
-      where: { orderId: order.id, status: { in: ["REQUESTED", "PROCESSING", "COMPLETED"] } },
+      where: {
+        orderId: order.id,
+        status: { in: ["REQUESTED", "PROCESSING", "COMPLETED"] },
+      },
       _sum: { amountPaise: true },
     }),
   ]);
-  const amountPaise = (captured._sum.amountPaise ?? 0) - (refunded._sum.amountPaise ?? 0);
+  const amountPaise =
+    (captured._sum.amountPaise ?? 0) - (refunded._sum.amountPaise ?? 0);
   let refundId: string | undefined;
   if (amountPaise > 0) {
     const refund = await requestRefund(db, provider, {

@@ -67,7 +67,11 @@ export default async function AdminOverview() {
             o.openOrders.pendingCodConfirmation,
             "/admin/orders?orderStatus=PENDING_CONFIRMATION",
           ],
-          ["Needs review", o.openOrders.needsReview, "/admin/orders?orderStatus=NEEDS_REVIEW"],
+          [
+            "Needs review",
+            o.openOrders.needsReview,
+            "/admin/orders?orderStatus=NEEDS_REVIEW",
+          ],
           [
             "To fulfil",
             o.openOrders.toFulfil,

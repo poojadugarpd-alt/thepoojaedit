@@ -42,11 +42,7 @@ import {
  * in-memory double.
  */
 
-type CheckoutOutcome =
-  | "confirmed"
-  | "authorized_pending"
-  | "failed"
-  | "review";
+type CheckoutOutcome = "confirmed" | "authorized_pending" | "failed" | "review";
 
 export interface VerifyCheckoutResult {
   order: Order;
@@ -124,8 +120,7 @@ export async function createPaymentAttempt(
     orderBy: { createdAt: "desc" },
   });
   if (!attempt) {
-    const seq =
-      (await db.paymentAttempt.count({ where: { orderId: order.id } })) + 1;
+    const seq = (await db.paymentAttempt.count({ where: { orderId: order.id } })) + 1;
     attempt = await db.paymentAttempt.create({
       data: {
         orderId: order.id,
@@ -182,11 +177,7 @@ async function flagForReview(
     });
     if (
       order.orderStatus !== "NEEDS_REVIEW" &&
-      canTransition(
-        ORDER_TRANSITIONS,
-        order.orderStatus as OrderStatus,
-        "NEEDS_REVIEW",
-      )
+      canTransition(ORDER_TRANSITIONS, order.orderStatus as OrderStatus, "NEEDS_REVIEW")
     ) {
       await tx.order.update({
         where: { id: order.id, version: order.version },
@@ -298,7 +289,10 @@ async function settleOrRecord(
       });
       return { order, outcome: "review" };
     }
-    return { order, outcome: order.orderStatus === "NEEDS_REVIEW" ? "review" : "confirmed" };
+    return {
+      order,
+      outcome: order.orderStatus === "NEEDS_REVIEW" ? "review" : "confirmed",
+    };
   }
   if (
     order.orderStatus === "CONFIRMED" &&
@@ -370,7 +364,8 @@ async function settleOrRecord(
         entityType: "Order",
         entityId: order.id,
         priority: 1,
-        reason: "payment captured after reservation expiry — stock could not be reacquired",
+        reason:
+          "payment captured after reservation expiry — stock could not be reacquired",
       });
       return { order: fresh, outcome: "review" };
     }
@@ -456,10 +451,7 @@ export async function verifyPrepaidCheckout(
   const mismatches: string[] = [];
   if (payment.providerOrderId !== input.providerOrderId) mismatches.push("order_id");
   if (payment.currency !== "INR") mismatches.push(`currency:${payment.currency}`);
-  if (
-    payment.status === "captured" &&
-    payment.amountPaise !== order.totalPaise
-  ) {
+  if (payment.status === "captured" && payment.amountPaise !== order.totalPaise) {
     mismatches.push(`amount:${payment.amountPaise}!=${order.totalPaise}`);
   }
   if (mismatches.length > 0) {
@@ -509,7 +501,11 @@ export async function handleProviderWebhook(
       headers: input.headers,
       verify: (b, h) => {
         const v = provider.verifyWebhook(b, h);
-        return { externalEventId: v.externalEventId, eventType: v.eventType, parsed: v };
+        return {
+          externalEventId: v.externalEventId,
+          eventType: v.eventType,
+          parsed: v,
+        };
       },
     });
   } catch (e) {
@@ -741,9 +737,7 @@ export function makePaymentReconcilePort(
       let unresolved = 0;
       for (const attempt of stale) {
         try {
-          const payments = await provider.fetchOrderPayments(
-            attempt.providerOrderId!,
-          );
+          const payments = await provider.fetchOrderPayments(attempt.providerOrderId!);
           const captured = payments.find((p) => p.status === "captured");
           const authorized = payments.find((p) => p.status === "authorized");
           const order = await db.order.findUniqueOrThrow({

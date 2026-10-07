@@ -32,7 +32,8 @@ export async function holdForPayment(
   try {
     const endsAt = await db.$transaction(async (tx) => {
       const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId } });
-      if (order.orderStatus !== "PENDING_PAYMENT") return "not_awaiting_payment" as const;
+      if (order.orderStatus !== "PENDING_PAYMENT")
+        return "not_awaiting_payment" as const;
       return renewHold(tx, {
         orderId: order.id,
         ttlSeconds: rules.reservationTtlSeconds,

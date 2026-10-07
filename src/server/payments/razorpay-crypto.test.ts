@@ -77,19 +77,21 @@ describe("webhook signature", () => {
   it("verifies the raw body bytes", () => {
     const raw = Buffer.from(JSON.stringify({ event: "payment.captured" }));
     const sig = webhookSignature(raw, SECRET);
-    expect(verifyWebhookSignature({ rawBody: raw, signature: sig, webhookSecret: SECRET })).toBe(
-      true,
-    );
+    expect(
+      verifyWebhookSignature({ rawBody: raw, signature: sig, webhookSecret: SECRET }),
+    ).toBe(true);
   });
 
   it("fails when a single byte of the body changes", () => {
     const raw = Buffer.from(JSON.stringify({ event: "payment.captured" }));
     const sig = webhookSignature(raw, SECRET);
-    const tampered = Buffer.from(
-      JSON.stringify({ event: "payment.captured", x: 1 }),
-    );
+    const tampered = Buffer.from(JSON.stringify({ event: "payment.captured", x: 1 }));
     expect(
-      verifyWebhookSignature({ rawBody: tampered, signature: sig, webhookSecret: SECRET }),
+      verifyWebhookSignature({
+        rawBody: tampered,
+        signature: sig,
+        webhookSecret: SECRET,
+      }),
     ).toBe(false);
   });
 });
@@ -135,8 +137,18 @@ describe("payload normalisation", () => {
 
   it("normalises a refund entity", () => {
     expect(
-      normalizeRazorpayRefund({ id: "rfnd_1", payment_id: "pay_1", status: "processed", amount: 500 }),
-    ).toMatchObject({ providerRefundId: "rfnd_1", providerPaymentId: "pay_1", status: "processed", amountPaise: 500 });
+      normalizeRazorpayRefund({
+        id: "rfnd_1",
+        payment_id: "pay_1",
+        status: "processed",
+        amount: 500,
+      }),
+    ).toMatchObject({
+      providerRefundId: "rfnd_1",
+      providerPaymentId: "pay_1",
+      status: "processed",
+      amountPaise: 500,
+    });
   });
 
   it("parses a webhook body into event type + normalised payment", () => {
@@ -144,7 +156,13 @@ describe("payload normalisation", () => {
       event: "payment.captured",
       payload: {
         payment: {
-          entity: { id: "pay_9", order_id: "order_9", status: "captured", amount: 1000, currency: "INR" },
+          entity: {
+            id: "pay_9",
+            order_id: "order_9",
+            status: "captured",
+            amount: 1000,
+            currency: "INR",
+          },
         },
       },
     };

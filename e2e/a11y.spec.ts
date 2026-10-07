@@ -9,7 +9,10 @@ import { expect, test } from "@playwright/test";
  */
 const WCAG = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
-async function scan(page: import("@playwright/test").Page, opts?: { disable?: string[] }) {
+async function scan(
+  page: import("@playwright/test").Page,
+  opts?: { disable?: string[] },
+) {
   let b = new AxeBuilder({ page }).withTags(WCAG);
   if (opts?.disable) b = b.disableRules(opts.disable);
   return b.analyze();
@@ -40,7 +43,12 @@ test.describe("storefront a11y", () => {
 });
 
 test.describe("admin a11y", () => {
-  for (const path of ["/admin", "/admin/needs-attention", "/admin/orders", "/admin/analytics"]) {
+  for (const path of [
+    "/admin",
+    "/admin/needs-attention",
+    "/admin/orders",
+    "/admin/analytics",
+  ]) {
     test(`no critical/serious violations: ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForLoadState("load");
@@ -48,10 +56,9 @@ test.describe("admin a11y", () => {
       const blocking = violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",
       );
-      expect(
-        blocking,
-        blocking.map((v) => `${v.id}: ${v.help}`).join("\n"),
-      ).toEqual([]);
+      expect(blocking, blocking.map((v) => `${v.id}: ${v.help}`).join("\n")).toEqual(
+        [],
+      );
     });
   }
 });

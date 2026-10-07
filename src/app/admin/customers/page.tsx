@@ -18,8 +18,8 @@ export default async function AdminCustomersPage({
     <div className="space-y-4">
       <h1 className="text-xl font-semibold text-ink-strong">Customers</h1>
       <p className="text-xs text-ink-soft">
-        A contact match is not proof of ownership — guest orders are never merged on
-        a matching email or phone.
+        A contact match is not proof of ownership — guest orders are never merged on a
+        matching email or phone.
       </p>
       <form className="flex gap-2">
         <input

@@ -34,8 +34,8 @@ export default async function AdminCollectionsPage() {
           Home page rails
         </h2>
         <p className="text-xs text-ink-soft">
-          The order here is the order shoppers see on the home page. Leave a rail
-          empty to show the newest pieces automatically.
+          The order here is the order shoppers see on the home page. Leave a rail empty
+          to show the newest pieces automatically.
         </p>
         <ul className="divide-y divide-line rounded-[10px] border border-line">
           {internal.map((c) => (
@@ -107,7 +107,11 @@ export default async function AdminCollectionsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
           Create collection
         </h2>
-        <ActionForm action={createCollectionAction} submitLabel="Create" className="max-w-sm">
+        <ActionForm
+          action={createCollectionAction}
+          submitLabel="Create"
+          className="max-w-sm"
+        >
           <div>
             <label htmlFor="f-catalog" className="block text-xs font-medium">
               Catalogue

@@ -11,7 +11,11 @@ import { bulkResolveTasksAction, resolveTaskAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-function entityHref(t: { entityType: string | null; entityId: string | null; dedupeKey: string }) {
+function entityHref(t: {
+  entityType: string | null;
+  entityId: string | null;
+  dedupeKey: string;
+}) {
   if (t.dedupeKey.startsWith("low-stock:")) return "/admin/inventory";
   if (t.entityType === "Order" && t.entityId) return `/admin/orders?q=${t.entityId}`;
   if (t.entityType === "Shipment") return "/admin/returns";
@@ -35,8 +39,8 @@ export default async function NeedsAttentionPage() {
         <>
           <p className="text-xs text-ink-soft">
             {tasks.length} open. A task clears only when its condition is gone — bulk
-            resolve skips any that are still active or need a decision, and reports
-            each skip.
+            resolve skips any that are still active or need a decision, and reports each
+            skip.
           </p>
 
           <BulkForm
@@ -87,8 +91,8 @@ export default async function NeedsAttentionPage() {
                       className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-xs"
                     />
                     <label className="flex min-h-11 items-center gap-1 text-[11px]">
-                      <input type="checkbox" name="force" value="1" /> override — I
-                      have verified this is handled
+                      <input type="checkbox" name="force" value="1" /> override — I have
+                      verified this is handled
                     </label>
                   </ActionForm>
                 </li>

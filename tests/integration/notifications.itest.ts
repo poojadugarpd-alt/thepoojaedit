@@ -243,36 +243,48 @@ describe("event → notification mapping (AC-07/14)", () => {
   it("prepaid settlement notifies customer (email + whatsapp) + admin in-app", async () => {
     const order = await seedOrder({ method: "PREPAID_RAZORPAY" });
     const T = fakeTransports(db);
-    const res = await notifyForDomainEvent(db, {
-      domainEventId: randomUUID(),
-      type: "order.payment_settled",
-      aggregateType: "Order",
-      aggregateId: order.id,
-      payload: {},
-    }, T);
+    const res = await notifyForDomainEvent(
+      db,
+      {
+        domainEventId: randomUUID(),
+        type: "order.payment_settled",
+        aggregateType: "Order",
+        aggregateId: order.id,
+        payload: {},
+      },
+      T,
+    );
     const sent = res.results.filter((r) => r.status === "sent").length;
     expect(sent).toBe(3);
     expect(await db.adminNotification.count({ where: { type: "NEW_ORDER" } })).toBe(1);
-    const deliveries = await db.notificationDelivery.findMany({ where: { orderId: order.id } });
+    const deliveries = await db.notificationDelivery.findMany({
+      where: { orderId: order.id },
+    });
     expect(deliveries.every((d) => d.status === "SENT")).toBe(true);
   });
 
   it("COD placement never says 'paid' and raises an admin pending-COD task", async () => {
     const order = await seedOrder({ method: "COD" });
     const T = fakeTransports(db);
-    await notifyForDomainEvent(db, {
-      domainEventId: randomUUID(),
-      type: "order.placed",
-      aggregateType: "Order",
-      aggregateId: order.id,
-      payload: {},
-    }, T);
+    await notifyForDomainEvent(
+      db,
+      {
+        domainEventId: randomUUID(),
+        type: "order.placed",
+        aggregateType: "Order",
+        aggregateId: order.id,
+        payload: {},
+      },
+      T,
+    );
     const deliveries = await db.notificationDelivery.findMany({
       where: { orderId: order.id, channel: "EMAIL" },
     });
     expect(deliveries).toHaveLength(1);
     expect(deliveries[0].templateKey).toBe("order_confirmation_cod");
-    expect(await db.adminNotification.count({ where: { type: "PENDING_COD" } })).toBe(1);
+    expect(await db.adminNotification.count({ where: { type: "PENDING_COD" } })).toBe(
+      1,
+    );
   });
 
   it("a duplicate domain event for the same transition does not double-send", async () => {
@@ -286,7 +298,9 @@ describe("event → notification mapping (AC-07/14)", () => {
     const T = fakeTransports(db);
     await notifyForDomainEvent(db, { ...ev, domainEventId: randomUUID() }, T);
     await notifyForDomainEvent(db, { ...ev, domainEventId: randomUUID() }, T); // different event id, same transition
-    expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(3);
+    expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(
+      3,
+    );
     expect(await db.adminNotification.count({ where: { entityId: order.id } })).toBe(1);
   });
 
@@ -294,13 +308,17 @@ describe("event → notification mapping (AC-07/14)", () => {
     // email transport unconfigured in this env → EMAIL is skipped, WHATSAPP + IN_APP still go
     const order = await seedOrder({ method: "PREPAID_RAZORPAY", email: null });
     const T = fakeTransports(db);
-    const res = await notifyForDomainEvent(db, {
-      domainEventId: randomUUID(),
-      type: "order.payment_settled",
-      aggregateType: "Order",
-      aggregateId: order.id,
-      payload: {},
-    }, T);
+    const res = await notifyForDomainEvent(
+      db,
+      {
+        domainEventId: randomUUID(),
+        type: "order.payment_settled",
+        aggregateType: "Order",
+        aggregateId: order.id,
+        payload: {},
+      },
+      T,
+    );
     const statuses = res.results.map((r) => r.status);
     expect(statuses).toContain("skipped"); // email (no address)
     expect(statuses.filter((s) => s === "sent").length).toBeGreaterThanOrEqual(2);
@@ -352,15 +370,15 @@ describe("admin push subscriptions + preferences", () => {
 
   it("preference defaults to all-on, lazily created on first read", async () => {
     const admin = await seedAdmin();
-    expect(await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } })).toBe(
-      0,
-    );
+    expect(
+      await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } }),
+    ).toBe(0);
     const pref = await getNotificationPreference(db, admin.id);
     expect(pref.lowStock).toBe(true);
     expect(pref.newPaidOrder).toBe(true);
-    expect(await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } })).toBe(
-      1,
-    );
+    expect(
+      await db.adminNotificationPreference.count({ where: { adminUserId: admin.id } }),
+    ).toBe(1);
   });
 
   it("updating a preference persists and leaves others untouched", async () => {
@@ -376,7 +394,10 @@ describe("admin push subscriptions + preferences", () => {
     const admin = await seedAdmin();
     await subscribeAdminPush(db, {
       adminUserId: admin.id,
-      subscription: { endpoint: `https://push.example/${randomUUID()}`, keys: { p256dh: "p", auth: "a" } },
+      subscription: {
+        endpoint: `https://push.example/${randomUUID()}`,
+        keys: { p256dh: "p", auth: "a" },
+      },
     });
     const outcome = await sendAdminPush(db, {
       dedupeKey: `test:${randomUUID()}`,
@@ -430,7 +451,9 @@ describe("AWB assigned email (D-145)", () => {
     // A re-delivered event for the same booking must not email twice.
     await notifyForDomainEvent(db, { ...ev, domainEventId: randomUUID() }, T);
 
-    const deliveries = await db.notificationDelivery.findMany({ where: { orderId: order.id } });
+    const deliveries = await db.notificationDelivery.findMany({
+      where: { orderId: order.id },
+    });
     expect(deliveries).toHaveLength(1);
     expect(deliveries[0].templateKey).toBe("shipment_awb_assigned");
     expect(deliveries[0].channel).toBe("EMAIL");
@@ -441,14 +464,20 @@ describe("AWB assigned email (D-145)", () => {
   it("sends nothing when the carrier returned no AWB", async () => {
     const { order, shipment } = await booked(null);
     const T = fakeTransports(db);
-    await notifyForDomainEvent(db, {
-      domainEventId: randomUUID(),
-      type: "shipment.created",
-      aggregateType: "Order",
-      aggregateId: order.id,
-      payload: { shipmentId: shipment.id, awb: null },
-    }, T);
-    expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(0);
+    await notifyForDomainEvent(
+      db,
+      {
+        domainEventId: randomUUID(),
+        type: "shipment.created",
+        aggregateType: "Order",
+        aggregateId: order.id,
+        payload: { shipmentId: shipment.id, awb: null },
+      },
+      T,
+    );
+    expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(
+      0,
+    );
   });
 });
 

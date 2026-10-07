@@ -63,7 +63,11 @@ export async function renderInvoicePdf(input: {
     billing: Record<string, string> | null;
     shipping: Record<string, string> | null;
   };
-  const tax = input.taxSnapshot as { interState: boolean; shippingPaise: number; codFeePaise: number };
+  const tax = input.taxSnapshot as {
+    interState: boolean;
+    shippingPaise: number;
+    codFeePaise: number;
+  };
   const lines = input.lineSnapshot as Line[];
 
   const doc = await PDFDocument.create();
@@ -209,12 +213,10 @@ export async function renderInvoicePdf(input: {
 
   y -= 20;
   if (legal.note) text(legal.note, M, y, { size: 7, color: [0.5, 0.1, 0.1] });
-  text(
-    "Computer-generated document. Amounts in INR.",
-    M,
-    M,
-    { size: 7, color: [0.5, 0.5, 0.5] },
-  );
+  text("Computer-generated document. Amounts in INR.", M, M, {
+    size: 7,
+    color: [0.5, 0.5, 0.5],
+  });
 
   return doc.save();
 }

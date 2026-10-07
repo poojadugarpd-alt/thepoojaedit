@@ -40,9 +40,8 @@ export default async function AdminOrderDetail({
   // own step rather than folded into the query above, so the report shows
   // it honestly instead of hiding it inside one bracket.
   const [activity, itemImages] = await Promise.all([
-    timed(
-      "admin:order-detail (activity, depends on order.id)",
-      () => listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
+    timed("admin:order-detail (activity, depends on order.id)", () =>
+      listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
     ),
     timed("admin:order-detail (item images)", () =>
       getOrderItemImages(prisma, order.items),
@@ -77,7 +76,11 @@ export default async function AdminOrderDetail({
           {ts(order.placedAt)}
           {order.utmSource && (
             <>
-              {" "}· via {[order.utmSource, order.utmMedium, order.utmCampaign].filter(Boolean).join(" / ")}
+              {" "}
+              · via{" "}
+              {[order.utmSource, order.utmMedium, order.utmCampaign]
+                .filter(Boolean)
+                .join(" / ")}
             </>
           )}
         </span>
@@ -255,10 +258,7 @@ export default async function AdminOrderDetail({
                   <tr key={i.id} className="border-b border-line/60">
                     <td className="py-1.5">
                       <div className="flex items-center gap-3">
-                        <Thumb
-                          url={itemImages.get(i.id) ?? null}
-                          alt={i.title}
-                        />
+                        <Thumb url={itemImages.get(i.id) ?? null} alt={i.title} />
                         <div>
                           {i.title}
                           {i.size ? ` · ${i.size}` : ""}

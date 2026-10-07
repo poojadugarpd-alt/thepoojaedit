@@ -34,7 +34,10 @@ describe("terminal / open", () => {
 });
 
 describe("shouldApplyTransition", () => {
-  const base = { current: "SHIPPED" as const, latestAppliedAt: new Date("2026-01-02T10:00:00Z") };
+  const base = {
+    current: "SHIPPED" as const,
+    latestAppliedAt: new Date("2026-01-02T10:00:00Z"),
+  };
 
   it("applies a legal forward step with a newer timestamp", () => {
     expect(
@@ -94,8 +97,16 @@ describe("shouldApplyTransition", () => {
 describe("eventFingerprint", () => {
   it("is deterministic for the same shipment + status + time", () => {
     const at = new Date("2026-01-02T12:00:00Z");
-    const a = eventFingerprint({ shipmentId: "s1", statusRaw: "IN_TRANSIT", occurredAt: at });
-    const b = eventFingerprint({ shipmentId: "s1", statusRaw: "in_transit", occurredAt: at });
+    const a = eventFingerprint({
+      shipmentId: "s1",
+      statusRaw: "IN_TRANSIT",
+      occurredAt: at,
+    });
+    const b = eventFingerprint({
+      shipmentId: "s1",
+      statusRaw: "in_transit",
+      occurredAt: at,
+    });
     expect(a).toBe(b);
   });
 
@@ -105,12 +116,20 @@ describe("eventFingerprint", () => {
     expect(
       eventFingerprint({ shipmentId: "s1", statusRaw: "IN_TRANSIT", occurredAt: at }),
     ).not.toBe(
-      eventFingerprint({ shipmentId: "s1", statusRaw: "OUT_FOR_DELIVERY", occurredAt: at }),
+      eventFingerprint({
+        shipmentId: "s1",
+        statusRaw: "OUT_FOR_DELIVERY",
+        occurredAt: at,
+      }),
     );
     expect(
       eventFingerprint({ shipmentId: "s1", statusRaw: "IN_TRANSIT", occurredAt: at }),
     ).not.toBe(
-      eventFingerprint({ shipmentId: "s1", statusRaw: "IN_TRANSIT", occurredAt: later }),
+      eventFingerprint({
+        shipmentId: "s1",
+        statusRaw: "IN_TRANSIT",
+        occurredAt: later,
+      }),
     );
   });
 

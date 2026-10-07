@@ -17,7 +17,11 @@ test("a customer can complete the checkout form with the keyboard only", async (
 
   // Tab from the top of the document until the name field has focus.
   const name = page.getByLabel("Full name");
-  for (let i = 0; i < 20 && !(await name.evaluate((el) => el === document.activeElement)); i++) {
+  for (
+    let i = 0;
+    i < 20 && !(await name.evaluate((el) => el === document.activeElement));
+    i++
+  ) {
     await page.keyboard.press("Tab");
   }
   await expect(name).toBeFocused();

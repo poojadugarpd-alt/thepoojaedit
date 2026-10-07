@@ -24,7 +24,9 @@ function verifySvix(rawBody: string, headers: Headers): boolean {
   if (!secret || !id || !ts || !sigHeader) return false;
 
   const key = Buffer.from(secret.replace(/^whsec_/, ""), "base64");
-  const expected = createHmac("sha256", key).update(`${id}.${ts}.${rawBody}`).digest("base64");
+  const expected = createHmac("sha256", key)
+    .update(`${id}.${ts}.${rawBody}`)
+    .digest("base64");
   const expectedBuf = Buffer.from(expected);
 
   return sigHeader.split(" ").some((part) => {

@@ -18,7 +18,9 @@ import { execSync } from "node:child_process";
 const env = process.env.VERCEL_ENV ?? "(unset — not running on Vercel)";
 
 if (process.env.VERCEL_ENV !== "production") {
-  console.log(`[vercel-migrate] VERCEL_ENV=${env} — skipping migrate deploy (production only).`);
+  console.log(
+    `[vercel-migrate] VERCEL_ENV=${env} — skipping migrate deploy (production only).`,
+  );
   process.exit(0);
 }
 

@@ -79,7 +79,10 @@ test.describe("application shell", () => {
     // untestable here, not something app markup can work around (the
     // skip link is a real, first, focusable <a href="#main-content"> —
     // correct markup either way).
-    test.skip(browserName === "webkit", "WebKit excludes links from Tab order by default");
+    test.skip(
+      browserName === "webkit",
+      "WebKit excludes links from Tab order by default",
+    );
     await page.goto("/");
     await page.keyboard.press("Tab");
     await expect(

@@ -127,7 +127,12 @@ export async function markFailedAttempt(
   if (row.attempts >= maxAttempts) {
     await db.outboxEvent.update({
       where: { id: input.outboxEventId },
-      data: { status: "FAILED", lastError: input.error, leaseOwner: null, leaseExpiresAt: null },
+      data: {
+        status: "FAILED",
+        lastError: input.error,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+      },
     });
     await openOperationalTask(db, {
       dedupeKey: `outbox:${input.outboxEventId}`,
@@ -148,7 +153,8 @@ export async function markFailedAttempt(
       leaseOwner: null,
       leaseExpiresAt: null,
       availableAt: new Date(
-        now.getTime() + backoffMs(row.attempts, input.backoffBaseMs ?? DEFAULTS.backoffBaseMs),
+        now.getTime() +
+          backoffMs(row.attempts, input.backoffBaseMs ?? DEFAULTS.backoffBaseMs),
       ),
     },
   });
@@ -189,7 +195,10 @@ export async function dispatchPending(
   for (const message of batch) {
     try {
       await input.transport.send(message);
-      await markDispatched(db, { outboxEventId: message.outboxEventId, owner: input.owner });
+      await markDispatched(db, {
+        outboxEventId: message.outboxEventId,
+        owner: input.owner,
+      });
       summary.dispatched++;
     } catch (err) {
       const outcome = await markFailedAttempt(db, {

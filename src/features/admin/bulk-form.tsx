@@ -47,7 +47,9 @@ export function BulkForm({
             type="checkbox"
             checked={allChecked}
             onChange={(e) =>
-              setSelected(e.target.checked ? new Set(items.map((i) => i.id)) : new Set())
+              setSelected(
+                e.target.checked ? new Set(items.map((i) => i.id)) : new Set(),
+              )
             }
             className="h-5 w-5"
           />
@@ -89,7 +91,9 @@ export function BulkForm({
       </ul>
 
       {state.message && (
-        <p className={`text-xs ${state.ok ? "text-ok" : "text-wait"}`}>{state.message}</p>
+        <p className={`text-xs ${state.ok ? "text-ok" : "text-wait"}`}>
+          {state.message}
+        </p>
       )}
       {state.errors && state.errors.length > 0 && (
         <ul className="list-inside list-disc text-xs text-stop">

@@ -28,7 +28,12 @@ export async function latestNewOrderAction(): Promise<LatestNewOrder | null> {
   for (const n of rows) {
     const order = await prisma.order.findUnique({
       where: { id: n.entityId },
-      select: { orderNumber: true, totalPaise: true, paymentMethod: true, isTest: true },
+      select: {
+        orderNumber: true,
+        totalPaise: true,
+        paymentMethod: true,
+        isTest: true,
+      },
     });
     if (order && !order.isTest) {
       return {

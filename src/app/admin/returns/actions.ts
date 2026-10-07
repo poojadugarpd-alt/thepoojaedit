@@ -31,7 +31,8 @@ export async function decideReturnAction(
   const returnRequestId = str(form.get("returnRequestId"));
   const approve = str(form.get("decision")) === "approve";
   const notes = str(form.get("notes"));
-  if (!approve && !notes) return { ok: false, message: "A reason is required to reject." };
+  if (!approve && !notes)
+    return { ok: false, message: "A reason is required to reject." };
   try {
     await decideReturnNow({ returnRequestId, approve, adminUserId: admin.id, notes });
     revalidate(returnRequestId);
@@ -103,7 +104,8 @@ export async function resolveReturnAction(
 ): Promise<ActionState> {
   const admin = await requireAdmin();
   const returnRequestId = str(form.get("returnRequestId"));
-  const resolution = str(form.get("resolution")) as "REFUND" | "REPLACEMENT" | "REJECTED";
+  const resolution = str(form.get("resolution")) as
+    "REFUND" | "REPLACEMENT" | "REJECTED";
   try {
     await resolveReturnNow({ returnRequestId, resolution, adminUserId: admin.id });
     revalidate(returnRequestId);
