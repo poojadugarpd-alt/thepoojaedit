@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { measurementsToRows, type MeasurementRow } from "./measurements-editor";
 import { TagInput } from "./tag-input";
 import { CheckboxInput, TextInput } from "./controlled-fields";
 
@@ -24,6 +25,9 @@ export interface VariantRow {
    *  saved — kept (never silently deleted, matches order/inventory
    *  history), forced inactive, shown separately with an explanation. */
   orphaned: boolean;
+  /** This size's own measurements (D-139) — used when a Closet item has
+   *  more than one size; otherwise the product-level set applies. */
+  measurementRows: MeasurementRow[];
 }
 
 function pairKey(size: string, color: string) {
@@ -46,7 +50,12 @@ function suggestSku(productTitle: string, size: string, color: string): string {
     .join("-");
 }
 
-function blankRow(size: string, color: string, productTitle: string, isThrift: boolean): VariantRow {
+function blankRow(
+  size: string,
+  color: string,
+  productTitle: string,
+  isThrift: boolean,
+): VariantRow {
   return {
     key: `new-${Math.random().toString(36).slice(2)}`,
     size,
@@ -59,6 +68,7 @@ function blankRow(size: string, color: string, productTitle: string, isThrift: b
     lowStockThreshold: "0",
     isActive: true,
     orphaned: false,
+    measurementRows: [],
   };
 }
 
@@ -76,6 +86,7 @@ export function variantsToMatrixState(
     onHandQty: number;
     lowStockThreshold: number;
     isActive: boolean;
+    measurements?: unknown;
   }[],
 ): { rows: VariantRow[]; sizes: string[]; colors: string[] } {
   const rows: VariantRow[] = variants.map((v) => ({
@@ -91,9 +102,14 @@ export function variantsToMatrixState(
     lowStockThreshold: String(v.lowStockThreshold),
     isActive: v.isActive,
     orphaned: false,
+    measurementRows: measurementsToRows(v.measurements),
   }));
-  const sizes = [...new Set(variants.map((v) => v.size).filter((s): s is string => !!s))];
-  const colors = [...new Set(variants.map((v) => v.color).filter((c): c is string => !!c))];
+  const sizes = [
+    ...new Set(variants.map((v) => v.size).filter((s): s is string => !!s)),
+  ];
+  const colors = [
+    ...new Set(variants.map((v) => v.color).filter((c): c is string => !!c)),
+  ];
   return { rows, sizes, colors };
 }
 
@@ -196,9 +212,9 @@ export function VariantMatrix({
 
       {oneOfOneConflict && (
         <p className="rounded border border-dashed border-line p-3 text-xs text-ink-soft">
-          This listing is marked “one of one”, so it can only have a single variant. If you
-          actually have this design in more than one size, uncheck “one of one” in Thrift
-          details first, then come back and add the other size.
+          This listing is ticked “Only one piece”, so it can only have one size. If you
+          have it in more than one size or quantity, untick “Only one piece” in Thrift
+          details.
         </p>
       )}
 
@@ -208,7 +224,9 @@ export function VariantMatrix({
             <thead>
               <tr className="border-b border-line text-left text-xs text-ink-soft">
                 {sizes.length > 0 && <th className="py-1.5 pr-2 font-medium">Size</th>}
-                {colors.length > 0 && <th className="py-1.5 pr-2 font-medium">Color</th>}
+                {colors.length > 0 && (
+                  <th className="py-1.5 pr-2 font-medium">Color</th>
+                )}
                 {!isThrift && <th className="py-1.5 pr-2 font-medium">SKU</th>}
                 <th className="py-1.5 pr-2 font-medium">Price (₹)</th>
                 <th className="py-1.5 pr-2 font-medium">Compare-at (₹)</th>
@@ -219,84 +237,98 @@ export function VariantMatrix({
             </thead>
             <tbody>
               {activeRows.map((row) => {
-                const rowLabel = [row.size, row.color].filter(Boolean).join(" ") || "default";
+                const rowLabel =
+                  [row.size, row.color].filter(Boolean).join(" ") || "default";
                 return (
-                <tr key={row.key} className="border-b border-line/60">
-                  {sizes.length > 0 && (
-                    <td className="py-1.5 pr-2 text-ink-strong">{row.size || "—"}</td>
-                  )}
-                  {colors.length > 0 && (
-                    <td className="py-1.5 pr-2 text-ink-strong">{row.color || "—"}</td>
-                  )}
-                  {!isThrift && (
+                  <tr key={row.key} className="border-b border-line/60">
+                    {sizes.length > 0 && (
+                      <td className="py-1.5 pr-2 text-ink-strong">{row.size || "—"}</td>
+                    )}
+                    {colors.length > 0 && (
+                      <td className="py-1.5 pr-2 text-ink-strong">
+                        {row.color || "—"}
+                      </td>
+                    )}
+                    {!isThrift && (
+                      <td className="py-1.5 pr-2">
+                        <input
+                          value={row.sku}
+                          onChange={(e) =>
+                            updateRow(row.key, {
+                              sku: e.target.value,
+                              skuTouched: true,
+                            })
+                          }
+                          required
+                          aria-label={`SKU (${rowLabel})`}
+                          className="min-h-11 w-32 rounded border border-line bg-transparent px-2 py-1 text-sm"
+                        />
+                      </td>
+                    )}
+                    {isThrift && row.id && (
+                      <td className="py-1.5 pr-2 font-mono text-xs text-ink-soft">
+                        {row.sku}
+                      </td>
+                    )}
+                    {isThrift && !row.id && (
+                      <td className="py-1.5 pr-2 text-xs text-ink-soft">auto</td>
+                    )}
                     <td className="py-1.5 pr-2">
                       <input
-                        value={row.sku}
-                        onChange={(e) =>
-                          updateRow(row.key, { sku: e.target.value, skuTouched: true })
-                        }
+                        type="number"
+                        step="0.01"
+                        value={row.price}
+                        onChange={(e) => updateRow(row.key, { price: e.target.value })}
                         required
-                        aria-label={`SKU (${rowLabel})`}
-                        className="min-h-11 w-32 rounded border border-line bg-transparent px-2 py-1 text-sm"
+                        aria-label={`Price, ₹ (${rowLabel})`}
+                        className="min-h-11 w-24 rounded border border-line bg-transparent px-2 py-1 text-sm"
                       />
                     </td>
-                  )}
-                  {isThrift && row.id && (
-                    <td className="py-1.5 pr-2 font-mono text-xs text-ink-soft">{row.sku}</td>
-                  )}
-                  {isThrift && !row.id && (
-                    <td className="py-1.5 pr-2 text-xs text-ink-soft">auto</td>
-                  )}
-                  <td className="py-1.5 pr-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={row.price}
-                      onChange={(e) => updateRow(row.key, { price: e.target.value })}
-                      required
-                      aria-label={`Price, ₹ (${rowLabel})`}
-                      className="min-h-11 w-24 rounded border border-line bg-transparent px-2 py-1 text-sm"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={row.compareAt}
-                      onChange={(e) => updateRow(row.key, { compareAt: e.target.value })}
-                      aria-label={`Compare-at, ₹ (${rowLabel})`}
-                      className="min-h-11 w-24 rounded border border-line bg-transparent px-2 py-1 text-sm"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      type="number"
-                      value={row.onHandQty}
-                      onChange={(e) => updateRow(row.key, { onHandQty: e.target.value })}
-                      aria-label={`On hand (${rowLabel})`}
-                      className="min-h-11 w-16 rounded border border-line bg-transparent px-2 py-1 text-sm"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      type="number"
-                      value={row.lowStockThreshold}
-                      onChange={(e) =>
-                        updateRow(row.key, { lowStockThreshold: e.target.value })
-                      }
-                      aria-label={`Low-stock at (${rowLabel})`}
-                      className="min-h-11 w-16 rounded border border-line bg-transparent px-2 py-1 text-sm"
-                    />
-                  </td>
-                  <td className="py-1.5 pr-2">
-                    <input
-                      type="checkbox"
-                      checked={row.isActive}
-                      aria-label={`Active (${rowLabel})`}
-                      onChange={(e) => updateRow(row.key, { isActive: e.target.checked })}
-                    />
-                  </td>
-                </tr>
+                    <td className="py-1.5 pr-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={row.compareAt}
+                        onChange={(e) =>
+                          updateRow(row.key, { compareAt: e.target.value })
+                        }
+                        aria-label={`Compare-at, ₹ (${rowLabel})`}
+                        className="min-h-11 w-24 rounded border border-line bg-transparent px-2 py-1 text-sm"
+                      />
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      <input
+                        type="number"
+                        value={row.onHandQty}
+                        onChange={(e) =>
+                          updateRow(row.key, { onHandQty: e.target.value })
+                        }
+                        aria-label={`On hand (${rowLabel})`}
+                        className="min-h-11 w-16 rounded border border-line bg-transparent px-2 py-1 text-sm"
+                      />
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      <input
+                        type="number"
+                        value={row.lowStockThreshold}
+                        onChange={(e) =>
+                          updateRow(row.key, { lowStockThreshold: e.target.value })
+                        }
+                        aria-label={`Low-stock at (${rowLabel})`}
+                        className="min-h-11 w-16 rounded border border-line bg-transparent px-2 py-1 text-sm"
+                      />
+                    </td>
+                    <td className="py-1.5 pr-2">
+                      <input
+                        type="checkbox"
+                        checked={row.isActive}
+                        aria-label={`Active (${rowLabel})`}
+                        onChange={(e) =>
+                          updateRow(row.key, { isActive: e.target.checked })
+                        }
+                      />
+                    </td>
+                  </tr>
                 );
               })}
             </tbody>
@@ -310,7 +342,9 @@ export function VariantMatrix({
                 label="SKU"
                 required
                 value={activeRows[0].sku}
-                onChange={(v) => updateRow(activeRows[0].key, { sku: v, skuTouched: true })}
+                onChange={(v) =>
+                  updateRow(activeRows[0].key, { sku: v, skuTouched: true })
+                }
               />
             )}
             {isThrift && activeRows[0].id && (

@@ -399,7 +399,23 @@ export type VariantInput = {
   onHandQty?: number;
   lowStockThreshold?: number;
   isActive?: boolean;
+  /** Per-size measurements JSON text (D-139); omit to leave unchanged. */
+  measurementsJson?: string | null;
 };
+
+/** `undefined` = leave as is, `null` = clear, else the parsed object. */
+function parseVariantMeasurements(
+  json: string | null | undefined,
+): Record<string, unknown> | null | undefined {
+  if (json === undefined) return undefined;
+  if (json === null || !json.trim()) return null;
+  try {
+    const v = JSON.parse(json);
+    return v && typeof v === "object" && !Array.isArray(v) ? v : null;
+  } catch {
+    throw new ValidationError("Measurements must be valid JSON.");
+  }
+}
 
 export type VariantResult =
   { ok: true; variantId: string } | { ok: false; message: string; errors?: string[] };
@@ -420,6 +436,7 @@ export async function upsertVariantAction(
       onHandQty: input.onHandQty ?? 0,
       lowStockThreshold: input.lowStockThreshold ?? 0,
       isActive: input.isActive ?? true,
+      measurements: parseVariantMeasurements(input.measurementsJson),
     });
     revalidatePath(`/admin/products/${productId}`);
     return { ok: true, variantId: variant.id };
@@ -561,6 +578,7 @@ export async function createFullProductAction(
           onHandQty: v.onHandQty ?? 0,
           lowStockThreshold: v.lowStockThreshold ?? 0,
           isActive: v.isActive ?? true,
+          measurements: parseVariantMeasurements(v.measurementsJson),
         });
         variantResults.push({ ok: true, variantId: variant.id });
       } catch (e) {

@@ -16,7 +16,7 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
       ? "SOLD"
       : product.availability === "OUT_OF_STOCK"
         ? "Sold out"
-        : product.isThrift
+        : product.isThrift && product.isOneOfOne
           ? "One of one"
           : null;
 

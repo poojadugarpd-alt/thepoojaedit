@@ -68,8 +68,11 @@ const STATUS_OPTIONS = [
   { value: "ARCHIVED", label: "Hidden from shop" },
 ];
 
-function rowToVariantInput(row: VariantRow): VariantInput {
+function rowToVariantInput(row: VariantRow, perSizeMeasurements = false): VariantInput {
   return {
+    ...(perSizeMeasurements
+      ? { measurementsJson: rowsToMeasurementsJson(row.measurementRows) }
+      : {}),
     id: row.id,
     sku: row.sku || undefined,
     size: row.size || null,
@@ -144,7 +147,9 @@ export function ProductEditor({
     td?.authenticityNotes ?? "",
   );
   const [careNotes, setCareNotes] = useState(td?.careNotes ?? "");
-  const [isOneOfOne, setIsOneOfOne] = useState(td?.isOneOfOne ?? true);
+  // New Closet items start with sizes + quantity open; the owner ticks
+  // "Only one piece" when it really is one of one (D-139).
+  const [isOneOfOne, setIsOneOfOne] = useState(td?.isOneOfOne ?? false);
   const [acquisitionCost, setAcquisitionCost] = useState(
     td?.acquisitionCostPaise != null ? (td.acquisitionCostPaise / 100).toFixed(2) : "",
   );
@@ -173,12 +178,17 @@ export function ProductEditor({
   const publicSiteUrl = publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
   const oneOfOneConflict =
     isThrift && isOneOfOne && rows.filter((r) => !r.orphaned).length > 1;
+  // A Closet item in more than one size gets measurements per size (D-139).
+  const sizedRows = rows.filter((r) => !r.orphaned && r.size);
+  const perSizeMeasurements = isThrift && sizedRows.length > 1;
 
   async function handleSave() {
     setSaving(true);
     setBanner(null);
     const nonOrphanedRows = rows.filter((r) => !r.orphaned);
-    const variants = nonOrphanedRows.map(rowToVariantInput);
+    const variants = nonOrphanedRows.map((r) =>
+      rowToVariantInput(r, perSizeMeasurements),
+    );
     const orphanedSaved = rows.filter((r) => r.orphaned && r.id);
     const thrift = isThrift
       ? {
@@ -279,9 +289,22 @@ export function ProductEditor({
       if (!soldRes.ok) errors.push(soldRes.message);
     }
 
+    // Closet details go first so unticking "one of one" lets a second size
+    // save in the same click (D-139). Ticking it is the exception: the sizes
+    // must drop to a single piece before the server enforces one of one.
+    const turningOneOfOneOn =
+      isThrift && isOneOfOne && !(initial?.thriftDetails?.isOneOfOne ?? false);
+    if (isThrift && thrift && !turningOneOfOneOn) {
+      const tRes = await thriftDetailsAction(productId, thrift);
+      if (!tRes.ok) errors.push(tRes.message);
+    }
+
     const activeRows = rows.filter((r) => !r.orphaned);
     const toSave = [
-      ...activeRows.map((r) => ({ key: r.key, input: rowToVariantInput(r) })),
+      ...activeRows.map((r) => ({
+        key: r.key,
+        input: rowToVariantInput(r, perSizeMeasurements),
+      })),
       ...orphanedSaved.map((r) => ({ key: r.key, input: rowToVariantInput(r) })),
     ];
     const nextRows = [...rows];
@@ -299,7 +322,7 @@ export function ProductEditor({
     }
     setRows(nextRows);
 
-    if (isThrift && thrift) {
+    if (isThrift && thrift && turningOneOfOneOn) {
       const tRes = await thriftDetailsAction(productId, thrift);
       if (!tRes.ok) errors.push(tRes.message);
     }
@@ -388,7 +411,7 @@ export function ProductEditor({
                       checked={catalog === "THRIFT"}
                       onChange={() => setCatalog("THRIFT")}
                     />
-                    The Closet (pre-loved, one of one)
+                    The Closet (pre-loved)
                   </label>
                 </div>
               </fieldset>
@@ -522,9 +545,13 @@ export function ProductEditor({
                     checked={isOneOfOne}
                     onChange={(e) => setIsOneOfOne(e.target.checked)}
                   />
-                  one of one
+                  Only one piece (one of one)
                 </label>
               </div>
+              <p className="text-[11px] text-ink-soft">
+                Leave unticked to sell this in several sizes or more than one quantity
+                (set them under Pricing &amp; variants).
+              </p>
               <TextInput
                 label="Condition notes"
                 value={conditionNotes}
@@ -566,10 +593,28 @@ export function ProductEditor({
                 onChange={setAuthenticityNotes}
               />
               <TextInput label="Care notes" value={careNotes} onChange={setCareNotes} />
-              <MeasurementsEditor
-                rows={measurementRows}
-                onChange={setMeasurementRows}
-              />
+              {perSizeMeasurements ? (
+                sizedRows.map((row) => (
+                  <MeasurementsEditor
+                    key={row.key}
+                    title={`Measurements — size ${row.size}${row.color ? ` ${row.color}` : ""}`}
+                    hint="This size’s garment measurements, shown to buyers on the product page."
+                    rows={row.measurementRows}
+                    onChange={(next) =>
+                      setRows((prev) =>
+                        prev.map((r) =>
+                          r.key === row.key ? { ...r, measurementRows: next } : r,
+                        ),
+                      )
+                    }
+                  />
+                ))
+              ) : (
+                <MeasurementsEditor
+                  rows={measurementRows}
+                  onChange={setMeasurementRows}
+                />
+              )}
             </section>
           )}
 

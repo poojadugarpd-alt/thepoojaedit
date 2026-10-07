@@ -470,6 +470,9 @@ model ProductVariant {
   lengthMm           Int?
   widthMm            Int?
   heightMm           Int?
+  // Per-size measurements for a Closet item sold in several sizes (D-139),
+  // same shape as ThriftDetails.measurements. Null = use the product's own.
+  measurements       Json?
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now()) @db.Timestamptz(6)
   updatedAt          DateTime @updatedAt @db.Timestamptz(6)

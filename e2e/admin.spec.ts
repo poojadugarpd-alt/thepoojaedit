@@ -180,3 +180,81 @@ test("Sold out switch hides the buy button but keeps the product on the site", a
   await page.goto("/closet/linen-shirt-stripe");
   await expect(page.getByRole("button", { name: /add to cart/i })).toBeEnabled();
 });
+
+/**
+ * D-139: a Closet item can come in several sizes with stock above 1, each
+ * size with its own measurements. Also covers unticking "Only one piece" and
+ * adding sizes in the same save, which used to be rejected because the sizes
+ * were saved before the Closet details. Chromium only: Closet SKUs are
+ * numbered from a count, and two projects creating at once could collide.
+ */
+test("Closet item with two sizes, stock and per-size measurements", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "shared SKU counter — run once");
+  const title = `E2E Closet Top ${Math.random().toString(36).slice(2, 8)}`;
+
+  await page.goto("/admin/products/new");
+  await page.getByLabel("The Closet (pre-loved)").check();
+  await expect(page.getByLabel("Only one piece (one of one)")).not.toBeChecked();
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title);
+
+  const sizes = page.getByLabel("Sizes", { exact: true });
+  await sizes.fill("S");
+  await sizes.press("Enter");
+  await sizes.fill("M");
+  await sizes.press("Enter");
+  await page.getByLabel("Price, ₹ (S)").fill("999");
+  await page.getByLabel("Price, ₹ (M)").fill("999");
+  await page.getByLabel("On hand (S)").fill("3");
+  await page.getByLabel("On hand (M)").fill("2");
+
+  for (const [i, value] of [
+    [0, "32"],
+    [1, "34"],
+  ] as const) {
+    await page.getByRole("button", { name: "+ Add measurement" }).nth(i).click();
+    await page.getByLabel("Measurement name").nth(i).fill("Bust");
+    await page.getByLabel("Bust value").nth(i).fill(value);
+  }
+  await expect(page.getByText("Measurements — size S")).toBeVisible();
+  await expect(page.getByText("Measurements — size M")).toBeVisible();
+
+  await page.getByRole("button", { name: "Save product" }).click();
+  await expect(page.getByText("Product created.")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]+$/);
+
+  await page.reload();
+  await expect(page.getByLabel("On hand (S)")).toHaveValue("3");
+  await expect(page.getByLabel("Bust value").nth(0)).toHaveValue("32");
+  await expect(page.getByLabel("Bust value").nth(1)).toHaveValue("34");
+});
+
+test("unticking Only one piece and adding sizes saves in one click", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "chromium", "shared SKU counter — run once");
+  const title = `E2E Closet Piece ${Math.random().toString(36).slice(2, 8)}`;
+
+  await page.goto("/admin/products/new");
+  await page.getByLabel("The Closet (pre-loved)").check();
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title);
+  await page.getByLabel("Only one piece (one of one)").check();
+  await page.getByLabel("Price (₹)").fill("500");
+  await page.getByLabel("On hand").fill("1");
+  await page.getByRole("button", { name: "Save product" }).click();
+  await expect(page.getByText("Product created.")).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]+$/);
+
+  await page.getByLabel("Only one piece (one of one)").uncheck();
+  const sizes = page.getByLabel("Sizes", { exact: true });
+  await sizes.fill("S");
+  await sizes.press("Enter");
+  await sizes.fill("M");
+  await sizes.press("Enter");
+  await page.getByLabel("Price, ₹ (S)").fill("500");
+  await page.getByLabel("Price, ₹ (M)").fill("500");
+  await page.getByLabel("On hand (S)").fill("2");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+});

@@ -21,15 +21,25 @@ const CONDITION_LABEL: Record<string, string> = {
   FAIR: "Fair",
 };
 
-function Measurements({ value }: { value: unknown }) {
-  if (!value || typeof value !== "object") return null;
-  const entries = Object.entries(value as Record<string, unknown>).filter(
+function measurementEntries(value: unknown): [string, unknown][] {
+  if (!value || typeof value !== "object") return [];
+  return Object.entries(value as Record<string, unknown>).filter(
     ([k]) => !k.startsWith("_"),
   );
+}
+
+function Measurements({
+  value,
+  label = "Measurements",
+}: {
+  value: unknown;
+  label?: string;
+}) {
+  const entries = measurementEntries(value);
   if (entries.length === 0) return null;
   return (
     <div>
-      <dt className="u-label">Measurements</dt>
+      <dt className="u-label">{label}</dt>
       <dd className="mt-1 text-ink">
         <ul className="space-y-0.5">
           {entries.map(([k, v]) => {
@@ -55,9 +65,15 @@ function Measurements({ value }: { value: unknown }) {
 
 function ThriftDetailsBlock({
   thrift,
+  variants,
 }: {
   thrift: NonNullable<PublicProductDetail["thrift"]>;
+  variants: PublicProductDetail["variants"];
 }) {
+  // Several sizes with their own measurements (D-139): one block per size.
+  const perSize = variants.filter(
+    (v) => v.size && measurementEntries(v.measurements).length > 0,
+  );
   const flaws = Array.isArray(thrift.flaws)
     ? (thrift.flaws as { description?: string }[])
     : [];
@@ -102,7 +118,17 @@ function ThriftDetailsBlock({
             <dd className="mt-1">{thrift.alterations}</dd>
           </div>
         )}
-        <Measurements value={thrift.measurements} />
+        {perSize.length > 0 ? (
+          perSize.map((v) => (
+            <Measurements
+              key={v.id}
+              label={`Measurements — size ${v.size}`}
+              value={v.measurements}
+            />
+          ))
+        ) : (
+          <Measurements value={thrift.measurements} />
+        )}
         {flaws.length > 0 && (
           <div className="sm:col-span-2">
             <dt className="u-label">Flaws</dt>
@@ -229,7 +255,9 @@ export function ProductDetail({
               className="text-lg"
             />
             <AvailabilityBadge availability={product.availability} />
-            {product.isThrift && <span className="u-eyebrow">One of one</span>}
+            {product.isThrift && product.isOneOfOne && (
+              <span className="u-eyebrow">One of one</span>
+            )}
           </div>
 
           <div className="mt-8">
@@ -255,7 +283,9 @@ export function ProductDetail({
         </div>
       </div>
 
-      {product.thrift && <ThriftDetailsBlock thrift={product.thrift} />}
+      {product.thrift && (
+        <ThriftDetailsBlock thrift={product.thrift} variants={product.variants} />
+      )}
 
       {product.availability === "SOLD" && alternatives.length > 0 && (
         <section className="mt-16 border-t border-line pt-10">

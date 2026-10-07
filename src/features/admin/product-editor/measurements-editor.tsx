@@ -17,7 +17,15 @@ export interface MeasurementRow {
   unit: string;
 }
 
-const COMMON_LABELS = ["Bust", "Waist", "Hips", "Shoulder", "Length", "Sleeve", "Inseam"];
+const COMMON_LABELS = [
+  "Bust",
+  "Waist",
+  "Hips",
+  "Shoulder",
+  "Length",
+  "Sleeve",
+  "Inseam",
+];
 
 function slugKey(label: string): string {
   return label
@@ -34,7 +42,8 @@ export function measurementsToRows(measurements: unknown): MeasurementRow[] {
     .filter(([k]) => !k.startsWith("_"))
     .map(([k, v]) => {
       const m = v as { value?: unknown; unit?: unknown };
-      const value = m && typeof m === "object" ? String(m.value ?? "") : String(v ?? "");
+      const value =
+        m && typeof m === "object" ? String(m.value ?? "") : String(v ?? "");
       const unit = m && typeof m === "object" && m.unit ? String(m.unit) : "in";
       return {
         key: `${k}-${Math.random().toString(36).slice(2)}`,
@@ -61,14 +70,24 @@ export function rowsToMeasurementsJson(rows: MeasurementRow[]): string {
 export function MeasurementsEditor({
   rows,
   onChange,
+  title = "Measurements",
+  hint = "The actual garment’s measurements — how a buyer checks fit on a one-of-one piece with no size chart. At least one is required to publish.",
 }: {
   rows: MeasurementRow[];
   onChange: (rows: MeasurementRow[]) => void;
+  /** Per-size use (D-139): e.g. "Measurements — size M". */
+  title?: string;
+  hint?: string;
 }) {
   function addRow() {
     onChange([
       ...rows,
-      { key: `new-${Math.random().toString(36).slice(2)}`, label: "", value: "", unit: "in" },
+      {
+        key: `new-${Math.random().toString(36).slice(2)}`,
+        label: "",
+        value: "",
+        unit: "in",
+      },
     ]);
   }
   function updateRow(key: string, patch: Partial<MeasurementRow>) {
@@ -81,12 +100,9 @@ export function MeasurementsEditor({
   return (
     <div>
       <label className="block text-xs font-medium">
-        Measurements <span className="text-stop">*</span>
+        {title} <span className="text-stop">*</span>
       </label>
-      <p className="mt-0.5 text-[11px] text-ink-soft">
-        The actual garment&rsquo;s measurements — how a buyer checks fit on a one-of-one piece
-        with no size chart. At least one is required to publish.
-      </p>
+      <p className="mt-0.5 text-[11px] text-ink-soft">{hint}</p>
       <datalist id="measurement-labels">
         {COMMON_LABELS.map((l) => (
           <option key={l} value={l} />

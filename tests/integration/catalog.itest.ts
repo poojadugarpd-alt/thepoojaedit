@@ -170,6 +170,7 @@ describe("public payload never exposes acquisition cost (master §5)", () => {
         "compareAtPaise",
         "id",
         "maxOrderQty",
+        "measurements",
         "pricePaise",
         "size",
         "sku",

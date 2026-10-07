@@ -273,7 +273,10 @@ export interface PublicationCheck {
 /** Master §10: thrift defects/measurements required for publication. */
 export function validateForPublication(product: {
   catalog: CatalogType;
-  variants: Pick<ProductVariant, "isActive" | "pricePaise" | "onHandQty">[];
+  variants: (Pick<ProductVariant, "isActive" | "pricePaise" | "onHandQty"> & {
+    size?: string | null;
+    measurements?: unknown;
+  })[];
   images: unknown[];
   thriftDetails: {
     conditionGrade: ConditionGrade | null;
@@ -292,14 +295,25 @@ export function validateForPublication(product: {
     if (!t) errors.push("Thrift details are missing.");
     else {
       if (!t.conditionGrade) errors.push("Condition grade is required for thrift.");
-      const m = t.measurements;
-      const measCount =
+      const count = (m: unknown) =>
         m && typeof m === "object"
           ? Object.keys(m as Record<string, unknown>).filter((k) => !k.startsWith("_"))
               .length
           : 0;
-      if (measCount === 0)
-        errors.push("At least one measurement is required for thrift.");
+      // Several sizes: each active size needs its own measurements, unless the
+      // product-level set covers them all (D-139).
+      const sized = product.variants.filter((v) => v.isActive && v.size);
+      if (count(t.measurements) === 0) {
+        if (sized.length > 1) {
+          const missing = sized.filter((v) => count(v.measurements) === 0);
+          if (missing.length > 0)
+            errors.push(
+              `Add measurements for size ${missing.map((v) => v.size).join(", ")}.`,
+            );
+        } else {
+          errors.push("At least one measurement is required for thrift.");
+        }
+      }
     }
     const totalOnHand = product.variants.reduce((s, v) => s + v.onHandQty, 0);
     if (product.thriftDetails?.isOneOfOne && totalOnHand > 1) {
@@ -499,6 +513,9 @@ export async function upsertVariant(
     onHandQty?: number;
     lowStockThreshold?: number;
     isActive?: boolean;
+    /** Per-size measurements (D-139). `undefined` leaves them as they are,
+     *  `null` clears them. */
+    measurements?: Record<string, unknown> | null;
   },
 ): Promise<ProductVariant> {
   const product = await db.product.findUniqueOrThrow({
@@ -519,13 +536,14 @@ export async function upsertVariant(
     const others = product.variants.filter((v) => v.id !== input.id);
     if (others.length > 0) {
       throw new ValidationError(
-        "This listing is marked “One of one”, so it can only have a single variant. " +
-          "If you actually have this design in more than one size, uncheck “One of one” " +
-          "below first, then add the other size.",
+        "This listing is ticked “Only one piece”, so it can only have one size. " +
+          "If you have it in more than one size, untick “Only one piece” first.",
       );
     }
     if ((input.onHandQty ?? 0) > 1) {
-      throw new ValidationError("On-hand quantity for a one-of-one piece is 0 or 1.");
+      throw new ValidationError(
+        "A piece ticked “Only one piece” can have stock 0 or 1. Untick it to add more.",
+      );
     }
   }
 
@@ -555,6 +573,14 @@ export async function upsertVariant(
     onHandQty: input.onHandQty ?? 0,
     lowStockThreshold: input.lowStockThreshold ?? 0,
     isActive: input.isActive ?? true,
+    ...(input.measurements === undefined
+      ? {}
+      : {
+          measurements:
+            input.measurements === null || Object.keys(input.measurements).length === 0
+              ? Prisma.DbNull
+              : (input.measurements as Prisma.InputJsonValue),
+        }),
   };
 
   const variant = input.id

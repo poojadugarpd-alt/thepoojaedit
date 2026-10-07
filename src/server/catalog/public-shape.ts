@@ -49,6 +49,8 @@ export interface PublicVariant {
   /** Advisory quantity-picker ceiling — see `MAX_ORDER_QTY`. Never exceeds
    * real stock, but real stock above the cap is never revealed exactly. */
   maxOrderQty: number;
+  /** This size's own measurements (D-139), or null to use the product's. */
+  measurements: unknown;
 }
 
 export interface PublicThrift {
@@ -208,6 +210,7 @@ export function toPublicDetail(
         compareAtPaise: v.compareAtPaise,
         available: !p.markedSoldOut && variantAvailable(v),
         maxOrderQty: p.markedSoldOut ? 0 : variantMaxOrderQty(v),
+        measurements: v.measurements ?? null,
       })),
     thrift: p.thriftDetails
       ? {

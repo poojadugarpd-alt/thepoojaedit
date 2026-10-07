@@ -323,7 +323,7 @@ describe("upsertVariant — thrift one-of-one", () => {
     // exceed 1, so a second variant could never hold real stock anyway.
     await expect(
       upsertVariant(db, admin, p.id, { sku: "THR-2", pricePaise: 50000, onHandQty: 1 }),
-    ).rejects.toThrow(/one of one/i);
+    ).rejects.toThrow(/Only one piece/);
     await expect(
       upsertVariant(db, admin, p.id, {
         id: v.id,
@@ -331,7 +331,7 @@ describe("upsertVariant — thrift one-of-one", () => {
         pricePaise: 50000,
         onHandQty: 2,
       }),
-    ).rejects.toThrow(/0 or 1/);
+    ).rejects.toThrow(/stock 0 or 1/);
   });
 
   it("multiple variants ARE allowed once the listing is no longer marked one-of-one — the real lever for a piece the owner has in more than one size (owner request, 2026-09-14)", async () => {
@@ -1101,5 +1101,80 @@ describe("setProductSoldOut (D-138)", () => {
       "product.marked_sold_out",
       "product.unmarked_sold_out",
     ]);
+  });
+});
+
+describe("Closet item in several sizes (D-139)", () => {
+  it("stores measurements per size, clears them with null, and leaves them on undefined", async () => {
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      slug: `multi-${randomUUID().slice(0, 6)}`,
+      title: "Multi",
+    });
+    await upsertThriftDetails(db, admin, p.id, {
+      conditionGrade: "GOOD",
+      measurements: {},
+      isOneOfOne: false,
+    });
+    const s = await upsertVariant(db, admin, p.id, {
+      size: "S",
+      pricePaise: 90000,
+      onHandQty: 3,
+      measurements: { bust: { value: "32", unit: "in" } },
+    });
+    const m = await upsertVariant(db, admin, p.id, {
+      size: "M",
+      pricePaise: 90000,
+      onHandQty: 2,
+      measurements: { bust: { value: "34", unit: "in" } },
+    });
+    expect(s.sku).not.toBe(m.sku);
+    expect(s.measurements).toEqual({ bust: { value: "32", unit: "in" } });
+
+    const kept = await upsertVariant(db, admin, p.id, {
+      id: s.id,
+      size: "S",
+      pricePaise: 95000,
+      onHandQty: 3,
+    });
+    expect(kept.measurements).toEqual({ bust: { value: "32", unit: "in" } });
+    const cleared = await upsertVariant(db, admin, p.id, {
+      id: s.id,
+      size: "S",
+      pricePaise: 95000,
+      onHandQty: 3,
+      measurements: null,
+    });
+    expect(cleared.measurements).toBeNull();
+  });
+
+  it("publishing needs measurements for every size unless the product has its own", () => {
+    const thriftDetails = { conditionGrade: "GOOD" as const, isOneOfOne: false };
+    const variants = [
+      {
+        isActive: true,
+        pricePaise: 1000,
+        onHandQty: 2,
+        size: "S",
+        measurements: { bust: { value: "32" } },
+      },
+      { isActive: true, pricePaise: 1000, onHandQty: 2, size: "M", measurements: null },
+    ];
+    expect(
+      validateForPublication({
+        catalog: "THRIFT",
+        images: [{}],
+        variants,
+        thriftDetails: { ...thriftDetails, measurements: {} },
+      }).errors,
+    ).toContain("Add measurements for size M.");
+    expect(
+      validateForPublication({
+        catalog: "THRIFT",
+        images: [{}],
+        variants,
+        thriftDetails: { ...thriftDetails, measurements: { length: { value: "40" } } },
+      }).ok,
+    ).toBe(true);
   });
 });
