@@ -64,10 +64,19 @@ const nextConfig: NextConfig = {
       // Legacy Shopify URLs (domain cutover, D-131). thepoojaedit.in served the
       // old Shopify store; its URLs live on in Instagram bios, posts and search
       // results. Product handles were carried over as slugs (migration keeps
-      // `source_slug`), and every Shopify product was a Label piece except the
-      // two untitled thrift drafts below. Specific rules must stay above the
-      // generic `/products/:handle` one.
-      { source: "/products/untitled-:rest", destination: "/closet", permanent: true },
+      // `source_slug`), except TPE Set 1 White/Black, whose Shopify handles were
+      // auto-generated "untitled-…" ones (D-135). Specific rules must stay
+      // above the generic `/products/:handle` one.
+      {
+        source: "/products/untitled-jul14_14-24-30",
+        destination: "/label/tpe-set-1-white",
+        permanent: true,
+      },
+      {
+        source: "/products/untitled-jul12_16-10-18",
+        destination: "/label/tpe-set-1-black",
+        permanent: true,
+      },
       { source: "/products/:handle", destination: "/label/:handle", permanent: true },
       {
         source: "/collections/:collection/products/:handle",

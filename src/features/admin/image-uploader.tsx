@@ -8,6 +8,8 @@ import {
   requestImageUploadAction,
 } from "@/app/admin/products/actions";
 
+import { compressImage } from "./compress-image";
+
 // iOS Safari transcodes HEIC camera photos to one of these automatically when
 // the file input's `accept` is restricted to them — this is standard iOS
 // behaviour, not something we implement. If a HEIC file still arrives (e.g.
@@ -32,7 +34,9 @@ interface QueueItem {
   height: number | null;
 }
 
-function readImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+function readImageDimensions(
+  file: File,
+): Promise<{ width: number; height: number } | null> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -65,7 +69,8 @@ function uploadWithProgress(
       if (xhr.status >= 200 && xhr.status < 300) resolve();
       else reject(new Error(`Upload failed (${xhr.status})`));
     };
-    xhr.onerror = () => reject(new Error("Upload failed — check the connection and retry."));
+    xhr.onerror = () =>
+      reject(new Error("Upload failed — check the connection and retry."));
     xhr.send(file);
   });
 }
@@ -114,11 +119,12 @@ export function ImageUploader({
         });
         continue;
       }
-      const dims = await readImageDimensions(file);
+      const small = await compressImage(file);
+      const dims = await readImageDimensions(small);
       items.push({
         localId,
-        file,
-        previewUrl: URL.createObjectURL(file),
+        file: small,
+        previewUrl: URL.createObjectURL(small),
         altText: `${defaultAltPrefix} — photo ${nextLabelNumber.current++}`,
         isFlaw: false,
         status: "queued",
@@ -229,7 +235,9 @@ export function ImageUploader({
             disabled={isBusy}
             className="min-h-11 rounded bg-foreground px-3 text-sm font-semibold text-background disabled:opacity-50"
           >
-            {isBusy ? "Uploading…" : `Upload ${queue.filter((i) => i.status !== "done").length}`}
+            {isBusy
+              ? "Uploading…"
+              : `Upload ${queue.filter((i) => i.status !== "done").length}`}
           </button>
         )}
         {hasPending && !productId && (
@@ -264,7 +272,10 @@ export function ImageUploader({
       {queue.length > 0 && (
         <ul className="space-y-2">
           {queue.map((it) => (
-            <li key={it.localId} className="flex items-start gap-3 rounded border border-line p-2">
+            <li
+              key={it.localId}
+              className="flex items-start gap-3 rounded border border-line p-2"
+            >
               {it.previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- local blob preview, not a served asset
                 <img
@@ -284,7 +295,9 @@ export function ImageUploader({
                   <>
                     <input
                       value={it.altText}
-                      onChange={(e) => updateItem(it.localId, { altText: e.target.value })}
+                      onChange={(e) =>
+                        updateItem(it.localId, { altText: e.target.value })
+                      }
                       placeholder="alt text"
                       disabled={it.status !== "queued"}
                       className="min-h-11 w-full rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
@@ -295,7 +308,9 @@ export function ImageUploader({
                           type="checkbox"
                           checked={it.isFlaw}
                           disabled={it.status !== "queued"}
-                          onChange={(e) => updateItem(it.localId, { isFlaw: e.target.checked })}
+                          onChange={(e) =>
+                            updateItem(it.localId, { isFlaw: e.target.checked })
+                          }
                         />
                         Flaw photo
                       </label>
@@ -304,11 +319,15 @@ export function ImageUploader({
                       <div className="h-1.5 w-full overflow-hidden rounded bg-line">
                         <div
                           className="h-full bg-foreground transition-all"
-                          style={{ width: `${it.status === "saving" ? 100 : it.progress}%` }}
+                          style={{
+                            width: `${it.status === "saving" ? 100 : it.progress}%`,
+                          }}
                         />
                       </div>
                     )}
-                    {it.status === "done" && <p className="text-xs text-ok">Uploaded.</p>}
+                    {it.status === "done" && (
+                      <p className="text-xs text-ok">Uploaded.</p>
+                    )}
                   </>
                 )}
                 {it.status === "error" && productId && (

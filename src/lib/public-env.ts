@@ -25,6 +25,13 @@ const PublicEnvSchema = z.object({
     .url()
     .optional()
     .describe("Supabase project URL. Wired in Phase 3."),
+  NEXT_PUBLIC_STORAGE_PUBLIC_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe(
+      "Supabase project URL to READ public storage objects from. Defaults to NEXT_PUBLIC_SUPABASE_URL; set it on Preview/Development to show production images read-only (D-135).",
+    ),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(1)
@@ -44,14 +51,26 @@ const PublicEnvSchema = z.object({
     ),
 });
 
+// Empty string = unset, same rule as the server env (src/lib/env.ts).
+const blankToUndefined = (v: string | undefined) =>
+  v && v.trim() !== "" ? v : undefined;
+
 const parsed = PublicEnvSchema.safeParse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  NEXT_PUBLIC_APP_ENV: process.env.NEXT_PUBLIC_APP_ENV,
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+  NEXT_PUBLIC_APP_ENV: blankToUndefined(process.env.NEXT_PUBLIC_APP_ENV),
+  NEXT_PUBLIC_SUPABASE_URL: blankToUndefined(process.env.NEXT_PUBLIC_SUPABASE_URL),
+  NEXT_PUBLIC_STORAGE_PUBLIC_URL: blankToUndefined(
+    process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL,
+  ),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: blankToUndefined(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-  NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  ),
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: blankToUndefined(
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  ),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: blankToUndefined(
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+  ),
 });
 
 if (!parsed.success) {

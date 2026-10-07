@@ -693,9 +693,12 @@ describe("listAdminProducts pagination + primary image (speed audit)", () => {
       ],
     });
     const { items } = await listAdminProducts(db, { q: "with-photo" });
-    expect(items[0].primaryImage).toEqual({
+    // publicUrl is resolved from (bucket, path) at read time (D-135); with no
+    // Supabase URL configured in this suite it falls back to the cached value.
+    expect(items[0].primaryImage).toMatchObject({
       publicUrl: "https://example.invalid/primary.jpg",
       altText: "primary",
+      path: `${p.id}/primary.jpg`,
     });
     expect(items[0].imageCount).toBe(2);
 

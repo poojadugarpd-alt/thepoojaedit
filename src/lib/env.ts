@@ -146,7 +146,12 @@ export function assertNoLiveCredentialsOutsideProduction(
   }
 }
 
-const parsed = ServerEnvSchema.safeParse(process.env);
+// An empty value means "unset" (e.g. `KEY=""` in a .env file, or the local
+// e2e runner blanking real-provider keys — scripts/e2e-local.sh).
+const nonEmptyEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([, v]) => v !== undefined && v.trim() !== ""),
+);
+const parsed = ServerEnvSchema.safeParse(nonEmptyEnv);
 
 if (!parsed.success) {
   throw new Error(

@@ -6,6 +6,7 @@ import type {
   ProductVariant,
   ThriftDetails,
 } from "@/generated/prisma";
+import { productImageUrl } from "@/lib/storage-url";
 
 /**
  * Shapes the DB rows into the payload the public storefront is allowed to see.
@@ -120,7 +121,7 @@ export function deriveAvailability(
 
 export function toPublicImage(im: ProductImage): PublicImage {
   return {
-    url: im.publicUrl ?? `/${im.bucket}/${im.path}`,
+    url: productImageUrl(im),
     alt: im.altText,
     width: im.widthPx,
     height: im.heightPx,

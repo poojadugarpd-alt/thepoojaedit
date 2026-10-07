@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { PrismaClient, Shipment } from "@/generated/prisma";
-import { openOperationalTask, resolveOperationalTask } from "@/server/events/operational-tasks";
+import {
+  openOperationalTask,
+  resolveOperationalTask,
+} from "@/server/events/operational-tasks";
 import { restockUnits } from "@/server/inventory/restock";
 import {
   canTransition,
@@ -18,11 +21,7 @@ import {
   type ReconcilePort,
 } from "@/server/webhooks/inbox";
 
-import {
-  ShippingError,
-  type ShippingProvider,
-  type WebhookHint,
-} from "./port";
+import { ShippingError, type ShippingProvider, type WebhookHint } from "./port";
 import {
   canAdvanceFulfillment,
   eventFingerprint,
@@ -95,7 +94,9 @@ export async function createShipmentForOrder(
     (sum, i) =>
       sum +
       i.quantity *
-        (i.variantId ? (weightById.get(i.variantId) ?? rules.defaultWeightGrams) : rules.defaultWeightGrams),
+        (i.variantId
+          ? (weightById.get(i.variantId) ?? rules.defaultWeightGrams)
+          : rules.defaultWeightGrams),
     0,
   );
 
@@ -126,15 +127,24 @@ export async function createShipmentForOrder(
   try {
     const existing = await provider.fetchTracking({ merchantReference: ref });
     if (existing.awb || existing.statusRaw !== "UNKNOWN") {
-      return finishCreate(db, provider, order.id, shipment.id, {
-        providerShipmentId: existing.awb ?? ref,
-        awb: existing.awb,
-        courier: "Shadowfax",
-        trackingUrl: null,
-        labelUrl: null,
-        statusRaw: existing.statusRaw,
-        raw: existing.raw,
-      }, order.paymentMethod, order.totalPaise, input.actor);
+      return finishCreate(
+        db,
+        provider,
+        order.id,
+        shipment.id,
+        {
+          providerShipmentId: existing.awb ?? ref,
+          awb: existing.awb,
+          courier: "Shadowfax",
+          trackingUrl: null,
+          labelUrl: null,
+          statusRaw: existing.statusRaw,
+          raw: existing.raw,
+        },
+        order.paymentMethod,
+        order.totalPaise,
+        input.actor,
+      );
     }
   } catch {
     // not found on the provider — proceed to create
@@ -269,7 +279,10 @@ async function finishCreate(
   await resolveOperationalTask(db, `shipment-failure:${orderId}`);
   // Fold in whatever scans the provider already has.
   await reconcileShipment(db, provider, { shipmentId: shipment.id }).catch(() => {});
-  return { shipment: await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }), created: true };
+  return {
+    shipment: await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }),
+    created: true,
+  };
 }
 
 // ─────────────────────────── tracking application ───────────────────────────
@@ -361,10 +374,7 @@ export async function applyTrackingEvent(
     const order = await tx.order.findUniqueOrThrow({ where: { id: shipment.orderId } });
     if (
       order.fulfillmentStatus !== normalized &&
-      canAdvanceFulfillment(
-        order.fulfillmentStatus as FulfillmentStatus,
-        normalized!,
-      )
+      canAdvanceFulfillment(order.fulfillmentStatus as FulfillmentStatus, normalized!)
     ) {
       await tx.order.update({
         where: { id: order.id, version: order.version },
@@ -374,7 +384,11 @@ export async function applyTrackingEvent(
     await appendOrderTimeline(tx, {
       orderId: shipment.orderId,
       type: `shipment.${normalized!.toLowerCase()}`,
-      payload: { shipmentId: shipment.id, statusRaw: input.statusRaw, occurredAt: input.occurredAt?.toISOString() ?? null },
+      payload: {
+        shipmentId: shipment.id,
+        statusRaw: input.statusRaw,
+        occurredAt: input.occurredAt?.toISOString() ?? null,
+      },
     });
   });
 
@@ -409,7 +423,8 @@ async function runStatusSideEffects(
       entityType: "Shipment",
       entityId: shipmentId,
       priority: 2,
-      reason: "Parcel is being returned to origin. Inspect on receipt before any restock.",
+      reason:
+        "Parcel is being returned to origin. Inspect on receipt before any restock.",
     });
   } else if (normalized === "RTO_RECEIVED") {
     await openOperationalTask(db, {
@@ -418,7 +433,8 @@ async function runStatusSideEffects(
       entityType: "Shipment",
       entityId: shipmentId,
       priority: 1,
-      reason: "RTO parcel received. Inspect and decide restock / quarantine / write-off.",
+      reason:
+        "RTO parcel received. Inspect and decide restock / quarantine / write-off.",
     });
   } else if (normalized === "OUT_FOR_DELIVERY" || normalized === "SHIPPED") {
     await resolveOperationalTask(db, `ndr:${shipmentId}`);
@@ -551,7 +567,9 @@ export async function handleShadowfaxWebhook(
           parsed.merchantReference
             ? { merchantReference: parsed.merchantReference }
             : { id: "00000000-0000-0000-0000-000000000000" },
-          parsed.awb ? { awb: parsed.awb } : { id: "00000000-0000-0000-0000-000000000000" },
+          parsed.awb
+            ? { awb: parsed.awb }
+            : { id: "00000000-0000-0000-0000-000000000000" },
         ],
       },
     });
@@ -684,8 +702,7 @@ export async function syncCodRemittance(
   if (remitted != null && remitted > 0) status = "REMITTED";
   else if (collected != null && collected > 0) status = "COLLECTED";
 
-  const discrepancy =
-    collected != null && collected !== remittance.expectedPaise;
+  const discrepancy = collected != null && collected !== remittance.expectedPaise;
   if (discrepancy) status = "DISPUTED";
 
   await db.codRemittance.update({
@@ -754,6 +771,65 @@ export async function getShipmentLabel(
  * shipment. Idempotent via the unique `merchantReference`; used by the Inngest
  * consumer of `poojaedit/outbox.dispatched`.
  */
+/**
+ * Cancel an order's not-yet-picked-up shipment(s) with the provider, so the
+ * order itself can then be cancelled (D-133). Without this, an order became
+ * uncancellable the moment `create-shipment-on-confirm` booked its pickup.
+ *
+ * Provider calls happen OUTSIDE any transaction; a local row is only marked
+ * CANCELLED once the provider accepted the cancellation. A claimed row that
+ * never got a provider id (failed create) is cancelled locally only.
+ * Already-cancelled rows are skipped, so a retry is safe.
+ */
+export async function cancelShipmentsForOrder(
+  db: PrismaClient,
+  provider: ShippingProvider,
+  input: { orderId: string; actor?: string },
+): Promise<{ cancelled: number }> {
+  const order = await db.order.findUniqueOrThrow({
+    where: { id: input.orderId },
+    include: { shipments: true },
+  });
+  if (
+    order.fulfillmentStatus !== "UNFULFILLED" &&
+    order.fulfillmentStatus !== "PROCESSING"
+  ) {
+    throw new ShippingError(
+      `Order ${order.orderNumber} is ${order.fulfillmentStatus}; only a shipment that hasn't been picked up can be cancelled.`,
+    );
+  }
+
+  let cancelled = 0;
+  for (const s of order.shipments) {
+    if (s.statusNormalized === "CANCELLED") continue;
+    if (s.providerShipmentId) {
+      const r = await provider.cancelShipment({
+        awb: s.awb,
+        merchantReference: s.merchantReference,
+      });
+      if (!r.cancelled) {
+        throw new ShippingError(
+          `Shadowfax did not accept the cancellation for ${s.awb ?? s.merchantReference}.`,
+        );
+      }
+    }
+    await db.$transaction(async (tx) => {
+      await tx.shipment.update({
+        where: { id: s.id },
+        data: { statusNormalized: "CANCELLED" },
+      });
+      await appendOrderTimeline(tx, {
+        orderId: order.id,
+        type: "shipment.cancelled",
+        payload: { shipmentId: s.id, awb: s.awb },
+        actor: input.actor,
+      });
+    });
+    cancelled++;
+  }
+  return { cancelled };
+}
+
 export async function ensureShipmentForConfirmedOrder(
   db: PrismaClient,
   provider: ShippingProvider,

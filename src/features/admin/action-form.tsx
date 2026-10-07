@@ -83,7 +83,12 @@ export function Field({
     <div>
       <label htmlFor={id} className="block text-xs font-medium">
         {label}
-        {required && <span className="text-stop"> *</span>}
+        {required && (
+          <span className="text-stop" aria-hidden="true">
+            {" "}
+            *
+          </span>
+        )}
       </label>
       <input
         id={id}

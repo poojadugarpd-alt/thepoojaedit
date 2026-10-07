@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma";
+import { storagePublicUrl } from "@/lib/storage-url";
 
 /**
  * Typed reads over the `StoreSettings` key/value table (master §3, §10). Values
@@ -115,12 +116,7 @@ export interface HomeContent {
  * to "immediately offer two clear catalog entrances", which lives there.
  */
 export type HomeSectionKey =
-  | "editorial"
-  | "newIn"
-  | "editBlocks"
-  | "fromCloset"
-  | "instagram"
-  | "newsletter";
+  "editorial" | "newIn" | "editBlocks" | "fromCloset" | "instagram" | "newsletter";
 
 export interface HomeSection {
   key: HomeSectionKey;
@@ -234,8 +230,14 @@ interface RawHomeContent extends Record<string, unknown> {
 
 /** A media slot is replaced wholesale, not field-by-field — a saved `"auto"`
  * slot with a leftover `url` from a previous upload is still `"auto"`. */
-function mergeMediaSlot(def: HomeMediaSlot, saved?: Partial<HomeMediaSlot>): HomeMediaSlot {
-  if (!saved || (saved.kind !== "image" && saved.kind !== "video" && saved.kind !== "auto")) {
+function mergeMediaSlot(
+  def: HomeMediaSlot,
+  saved?: Partial<HomeMediaSlot>,
+): HomeMediaSlot {
+  if (
+    !saved ||
+    (saved.kind !== "image" && saved.kind !== "video" && saved.kind !== "auto")
+  ) {
     return def;
   }
   if (saved.kind === "auto") return { kind: "auto" };
@@ -243,7 +245,12 @@ function mergeMediaSlot(def: HomeMediaSlot, saved?: Partial<HomeMediaSlot>): Hom
     kind: saved.kind,
     bucket: saved.bucket,
     path: saved.path,
-    url: saved.url,
+    // Resolved from (bucket, path) at read time, not the URL saved at upload
+    // time, so a Supabase project move can't strand home media (D-135).
+    url:
+      saved.bucket && saved.path
+        ? storagePublicUrl(saved.bucket, saved.path, saved.url)
+        : saved.url,
     posterUrl: saved.posterUrl,
     alt: saved.alt,
   };
@@ -262,7 +269,8 @@ function normalizeSections(saved?: Partial<HomeSection>[]): HomeSection[] {
   const seen = new Set<HomeSectionKey>();
   const out: HomeSection[] = [];
   for (const s of saved) {
-    if (!s || typeof s.key !== "string" || !known.has(s.key as HomeSectionKey)) continue;
+    if (!s || typeof s.key !== "string" || !known.has(s.key as HomeSectionKey))
+      continue;
     const key = s.key as HomeSectionKey;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -294,9 +302,15 @@ export async function getHomeContent(db: PrismaClient): Promise<HomeContent> {
     newsletter: merge(DEFAULT_HOME_CONTENT.newsletter, v?.newsletter),
     media: {
       editorial: mergeMediaSlot(DEFAULT_HOME_MEDIA.editorial, v?.media?.editorial),
-      editorialMobile: mergeMediaSlot(DEFAULT_HOME_MEDIA.editorialMobile, v?.media?.editorialMobile),
+      editorialMobile: mergeMediaSlot(
+        DEFAULT_HOME_MEDIA.editorialMobile,
+        v?.media?.editorialMobile,
+      ),
       labelBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.labelBlock, v?.media?.labelBlock),
-      closetBlock: mergeMediaSlot(DEFAULT_HOME_MEDIA.closetBlock, v?.media?.closetBlock),
+      closetBlock: mergeMediaSlot(
+        DEFAULT_HOME_MEDIA.closetBlock,
+        v?.media?.closetBlock,
+      ),
     },
     sections: normalizeSections(v?.sections),
   };

@@ -37,7 +37,9 @@ test("admin shell + core screens render", async ({ page }) => {
   // filter form + a data row — `>> visible=true` picks whichever of the
   // parallel card-list / table renderings is actually shown at this
   // viewport, since both exist in the DOM regardless of viewport.
-  await expect(page.getByRole("button", { name: "Filter" }).locator("visible=true")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Filter" }).locator("visible=true"),
+  ).toBeVisible();
   const firstOrder = page.locator('a[href^="/admin/orders/"] >> visible=true').first();
   await expect(firstOrder).toBeVisible();
   // Read the order number from the href, not the link's text content — on
@@ -53,9 +55,7 @@ test("admin shell + core screens render", async ({ page }) => {
   await expect(page.getByText("Actions")).toBeVisible();
 
   await page.goto("/admin/analytics");
-  await expect(
-    page.getByRole("heading", { name: /Analytics/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Analytics/ })).toBeVisible();
   await expect(
     page.getByText("Revenue by catalogue (line-allocated)", { exact: true }),
   ).toBeVisible();
@@ -111,7 +111,9 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
   await page.goto("/admin/products/new");
   await expect(page.getByRole("heading", { name: "New product" })).toBeVisible();
 
-  await page.getByLabel("Title", { exact: true }).fill("E2E Test Kurta");
+  await page
+    .getByRole("textbox", { name: "Title", exact: true })
+    .fill("E2E Test Kurta");
 
   const sizesInput = page.getByLabel("Sizes", { exact: true });
   await sizesInput.fill("S");
@@ -131,7 +133,9 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
   // Reload to confirm it actually persisted, not just optimistic client
   // state — both variant rows survive a fresh load.
   await page.reload();
-  await expect(page.getByLabel("Title", { exact: true })).toHaveValue("E2E Test Kurta");
+  await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(
+    "E2E Test Kurta",
+  );
   await expect(page.getByLabel("Price, ₹ (S)")).toHaveValue("1999.00");
   await expect(page.getByLabel("Price, ₹ (M)")).toHaveValue("1999.00");
 });

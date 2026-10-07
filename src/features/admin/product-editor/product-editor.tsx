@@ -39,11 +39,22 @@ import {
 } from "./measurements-editor";
 import { SeoPreview } from "./seo-preview";
 import { TagInput } from "./tag-input";
-import { VariantMatrix, variantsToMatrixState, type VariantRow } from "./variant-matrix";
+import {
+  VariantMatrix,
+  variantsToMatrixState,
+  type VariantRow,
+} from "./variant-matrix";
+import { productImageUrl } from "@/lib/storage-url";
 
 export type AdminProductData = NonNullable<Awaited<ReturnType<typeof getAdminProduct>>>;
 
-const CONDITIONS: ConditionGrade[] = ["NEW_WITH_TAGS", "LIKE_NEW", "EXCELLENT", "GOOD", "FAIR"];
+const CONDITIONS: ConditionGrade[] = [
+  "NEW_WITH_TAGS",
+  "LIKE_NEW",
+  "EXCELLENT",
+  "GOOD",
+  "FAIR",
+];
 const STATUS_OPTIONS = [
   { value: "DRAFT", label: "Draft" },
   { value: "PUBLISHED", label: "Active" },
@@ -86,7 +97,9 @@ export function ProductEditor({
   const router = useRouter();
 
   const [productId, setProductId] = useState<string | null>(initial?.id ?? null);
-  const [catalog, setCatalog] = useState<CatalogType>(initial?.catalog ?? initialCatalog);
+  const [catalog, setCatalog] = useState<CatalogType>(
+    initial?.catalog ?? initialCatalog,
+  );
   const isThrift = catalog === "THRIFT";
 
   const [title, setTitle] = useState(initial?.title ?? "");
@@ -95,7 +108,9 @@ export function ProductEditor({
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [hsnCode, setHsnCode] = useState(initial?.hsnCode ?? "");
   const [metaTitle, setMetaTitle] = useState(initial?.metaTitle ?? "");
-  const [metaDescription, setMetaDescription] = useState(initial?.metaDescription ?? "");
+  const [metaDescription, setMetaDescription] = useState(
+    initial?.metaDescription ?? "",
+  );
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [status, setStatus] = useState(initial?.status ?? "DRAFT");
   const [reason, setReason] = useState("");
@@ -117,7 +132,9 @@ export function ProductEditor({
   const [recommendedFit, setRecommendedFit] = useState(td?.recommendedFit ?? "");
   const [fabric, setFabric] = useState(td?.fabric ?? "");
   const [alterations, setAlterations] = useState(td?.alterations ?? "");
-  const [authenticityNotes, setAuthenticityNotes] = useState(td?.authenticityNotes ?? "");
+  const [authenticityNotes, setAuthenticityNotes] = useState(
+    td?.authenticityNotes ?? "",
+  );
   const [careNotes, setCareNotes] = useState(td?.careNotes ?? "");
   const [isOneOfOne, setIsOneOfOne] = useState(td?.isOneOfOne ?? true);
   const [acquisitionCost, setAcquisitionCost] = useState(
@@ -131,7 +148,8 @@ export function ProductEditor({
   const [banner, setBanner] = useState<{ ok: boolean; message: string } | null>(null);
 
   const publicSiteUrl = publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  const oneOfOneConflict = isThrift && isOneOfOne && rows.filter((r) => !r.orphaned).length > 1;
+  const oneOfOneConflict =
+    isThrift && isOneOfOne && rows.filter((r) => !r.orphaned).length > 1;
 
   async function handleSave() {
     setSaving(true);
@@ -203,13 +221,27 @@ export function ProductEditor({
 
     const coreRes = await updateProductAction(
       productId,
-      { slug, title, description, brand: brand || null, tags, hsnCode: hsnCode || null, metaTitle: metaTitle || null, metaDescription: metaDescription || null },
+      {
+        slug,
+        title,
+        description,
+        brand: brand || null,
+        tags,
+        hsnCode: hsnCode || null,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+      },
       reason || undefined,
     );
     if (!coreRes.ok) errors.push(coreRes.message);
 
     if (status !== initial?.status) {
-      const next = status === "PUBLISHED" ? "PUBLISH" : status === "ARCHIVED" ? "ARCHIVE" : "DRAFT";
+      const next =
+        status === "PUBLISHED"
+          ? "PUBLISH"
+          : status === "ARCHIVED"
+            ? "ARCHIVE"
+            : "DRAFT";
       const statusRes = await statusAction(productId, next, reason || undefined);
       if (!statusRes.ok) errors.push(statusRes.message);
     }
@@ -223,10 +255,13 @@ export function ProductEditor({
     for (const row of toSave) {
       const vRes = await upsertVariantAction(productId, row.input);
       if (!vRes.ok) {
-        errors.push(`Variant ${row.input.size || row.input.color || "default"}: ${vRes.message}`);
+        errors.push(
+          `Variant ${row.input.size || row.input.color || "default"}: ${vRes.message}`,
+        );
       } else {
         const idx = nextRows.findIndex((r) => r.key === row.key);
-        if (idx >= 0 && !nextRows[idx].id) nextRows[idx] = { ...nextRows[idx], id: vRes.variantId };
+        if (idx >= 0 && !nextRows[idx].id)
+          nextRows[idx] = { ...nextRows[idx], id: vRes.variantId };
       }
     }
     setRows(nextRows);
@@ -251,7 +286,10 @@ export function ProductEditor({
       <div className="sticky top-0 z-10 -mx-4 mb-6 border-b border-line bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
           <div>
-            <Link href="/admin/products" className="text-xs text-ink-soft hover:underline">
+            <Link
+              href="/admin/products"
+              className="text-xs text-ink-soft hover:underline"
+            >
               ← All products
             </Link>
             <div className="flex flex-wrap items-center gap-2">
@@ -326,7 +364,12 @@ export function ProductEditor({
 
           <section className="space-y-3">
             <TextInput label="Title" required value={title} onChange={setTitle} />
-            <TextAreaInput label="Description" value={description} onChange={setDescription} rows={5} />
+            <TextAreaInput
+              label="Description"
+              value={description}
+              onChange={setDescription}
+              rows={5}
+            />
           </section>
 
           <section className="space-y-3">
@@ -344,15 +387,13 @@ export function ProductEditor({
                 {initial.images.map((im, i) => (
                   <li key={im.id} className="w-32">
                     <div className="relative h-40 w-32 overflow-hidden rounded bg-line/40">
-                      {im.publicUrl && (
-                        <Image
-                          src={im.publicUrl}
-                          alt={im.altText}
-                          fill
-                          sizes="128px"
-                          className="object-cover"
-                        />
-                      )}
+                      <Image
+                        src={productImageUrl(im)}
+                        alt={im.altText}
+                        fill
+                        sizes="128px"
+                        className="object-cover"
+                      />
                       {im.isPrimary && (
                         <span className="absolute left-1 top-1 rounded bg-foreground px-1 text-[10px] text-background">
                           primary
@@ -365,24 +406,43 @@ export function ProductEditor({
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-                      <ActionForm action={reorderImageAction.bind(null, productId!)} submitLabel="↑" compact>
+                      <ActionForm
+                        action={reorderImageAction.bind(null, productId!)}
+                        submitLabel="↑"
+                        compact
+                      >
                         <input type="hidden" name="imageId" value={im.id} />
                         <input type="hidden" name="direction" value="up" />
                       </ActionForm>
-                      <ActionForm action={reorderImageAction.bind(null, productId!)} submitLabel="↓" compact>
+                      <ActionForm
+                        action={reorderImageAction.bind(null, productId!)}
+                        submitLabel="↓"
+                        compact
+                      >
                         <input type="hidden" name="imageId" value={im.id} />
                         <input type="hidden" name="direction" value="down" />
                       </ActionForm>
                       {!im.isPrimary && (
-                        <ActionForm action={setPrimaryImageAction.bind(null, productId!)} submitLabel="Primary" compact>
+                        <ActionForm
+                          action={setPrimaryImageAction.bind(null, productId!)}
+                          submitLabel="Primary"
+                          compact
+                        >
                           <input type="hidden" name="imageId" value={im.id} />
                         </ActionForm>
                       )}
-                      <ActionForm action={deleteImageAction.bind(null, productId!)} submitLabel="Delete" compact>
+                      <ActionForm
+                        action={deleteImageAction.bind(null, productId!)}
+                        submitLabel="Delete"
+                        compact
+                      >
                         <input type="hidden" name="imageId" value={im.id} />
                       </ActionForm>
                     </div>
-                    <p className="mt-0.5 truncate text-[11px] text-ink-soft" title={im.altText}>
+                    <p
+                      className="mt-0.5 truncate text-[11px] text-ink-soft"
+                      title={im.altText}
+                    >
                       {i + 1}. {im.altText}
                     </p>
                   </li>
@@ -420,7 +480,10 @@ export function ProductEditor({
                   onChange={(v) => setConditionGrade(v as ConditionGrade)}
                   options={CONDITIONS.map((c) => ({ value: c, label: c }))}
                 />
-                <label id="f-isOneOfOne-label" className="flex min-h-11 items-end gap-2 text-xs">
+                <label
+                  id="f-isOneOfOne-label"
+                  className="flex min-h-11 items-end gap-2 text-xs"
+                >
                   <input
                     type="checkbox"
                     checked={isOneOfOne}
@@ -429,13 +492,33 @@ export function ProductEditor({
                   one of one
                 </label>
               </div>
-              <TextInput label="Condition notes" value={conditionNotes} onChange={setConditionNotes} />
+              <TextInput
+                label="Condition notes"
+                value={conditionNotes}
+                onChange={setConditionNotes}
+              />
               <div className="grid grid-cols-2 gap-3">
-                <TextInput label="Original brand" value={originalBrand} onChange={setOriginalBrand} />
+                <TextInput
+                  label="Original brand"
+                  value={originalBrand}
+                  onChange={setOriginalBrand}
+                />
                 <TextInput label="Fabric" value={fabric} onChange={setFabric} />
-                <TextInput label="Labelled size" value={labelledSize} onChange={setLabelledSize} />
-                <TextInput label="Recommended fit" value={recommendedFit} onChange={setRecommendedFit} />
-                <TextInput label="Alterations" value={alterations} onChange={setAlterations} />
+                <TextInput
+                  label="Labelled size"
+                  value={labelledSize}
+                  onChange={setLabelledSize}
+                />
+                <TextInput
+                  label="Recommended fit"
+                  value={recommendedFit}
+                  onChange={setRecommendedFit}
+                />
+                <TextInput
+                  label="Alterations"
+                  value={alterations}
+                  onChange={setAlterations}
+                />
                 <TextInput
                   label="Acquisition cost (₹, admin-only)"
                   type="number"
@@ -444,9 +527,16 @@ export function ProductEditor({
                   onChange={setAcquisitionCost}
                 />
               </div>
-              <TextInput label="Authenticity notes" value={authenticityNotes} onChange={setAuthenticityNotes} />
+              <TextInput
+                label="Authenticity notes"
+                value={authenticityNotes}
+                onChange={setAuthenticityNotes}
+              />
               <TextInput label="Care notes" value={careNotes} onChange={setCareNotes} />
-              <MeasurementsEditor rows={measurementRows} onChange={setMeasurementRows} />
+              <MeasurementsEditor
+                rows={measurementRows}
+                onChange={setMeasurementRows}
+              />
             </section>
           )}
 
@@ -467,7 +557,11 @@ export function ProductEditor({
             />
             <div className="grid grid-cols-2 gap-3">
               <TextInput label="SEO title" value={metaTitle} onChange={setMetaTitle} />
-              <TextInput label="SEO description" value={metaDescription} onChange={setMetaDescription} />
+              <TextInput
+                label="SEO description"
+                value={metaDescription}
+                onChange={setMetaDescription}
+              />
             </div>
             {initial && (
               <details className="rounded border border-line p-3">
@@ -475,10 +569,15 @@ export function ProductEditor({
                   Advanced: Web address
                 </summary>
                 <div className="mt-3 space-y-2">
-                  <TextInput label="Web address (slug)" required value={slug} onChange={setSlug} />
+                  <TextInput
+                    label="Web address (slug)"
+                    required
+                    value={slug}
+                    onChange={setSlug}
+                  />
                   <p className="text-xs text-stop">
-                    Changing this breaks any link to this product already shared — only change
-                    it if you know that&rsquo;s what you want.
+                    Changing this breaks any link to this product already shared — only
+                    change it if you know that&rsquo;s what you want.
                   </p>
                 </div>
               </details>
@@ -489,7 +588,12 @@ export function ProductEditor({
         {/* ── Sidebar ── */}
         <div className="space-y-8">
           <section className="space-y-2 rounded border border-line p-3">
-            <SelectInput label="Status" value={status} onChange={(v) => setStatus(v as typeof status)} options={STATUS_OPTIONS} />
+            <SelectInput
+              label="Status"
+              value={status}
+              onChange={(v) => setStatus(v as typeof status)}
+              options={STATUS_OPTIONS}
+            />
             {initialCheck && (
               <ul className="text-xs">
                 {initialCheck.ok ? (
@@ -503,7 +607,12 @@ export function ProductEditor({
                 )}
               </ul>
             )}
-            <TextInput label="Reason (audit, optional)" value={reason} onChange={setReason} placeholder="why this change" />
+            <TextInput
+              label="Reason (audit, optional)"
+              value={reason}
+              onChange={setReason}
+              placeholder="why this change"
+            />
           </section>
 
           <section className="space-y-3 rounded border border-line p-3">
@@ -512,7 +621,12 @@ export function ProductEditor({
             </h2>
             <TextInput label="Vendor" value={brand} onChange={setBrand} />
             <TextInput label="HSN code" value={hsnCode} onChange={setHsnCode} />
-            <TagInput label="Tags" values={tags} onChange={setTags} placeholder="add a tag" />
+            <TagInput
+              label="Tags"
+              values={tags}
+              onChange={setTags}
+              placeholder="add a tag"
+            />
           </section>
 
           {initial && (
@@ -526,7 +640,8 @@ export function ProductEditor({
                     .filter((pc) => !pc.collection.isInternal)
                     .map((pc) => (
                       <li key={pc.collectionId}>
-                        {pc.collection.name} {pc.collection.isActive ? "" : "(inactive)"}
+                        {pc.collection.name}{" "}
+                        {pc.collection.isActive ? "" : "(inactive)"}
                       </li>
                     ))}
                 </ul>
@@ -534,7 +649,8 @@ export function ProductEditor({
               {homeRailSlug &&
                 (() => {
                   const membership = initial.collections.find(
-                    (pc) => pc.collection.slug === homeRailSlug && pc.collection.isInternal,
+                    (pc) =>
+                      pc.collection.slug === homeRailSlug && pc.collection.isInternal,
                   );
                   return (
                     <ActionForm
@@ -559,8 +675,8 @@ export function ProductEditor({
                 Catalogue
               </h2>
               <p className="mt-1 text-xs text-ink-soft">
-                Currently {isThrift ? "in the Closet" : "in the Label"}. Wrong catalogue?
-                Move it instead of deleting and re-listing.
+                Currently {isThrift ? "in the Closet" : "in the Label"}. Wrong
+                catalogue? Move it instead of deleting and re-listing.
               </p>
               <div className="mt-3">
                 <SwitchCatalogConfirm
@@ -574,10 +690,12 @@ export function ProductEditor({
 
           {initial && (
             <section className="border-t border-line pt-6">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stop">Delete</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-stop">
+                Delete
+              </h2>
               <p className="mt-1 text-xs text-ink-soft">
-                Only possible if this product has never appeared on an order. If it has, use
-                &ldquo;Hidden from shop&rdquo; status above instead.
+                Only possible if this product has never appeared on an order. If it has,
+                use &ldquo;Hidden from shop&rdquo; status above instead.
               </p>
               <div className="mt-3">
                 <DeleteProductConfirm

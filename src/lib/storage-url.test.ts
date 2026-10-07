@@ -1,0 +1,51 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+async function load(env: Record<string, string | undefined>) {
+  vi.resetModules();
+  for (const [k, v] of Object.entries(env)) vi.stubEnv(k, v as string);
+  return import("./storage-url");
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("storagePublicUrl (D-135)", () => {
+  it("builds from the current project, ignoring a stale cached host", async () => {
+    const { productImageUrl } = await load({
+      NEXT_PUBLIC_SUPABASE_URL: "https://newproj.supabase.co",
+      NEXT_PUBLIC_STORAGE_PUBLIC_URL: undefined,
+    });
+    expect(
+      productImageUrl({
+        bucket: "product-images",
+        path: "images/thepoojaedit/kurti-14/00-a.jpg",
+        publicUrl:
+          "https://oldproj.supabase.co/storage/v1/object/public/product-images/images/thepoojaedit/kurti-14/00-a.jpg",
+      }),
+    ).toBe(
+      "https://newproj.supabase.co/storage/v1/object/public/product-images/images/thepoojaedit/kurti-14/00-a.jpg",
+    );
+  });
+
+  it("prefers the storage read override (Preview reading production images)", async () => {
+    const { storagePublicUrl } = await load({
+      NEXT_PUBLIC_SUPABASE_URL: "https://devproj.supabase.co",
+      NEXT_PUBLIC_STORAGE_PUBLIC_URL: "https://prodproj.supabase.co/",
+    });
+    expect(storagePublicUrl("site-media", "home/a b.mp4")).toBe(
+      "https://prodproj.supabase.co/storage/v1/object/public/site-media/home/a%20b.mp4",
+    );
+  });
+
+  it("falls back to the cached URL, then a relative path, when unconfigured", async () => {
+    const { storagePublicUrl } = await load({
+      NEXT_PUBLIC_SUPABASE_URL: undefined,
+      NEXT_PUBLIC_STORAGE_PUBLIC_URL: undefined,
+    });
+    expect(storagePublicUrl("b", "p.jpg", "https://cdn.example/p.jpg")).toBe(
+      "https://cdn.example/p.jpg",
+    );
+    expect(storagePublicUrl("b", "p.jpg")).toBe("/b/p.jpg");
+  });
+});

@@ -15,6 +15,7 @@ import { auditLog } from "@/server/admin/audit";
 import { HOME_RAIL_SLUG } from "./queries";
 import { generateClosetSku } from "./sku";
 import { generateUniqueCollectionSlug, generateUniqueSlug } from "./slug";
+import { productImageUrl } from "@/lib/storage-url";
 
 /**
  * Catalog write operations (master §4, §10). Every function takes the acting
@@ -87,7 +88,7 @@ export async function listAdminProducts(
       images: {
         where: { isPrimary: true },
         take: 1,
-        select: { publicUrl: true, altText: true },
+        select: { publicUrl: true, bucket: true, path: true, altText: true },
       },
     },
   });
@@ -100,7 +101,9 @@ export async function listAdminProducts(
     status: p.status,
     variantCount: p.variants.length,
     imageCount: p._count.images,
-    primaryImage: p.images[0] ?? null,
+    primaryImage: p.images[0]
+      ? { ...p.images[0], publicUrl: productImageUrl(p.images[0]) }
+      : null,
     fromPricePaise: p.variants.length
       ? Math.min(...p.variants.map((v) => v.pricePaise))
       : null,
@@ -1021,7 +1024,7 @@ const COLLECTION_PRODUCT_SELECT = {
   images: {
     where: { isPrimary: true },
     take: 1,
-    select: { publicUrl: true, altText: true },
+    select: { publicUrl: true, bucket: true, path: true, altText: true },
   },
 } satisfies Prisma.ProductSelect;
 
@@ -1102,7 +1105,7 @@ export async function searchAddableCollectionProducts(
       images: {
         where: { isPrimary: true },
         take: 1,
-        select: { publicUrl: true, altText: true },
+        select: { publicUrl: true, bucket: true, path: true, altText: true },
       },
     },
   });

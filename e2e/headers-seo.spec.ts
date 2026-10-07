@@ -18,7 +18,9 @@ test("public catalog API is shared-cacheable; private surfaces are not", async (
   expect(cc).not.toMatch(/private/);
 });
 
-test("robots.txt and sitemap.xml serve and gate the right paths", async ({ request }) => {
+test("robots.txt and sitemap.xml serve and gate the right paths", async ({
+  request,
+}) => {
   const robots = await request.get("/robots.txt");
   expect(robots.ok()).toBeTruthy();
   const body = await robots.text();
@@ -40,10 +42,22 @@ test("cart / checkout / admin are noindex", async ({ page }) => {
 
 test("a PDP carries canonical, OG tags and Product JSON-LD", async ({ page }) => {
   await page.goto("/label");
-  await page.locator("ul.grid > li a").first().click();
+  // First PRODUCT link — the grid can also hold collection tiles.
+  await page
+    .locator('ul.grid > li a[href^="/label/"]:not([href^="/label/collections"])')
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/label\/(?!collections)[^/]+$/);
   await expect(page.locator('head link[rel="canonical"]')).toHaveCount(1);
   await expect(page.locator('head meta[property="og:title"]')).toHaveCount(1);
-  const ld = await page.locator('script[type="application/ld+json"]').first().textContent();
-  expect(ld).toBeTruthy();
-  expect(JSON.parse(ld!)["@type"]).toBe("Product");
+  // Since D-128 a PDP carries several JSON-LD blocks (site-wide Organization/
+  // WebSite @graph, Product, BreadcrumbList) — find the Product among them.
+  const blocks = await page
+    .locator('script[type="application/ld+json"]')
+    .allTextContents();
+  const types = blocks.flatMap((b) => {
+    const d = JSON.parse(b) as { "@type"?: string; "@graph"?: { "@type"?: string }[] };
+    return d["@graph"] ? d["@graph"].map((g) => g["@type"]) : [d["@type"]];
+  });
+  expect(types).toContain("Product");
 });

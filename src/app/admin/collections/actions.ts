@@ -16,11 +16,13 @@ import {
   updateCollection,
 } from "@/server/catalog/admin";
 import { requireAdmin } from "@/server/auth/require-admin";
+import { productImageUrl } from "@/lib/storage-url";
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
 
 function handle(e: unknown): ActionState {
-  if (e instanceof ValidationError) return { ok: false, message: e.message, errors: e.errors };
+  if (e instanceof ValidationError)
+    return { ok: false, message: e.message, errors: e.errors };
   if (e instanceof Error) return { ok: false, message: e.message };
   return { ok: false, message: "Something went wrong." };
 }
@@ -149,7 +151,6 @@ export async function searchAddableProductsAction(
   return rows.map((p) => ({
     id: p.id,
     title: p.title,
-    image: p.images[0]?.publicUrl ?? null,
+    image: p.images[0] ? productImageUrl(p.images[0]) : null,
   }));
 }
-

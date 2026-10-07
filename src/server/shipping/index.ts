@@ -7,6 +7,7 @@ import { env } from "@/lib/env";
 import { ShippingNotConfiguredError, type ShippingProvider } from "./port";
 import { ShadowfaxProvider } from "./shadowfax";
 import {
+  cancelShipmentsForOrder,
   createShipmentForOrder,
   ensureShipmentForConfirmedOrder,
   getShipmentLabel,
@@ -153,6 +154,9 @@ export function getQuoteProvider(): ShippingPort {
 // Prisma-bound wrappers for routes / actions / jobs.
 export function createShipmentForOrderNow(orderId: string, actor?: string) {
   return createShipmentForOrder(prisma, getFulfilmentProvider(), { orderId, actor });
+}
+export function cancelShipmentsNow(orderId: string, actor?: string) {
+  return cancelShipmentsForOrder(prisma, getFulfilmentProvider(), { orderId, actor });
 }
 export function ensureShipmentNow(orderId: string) {
   return ensureShipmentForConfirmedOrder(prisma, getFulfilmentProvider(), { orderId });

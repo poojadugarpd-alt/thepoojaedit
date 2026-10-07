@@ -37,7 +37,12 @@ export function TextInput({
     <div>
       <label htmlFor={inputId} className="block text-xs font-medium">
         {label}
-        {required && <span className="text-stop"> *</span>}
+        {required && (
+          <span className="text-stop" aria-hidden="true">
+            {" "}
+            *
+          </span>
+        )}
       </label>
       <input
         id={inputId}
@@ -138,7 +143,11 @@ export function CheckboxInput({
 }) {
   return (
     <label className="flex min-h-11 items-center gap-2 text-xs">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       {label}
     </label>
   );

@@ -38,8 +38,9 @@ export default async function AdminOrderDetail({
   // there is no cheaper way to learn it first. Measured and reported as its
   // own step rather than folded into the query above, so the report shows
   // it honestly instead of hiding it inside one bracket.
-  const activity = await timed("admin:order-detail (activity, depends on order.id)", () =>
-    listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
+  const activity = await timed(
+    "admin:order-detail (activity, depends on order.id)",
+    () => listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
   );
   const shipment = order.shipments[0];
   const hidden = <input type="hidden" name="orderNumber" value={order.orderNumber} />;
@@ -54,7 +55,9 @@ export default async function AdminOrderDetail({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold text-ink-strong">Order {order.orderNumber}</h1>
+        <h1 className="text-xl font-semibold text-ink-strong">
+          Order {order.orderNumber}
+        </h1>
         <Pill value={order.orderStatus} />
         <Pill value={order.paymentStatus} />
         <Pill value={order.fulfillmentStatus} />
@@ -71,16 +74,21 @@ export default async function AdminOrderDetail({
         <div className="order-first space-y-4 lg:order-none">
           <Section title="Contact & address">
             <p className="text-sm">{order.contactPhone}</p>
-            {order.contactEmail && <p className="text-sm text-ink-soft">{order.contactEmail}</p>}
+            {order.contactEmail && (
+              <p className="text-sm text-ink-soft">{order.contactEmail}</p>
+            )}
             {order.addresses.map((a) => (
               <p key={a.id} className="mt-1 text-xs text-ink-soft">
-                <span className="font-medium">{a.type}</span> — {a.name}, {a.line1}, {a.city},{" "}
-                {a.stateName} {a.postcode}
+                <span className="font-medium">{a.type}</span> — {a.name}, {a.line1},{" "}
+                {a.city}, {a.stateName} {a.postcode}
               </p>
             ))}
             {order.customer && (
               <p className="mt-1 text-xs">
-                <Link href={`/admin/customers/${order.customer.id}`} className="underline">
+                <Link
+                  href={`/admin/customers/${order.customer.id}`}
+                  className="underline"
+                >
                   customer record
                 </Link>
               </p>
@@ -89,18 +97,23 @@ export default async function AdminOrderDetail({
 
           <Section title="Actions">
             <div className="space-y-3">
-              {order.orderStatus === "PENDING_CONFIRMATION" && order.paymentMethod === "COD" && (
-                <ActionForm action={confirmCodAction} submitLabel="Confirm COD order">
-                  {hidden}
-                  <p className="text-xs text-ink-soft">
-                    Confirms the order at {money(order.totalPaise)}, payable on delivery.
-                  </p>
-                </ActionForm>
-              )}
+              {order.orderStatus === "PENDING_CONFIRMATION" &&
+                order.paymentMethod === "COD" && (
+                  <ActionForm action={confirmCodAction} submitLabel="Confirm COD order">
+                    {hidden}
+                    <p className="text-xs text-ink-soft">
+                      Confirms the order at {money(order.totalPaise)}, payable on
+                      delivery.
+                    </p>
+                  </ActionForm>
+                )}
 
               {["CONFIRMED"].includes(order.orderStatus) &&
                 order.fulfillmentStatus === "UNFULFILLED" && (
-                  <ActionForm action={createShipmentAction} submitLabel="Create shipment">
+                  <ActionForm
+                    action={createShipmentAction}
+                    submitLabel="Create shipment"
+                  >
                     {hidden}
                     {!isShippingConfigured() && (
                       <p className="text-xs text-wait">
@@ -112,7 +125,10 @@ export default async function AdminOrderDetail({
 
               {!order.invoices.length &&
                 ["CONFIRMED", "COMPLETED"].includes(order.orderStatus) && (
-                  <ActionForm action={generateInvoiceAction} submitLabel="Issue invoice">
+                  <ActionForm
+                    action={generateInvoiceAction}
+                    submitLabel="Issue invoice"
+                  >
                     {hidden}
                   </ActionForm>
                 )}
@@ -135,7 +151,9 @@ export default async function AdminOrderDetail({
               {refundable > 0 && (
                 <ActionForm action={refundOrderAction} submitLabel="Refund">
                   {hidden}
-                  <p className="text-xs text-ink-soft">up to {money(refundable)} refundable</p>
+                  <p className="text-xs text-ink-soft">
+                    up to {money(refundable)} refundable
+                  </p>
                   <input
                     name="amountRupees"
                     type="number"
@@ -152,10 +170,19 @@ export default async function AdminOrderDetail({
                 </ActionForm>
               )}
 
+              {/* PROCESSING = pickup booked but not collected: cancelOrderAction
+                  cancels it with Shadowfax first (D-133). */}
               {!["CANCELLED", "COMPLETED"].includes(order.orderStatus) &&
-                order.fulfillmentStatus === "UNFULFILLED" && (
+                (order.fulfillmentStatus === "UNFULFILLED" ||
+                  order.fulfillmentStatus === "PROCESSING") && (
                   <ActionForm action={cancelOrderAction} submitLabel="Cancel order">
                     {hidden}
+                    {order.fulfillmentStatus === "PROCESSING" && (
+                      <p className="text-xs text-ink-soft">
+                        A Shadowfax pickup is booked — cancelling also cancels the
+                        pickup.
+                      </p>
+                    )}
                     <input
                       name="reason"
                       placeholder="cancellation reason"
@@ -211,9 +238,13 @@ export default async function AdminOrderDetail({
             </table>
             <dl className="mt-2 ml-auto max-w-xs space-y-0.5 text-sm">
               <Row k="Subtotal" v={money(order.subtotalPaise)} />
-              {order.discountPaise > 0 && <Row k="Discount" v={`-${money(order.discountPaise)}`} />}
+              {order.discountPaise > 0 && (
+                <Row k="Discount" v={`-${money(order.discountPaise)}`} />
+              )}
               <Row k="Shipping" v={money(order.shippingPaise)} />
-              {order.codFeePaise > 0 && <Row k="COD fee" v={money(order.codFeePaise)} />}
+              {order.codFeePaise > 0 && (
+                <Row k="COD fee" v={money(order.codFeePaise)} />
+              )}
               <Row k="Tax" v={money(order.taxPaise)} />
               <Row k="Total" v={money(order.totalPaise)} strong />
               {capturedPaise > 0 && <Row k="Captured" v={money(capturedPaise)} />}
@@ -228,7 +259,9 @@ export default async function AdminOrderDetail({
                   <span className="w-32 shrink-0 text-ink-soft">{ts(e.createdAt)}</span>
                   <span>
                     <span className="font-medium">{e.type}</span>
-                    {e.actor ? <span className="text-ink-soft"> · {e.actor}</span> : null}
+                    {e.actor ? (
+                      <span className="text-ink-soft"> · {e.actor}</span>
+                    ) : null}
                   </span>
                 </li>
               ))}
@@ -247,7 +280,9 @@ export default async function AdminOrderDetail({
                       <td className="py-1">
                         <Pill value={a.status} />
                       </td>
-                      <td className="py-1">{a.providerPaymentId ?? a.providerOrderId ?? "—"}</td>
+                      <td className="py-1">
+                        {a.providerPaymentId ?? a.providerOrderId ?? "—"}
+                      </td>
                       <td className="py-1 text-right">{money(a.amountPaise)}</td>
                     </tr>
                   ))}
@@ -291,19 +326,28 @@ export default async function AdminOrderDetail({
                   COD:{" "}
                   {shipment.codRemittances.map((c) => (
                     <span key={c.id}>
-                      <Pill value={c.status} /> expected {money(c.expectedPaise)} · collected{" "}
-                      {money(c.collectedPaise ?? 0)} · remitted {money(c.remittedPaise ?? 0)}
+                      <Pill value={c.status} /> expected {money(c.expectedPaise)} ·
+                      collected {money(c.collectedPaise ?? 0)} · remitted{" "}
+                      {money(c.remittedPaise ?? 0)}
                     </span>
                   ))}
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-3">
-                <ActionForm action={reconcileShipmentAction} submitLabel="Reconcile tracking" compact>
+                <ActionForm
+                  action={reconcileShipmentAction}
+                  submitLabel="Reconcile tracking"
+                  compact
+                >
                   {hidden}
                   <input type="hidden" name="shipmentId" value={shipment.id} />
                 </ActionForm>
                 {order.paymentMethod === "COD" && (
-                  <ActionForm action={syncCodRemittanceAction} submitLabel="Sync COD remittance" compact>
+                  <ActionForm
+                    action={syncCodRemittanceAction}
+                    submitLabel="Sync COD remittance"
+                    compact
+                  >
                     {hidden}
                     <input type="hidden" name="shipmentId" value={shipment.id} />
                   </ActionForm>
@@ -354,7 +398,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Row({ k, v, strong }: { k: string; v: React.ReactNode; strong?: boolean }) {
   return (
-    <div className={`flex justify-between ${strong ? "border-t border-line pt-1 font-semibold" : ""}`}>
+    <div
+      className={`flex justify-between ${strong ? "border-t border-line pt-1 font-semibold" : ""}`}
+    >
       <dt className="text-ink-soft">{k}</dt>
       <dd>{v}</dd>
     </div>

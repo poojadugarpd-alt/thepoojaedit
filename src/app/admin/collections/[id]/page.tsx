@@ -14,10 +14,15 @@ import {
   updateCollectionAction,
 } from "../actions";
 import { AddProduct } from "./add-product";
+import { productImageUrl } from "@/lib/storage-url";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const col = await getCollectionAdmin(prisma, id);
   return { title: col?.name ?? "Collection" };
@@ -47,13 +52,19 @@ export default async function AdminCollectionPage({
 
       {col.isInternal && (
         <p className="text-xs text-ink-soft">
-          The first piece here with a photo becomes the large image at the top of
-          the home page. Leave this empty to show the newest pieces automatically.
+          The first piece here with a photo becomes the large image at the top of the
+          home page. Leave this empty to show the newest pieces automatically.
         </p>
       )}
 
       <ActionForm action={updateCollectionAction.bind(null, id)} submitLabel="Save">
-        <Field label="Name" name="name" defaultValue={col.name} required maxLength={80} />
+        <Field
+          label="Name"
+          name="name"
+          defaultValue={col.name}
+          required
+          maxLength={80}
+        />
         <TextArea
           label="Description"
           name="description"
@@ -93,12 +104,19 @@ export default async function AdminCollectionPage({
                   key={p.id}
                   className={`flex items-center gap-3 rounded border border-line p-2 ${!isVisible ? "opacity-50" : ""}`}
                 >
-                  <Thumb url={p.images[0]?.publicUrl ?? null} alt={p.images[0]?.altText ?? p.title} />
+                  <Thumb
+                    url={p.images[0] ? productImageUrl(p.images[0]) : null}
+                    alt={p.images[0]?.altText ?? p.title}
+                  />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink-strong">{p.title}</p>
+                    <p className="truncate text-sm font-medium text-ink-strong">
+                      {p.title}
+                    </p>
                     <div className="mt-0.5 flex items-center gap-2">
                       <Pill value={p.status} />
-                      {price != null && <span className="text-xs text-ink-soft">{money(price)}</span>}
+                      {price != null && (
+                        <span className="text-xs text-ink-soft">{money(price)}</span>
+                      )}
                     </div>
                     {!isVisible && (
                       <p className="mt-0.5 text-[11px] text-ink-soft">
