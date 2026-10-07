@@ -225,6 +225,11 @@ backfill was superseded in the 2026-10-07 merge.
      directly (`cc7250a`, live, verified 200). Photos are now 0.5–2.7 MB
      each, so pages are heavy on mobile. Follow-up: shrink the Shopify-era
      originals, or upgrade Vercel and remove the flag.
+   - **D-144:** checkout was broken on production (Shadowfax token and
+     Razorpay live keys both rejected with 401). Owner replaced both; first
+     live end-to-end order `PE-261007-QXQANN` proved Razorpay capture, invoice
+     and a real Shadowfax shipment (AWB `SF40396589404`). That order is a
+     test: cancel + refund it in admin, and archive "TEST ITEM - please ignore".
    - **D-143:** 42 sold Closet pieces archived via the new "Hide sold Closet
      pieces now" button (admin → Products → Sold). Going forward an hourly
      Inngest cron (`archive-sold-closet`) archives a Closet piece 3 days after
