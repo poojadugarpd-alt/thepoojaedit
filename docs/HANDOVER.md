@@ -225,6 +225,13 @@ backfill was superseded in the 2026-10-07 merge.
      directly (`cc7250a`, live, verified 200). Photos are now 0.5–2.7 MB
      each, so pages are heavy on mobile. Follow-up: shrink the Shopify-era
      originals, or upgrade Vercel and remove the flag.
+   - **D-143:** 42 sold Closet pieces archived via the new "Hide sold Closet
+     pieces now" button (admin → Products → Sold). Going forward an hourly
+     Inngest cron (`archive-sold-closet`) archives a Closet piece 3 days after
+     it sells. **Unverified:** that Inngest has picked up the new function and
+     the cron actually fires in production (no prod Inngest cron has been
+     verified end-to-end yet; check the Inngest dashboard). Archived product
+     URLs now return 404.
    - **Fixed (D-142):** multi-photo upload no longer makes the last photo
      primary; "Primary" moves the photo to the front without creating
      position ties; ↑/↓ work again (old ties heal on the next click);
