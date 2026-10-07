@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
   // Phase 4 storefront has real imagery to render; production images come from
   // Supabase Storage.
   images: {
+    // D-141: Vercel's image optimizer started returning 402
+    // OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED (plan quota used up), blanking
+    // product photos on the live site. Serve the source files directly from
+    // Supabase Storage instead; admin uploads are already compressed
+    // client-side (compress-image.ts, max 2400px edge).
+    unoptimized: true,
     remotePatterns: [
       // Product photography — Supabase Storage (public `product-images` bucket).
       { protocol: "https", hostname: "**.supabase.co" },
