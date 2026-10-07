@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,7 @@ const CONDITIONS: ConditionGrade[] = [
   "GOOD",
   "FAIR",
 ];
+const CREATED_FLASH_KEY = "tpe-admin-product-created";
 const STATUS_OPTIONS = [
   { value: "DRAFT", label: "Draft" },
   { value: "PUBLISHED", label: "Active" },
@@ -147,6 +148,21 @@ export function ProductEditor({
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<{ ok: boolean; message: string } | null>(null);
 
+  // "Product created." is set on /admin/products/new, but the redirect to
+  // /admin/products/[id] is a different route, so this component remounts and
+  // loses its state. The message is handed across in sessionStorage instead.
+  useEffect(() => {
+    try {
+      const flash = sessionStorage.getItem(CREATED_FLASH_KEY);
+      if (flash && flash === initial?.id) {
+        sessionStorage.removeItem(CREATED_FLASH_KEY);
+        setBanner({ ok: true, message: "Product created." });
+      }
+    } catch {
+      // Storage blocked: the product still saved, only the banner is lost.
+    }
+  }, [initial?.id]);
+
   const publicSiteUrl = publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
   const oneOfOneConflict =
     isThrift && isOneOfOne && rows.filter((r) => !r.orphaned).length > 1;
@@ -192,6 +208,11 @@ export function ProductEditor({
       if (result.ok) {
         setProductId(result.productId);
         setBanner({ ok: true, message: "Product created." });
+        try {
+          sessionStorage.setItem(CREATED_FLASH_KEY, result.productId);
+        } catch {
+          // See the mount effect above: losing the banner is harmless.
+        }
         router.replace(`/admin/products/${result.productId}`);
       } else {
         // A partial failure after the product row itself was created still

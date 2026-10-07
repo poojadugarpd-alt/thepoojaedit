@@ -108,12 +108,13 @@ test("mobile bottom nav reaches every primary destination", async ({ page }) => 
  * variant rows already attached (no separate "add variant" round trips).
  */
 test("create a Label product with two sizes in one Save", async ({ page }) => {
+  // SKUs are suggested from the title, and every project (chromium, mobile, …)
+  // shares one database, so a fixed title collides on `ProductVariant_sku_key`.
+  const title = `E2E Test Kurta ${Math.random().toString(36).slice(2, 8)}`;
   await page.goto("/admin/products/new");
   await expect(page.getByRole("heading", { name: "New product" })).toBeVisible();
 
-  await page
-    .getByRole("textbox", { name: "Title", exact: true })
-    .fill("E2E Test Kurta");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title);
 
   const sizesInput = page.getByLabel("Sizes", { exact: true });
   await sizesInput.fill("S");
@@ -134,7 +135,7 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
   // state — both variant rows survive a fresh load.
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(
-    "E2E Test Kurta",
+    title,
   );
   await expect(page.getByLabel("Price, ₹ (S)")).toHaveValue("1999.00");
   await expect(page.getByLabel("Price, ₹ (M)")).toHaveValue("1999.00");
