@@ -45,6 +45,11 @@ export interface ShippingRules {
   pickup: ShippingPickup;
   /** Fallback per-parcel weight when a variant has no weight recorded. */
   defaultWeightGrams: number;
+  /**
+   * Shipping charged at checkout, once per order (owner, 2026-10-07): Label-only
+   * orders ship free, and any Closet item makes the whole order ₹100.
+   */
+  fees: { labelOnlyPaise: number; withClosetPaise: number };
 }
 
 /** Clearly-labelled dev fixture; the owner confirms the real pickup before live. */
@@ -60,6 +65,7 @@ const DEFAULT_SHIPPING_RULES: ShippingRules = {
     country: "IN",
   },
   defaultWeightGrams: 400,
+  fees: { labelOnlyPaise: 0, withClosetPaise: 10_000 },
 };
 
 async function readSetting<T>(db: PrismaClient, key: string): Promise<T | null> {
@@ -82,6 +88,7 @@ export async function getShippingRules(db: PrismaClient): Promise<ShippingRules>
     pickup: { ...DEFAULT_SHIPPING_RULES.pickup, ...(v?.pickup ?? {}) },
     defaultWeightGrams:
       v?.defaultWeightGrams ?? DEFAULT_SHIPPING_RULES.defaultWeightGrams,
+    fees: { ...DEFAULT_SHIPPING_RULES.fees, ...(v?.fees ?? {}) },
   };
 }
 

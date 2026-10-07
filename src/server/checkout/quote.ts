@@ -3,7 +3,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 
 import type { CatalogType, PrismaClient } from "@/generated/prisma";
-import { getBusinessProfile, getCheckoutRules } from "@/server/settings";
+import {
+  getBusinessProfile,
+  getCheckoutRules,
+  getShippingRules,
+} from "@/server/settings";
 import { computeOrderTax, type PricingMode } from "@/server/tax/calculator";
 import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
 
@@ -126,9 +130,10 @@ export async function computeQuote(
     }
   }
 
-  const [profile, rules] = await Promise.all([
+  const [profile, rules, shippingRules] = await Promise.all([
     getBusinessProfile(db),
     getCheckoutRules(db),
+    getShippingRules(db),
   ]);
   const supplierStateCode = profile?.stateCode ?? "";
   const placeOfSupplyStateCode = input.destination.stateCode;
@@ -223,9 +228,15 @@ export async function computeQuote(
     throw new QuoteError("Cash on delivery is not available for this order.");
   }
 
+  // The provider only answers serviceability/COD; the fee is the store's own
+  // rule — ₹100 once if any Closet piece is in the cart, else free (D-137).
+  const shippingPaise = base.some((l) => l.catalog === "THRIFT")
+    ? shippingRules.fees.withClosetPaise
+    : shippingRules.fees.labelOnlyPaise;
+
   const tax = computeOrderTax({
     lines: taxLines,
-    shippingPaise: shipQuote.shippingPaise,
+    shippingPaise,
     codFeePaise: input.paymentMethod === "COD" ? shipQuote.codFeePaise : 0,
   });
 

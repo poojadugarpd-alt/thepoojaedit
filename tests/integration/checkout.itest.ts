@@ -214,6 +214,51 @@ describe("server-authoritative pricing (AC-06/11)", () => {
   });
 });
 
+describe("shipping fee: Label free, ₹100 once with any Closet item (D-137)", () => {
+  const quoteFor = (lines: { variantId: string; quantity: number }[]) =>
+    computeQuote(db, {
+      lines,
+      paymentMethod: "PREPAID_RAZORPAY",
+      destination: { stateCode: "08", postcode: "302001" },
+    });
+
+  it("charges nothing on a Label-only cart", async () => {
+    const label = await makeVariant({ onHand: 5 });
+    const q = await quoteFor([{ variantId: label, quantity: 2 }]);
+    expect(q.shippingPaise).toBe(0);
+  });
+
+  it("charges ₹100 once for Closet items, alone or mixed with Label", async () => {
+    const closetA = await makeVariant({ onHand: 1, oneOfOne: true });
+    const closetB = await makeVariant({ onHand: 1, oneOfOne: true });
+    const label = await makeVariant({ onHand: 5 });
+    const closetOnly = await quoteFor([
+      { variantId: closetA, quantity: 1 },
+      { variantId: closetB, quantity: 1 },
+    ]);
+    expect(closetOnly.shippingPaise).toBe(10_000);
+    const mixed = await quoteFor([
+      { variantId: closetA, quantity: 1 },
+      { variantId: label, quantity: 3 },
+    ]);
+    expect(mixed.shippingPaise).toBe(10_000);
+  });
+
+  it("takes the amounts from the shipping.rules setting", async () => {
+    await db.storeSettings.create({
+      data: { key: "shipping.rules", value: { fees: { labelOnlyPaise: 5_000 } } },
+    });
+    const label = await makeVariant({ onHand: 5 });
+    const closet = await makeVariant({ onHand: 1, oneOfOne: true });
+    expect((await quoteFor([{ variantId: label, quantity: 1 }])).shippingPaise).toBe(
+      5_000,
+    );
+    expect((await quoteFor([{ variantId: closet, quantity: 1 }])).shippingPaise).toBe(
+      10_000,
+    );
+  });
+});
+
 describe("prepaid vs COD placement (AC-09)", () => {
   it("prepaid → PENDING_PAYMENT + reservation; COD → PENDING_CONFIRMATION + committed stock", async () => {
     const v1 = await makeVariant({ onHand: 5 });

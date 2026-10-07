@@ -204,7 +204,12 @@ export default async function OrderPage({ params, searchParams }: Params) {
         {order.discountPaise > 0 && (
           <Row label="Discount" value={`-${formatPaiseINR(order.discountPaise)}`} />
         )}
-        <Row label="Shipping" value={formatPaiseINR(order.shippingPaise)} />
+        <Row
+          label="Shipping"
+          value={
+            order.shippingPaise === 0 ? "Free" : formatPaiseINR(order.shippingPaise)
+          }
+        />
         {order.codFeePaise > 0 && (
           <Row label="COD fee" value={formatPaiseINR(order.codFeePaise)} />
         )}

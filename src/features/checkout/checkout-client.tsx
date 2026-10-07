@@ -87,10 +87,12 @@ export function CheckoutClient({
     );
   }
 
-  const set = (k: keyof AddressForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setAddr((a) => ({ ...a, [k]: e.target.value }));
-    setQuote(null);
-  };
+  const set =
+    (k: keyof AddressForm) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setAddr((a) => ({ ...a, [k]: e.target.value }));
+      setQuote(null);
+    };
 
   async function onReview(e: React.FormEvent) {
     e.preventDefault();
@@ -196,12 +198,51 @@ export function CheckoutClient({
         <li>
           <h2 className="u-label">Delivery address</h2>
           <form onSubmit={onReview} className="mt-3 grid gap-3 sm:grid-cols-2">
-            <Input label="Full name" value={addr.name} onChange={set("name")} required autoComplete="name" />
-            <Input label="Phone" value={addr.phone} onChange={set("phone")} required inputMode="tel" autoComplete="tel" />
-            <Input label="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} type="email" autoComplete="email" className="sm:col-span-2" />
-            <Input label="Address" value={addr.line1} onChange={set("line1")} required autoComplete="address-line1" className="sm:col-span-2" />
-            <Input label="Apartment, suite (optional)" value={addr.line2} onChange={set("line2")} autoComplete="address-line2" className="sm:col-span-2" />
-            <Input label="City" value={addr.city} onChange={set("city")} required autoComplete="address-level2" />
+            <Input
+              label="Full name"
+              value={addr.name}
+              onChange={set("name")}
+              required
+              autoComplete="name"
+            />
+            <Input
+              label="Phone"
+              value={addr.phone}
+              onChange={set("phone")}
+              required
+              inputMode="tel"
+              autoComplete="tel"
+            />
+            <Input
+              label="Email (optional)"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              autoComplete="email"
+              className="sm:col-span-2"
+            />
+            <Input
+              label="Address"
+              value={addr.line1}
+              onChange={set("line1")}
+              required
+              autoComplete="address-line1"
+              className="sm:col-span-2"
+            />
+            <Input
+              label="Apartment, suite (optional)"
+              value={addr.line2}
+              onChange={set("line2")}
+              autoComplete="address-line2"
+              className="sm:col-span-2"
+            />
+            <Input
+              label="City"
+              value={addr.city}
+              onChange={set("city")}
+              required
+              autoComplete="address-level2"
+            />
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="u-label u-label--muted">State</span>
               <select
@@ -218,7 +259,14 @@ export function CheckoutClient({
                 ))}
               </select>
             </label>
-            <Input label="PIN code" value={addr.postcode} onChange={set("postcode")} required inputMode="numeric" autoComplete="postal-code" />
+            <Input
+              label="PIN code"
+              value={addr.postcode}
+              onChange={set("postcode")}
+              required
+              inputMode="numeric"
+              autoComplete="postal-code"
+            />
 
             <fieldset className="sm:col-span-2 mt-2">
               <legend className="u-label u-label--muted">Payment</legend>
@@ -280,16 +328,22 @@ export function CheckoutClient({
                         {l.title}
                         {l.size ? ` · ${l.size}` : ""} × {l.quantity}
                       </td>
-                      <td className="py-1 text-right">{formatPaiseINR(l.lineTotalPaise)}</td>
+                      <td className="py-1 text-right">
+                        {formatPaiseINR(l.lineTotalPaise)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <dl className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
                 <Line label="Subtotal" value={quote.subtotalPaise} />
-                {quote.discountPaise > 0 && <Line label="Discount" value={-quote.discountPaise} />}
-                <Line label="Shipping" value={quote.shippingPaise} />
-                {quote.codFeePaise > 0 && <Line label="COD fee" value={quote.codFeePaise} />}
+                {quote.discountPaise > 0 && (
+                  <Line label="Discount" value={-quote.discountPaise} />
+                )}
+                <Line label="Shipping" value={quote.shippingPaise} zeroLabel="Free" />
+                {quote.codFeePaise > 0 && (
+                  <Line label="COD fee" value={quote.codFeePaise} />
+                )}
                 <Line label="Tax" value={quote.taxPaise} />
                 <div className="flex justify-between border-t border-line pt-2 text-ink-strong">
                   <dt className="font-bold uppercase tracking-[0.06em] text-[0.8125rem]">
@@ -302,11 +356,7 @@ export function CheckoutClient({
                 Stock is held for {Math.round(quote.reservationTtlSeconds / 60)} minutes
                 after you place a prepaid order.
               </p>
-              <button
-                onClick={onPlace}
-                disabled={busy}
-                className="u-pill mt-5 w-full"
-              >
+              <button onClick={onPlace} disabled={busy} className="u-pill mt-5 w-full">
                 {busy
                   ? "Working…"
                   : method === "COD"
@@ -329,8 +379,11 @@ export function CheckoutClient({
 
       <p className="mt-8 text-xs text-ink-soft">
         Cart total (as displayed): {formatPaiseINR(displaySubtotal)} across{" "}
-        {lines.map((l) => CATALOG_LABEL[l.catalog]).filter((v, i, a) => a.indexOf(v) === i).join(" + ")}.
-        The server recalculates the exact price and tax above.
+        {lines
+          .map((l) => CATALOG_LABEL[l.catalog])
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(" + ")}
+        . The server recalculates the exact price and tax above.
       </p>
     </div>
   );
@@ -352,11 +405,21 @@ function Input({
   );
 }
 
-function Line({ label, value }: { label: string; value: number }) {
+function Line({
+  label,
+  value,
+  zeroLabel,
+}: {
+  label: string;
+  value: number;
+  zeroLabel?: string;
+}) {
   return (
     <div className="flex justify-between">
       <dt className="text-ink-soft">{label}</dt>
-      <dd className="text-ink">{formatPaiseINR(value)}</dd>
+      <dd className="text-ink">
+        {value === 0 && zeroLabel ? zeroLabel : formatPaiseINR(value)}
+      </dd>
     </div>
   );
 }
