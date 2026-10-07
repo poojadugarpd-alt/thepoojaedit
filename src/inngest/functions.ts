@@ -27,6 +27,7 @@ import {
 } from "@/server/invoices/service";
 import { makeRefundReconcilePort } from "@/server/refunds/service";
 import { notifyForDomainEvent } from "@/server/notifications";
+import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -157,6 +158,22 @@ export const reconcileRefunds = inngest.createFunction(
 );
 
 /**
+ * Sold Closet pieces leave the shop 3 days after they sell (D-143). Hourly, so
+ * a piece goes within an hour of its 3 days being up.
+ */
+export const archiveSoldCloset = inngest.createFunction(
+  { id: "archive-sold-closet", concurrency: 1 },
+  { cron: "0 * * * *" },
+  async ({ step }) => {
+    const result = await step.run("archive", () => archiveSoldClosetPieces(prisma));
+    if (result.archived.length > 0) {
+      logger.info({ archived: result.archived }, "archived sold Closet pieces");
+    }
+    return { archived: result.archived.length };
+  },
+);
+
+/**
  * Issue the invoice + generate its private PDF when an order is CONFIRMED
  * (master §6). Idempotent (`Invoice @@unique([orderId])` + PDF key check).
  * A PDF failure opens an `INVOICE_FAILURE` task and is retried — it never
@@ -265,6 +282,7 @@ export const functions = [
   reconcilePayments,
   reconcileShipments,
   reconcileRefunds,
+  archiveSoldCloset,
   createShipmentOnConfirm,
   generateInvoice,
   sendNotifications,

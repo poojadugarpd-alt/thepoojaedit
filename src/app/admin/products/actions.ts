@@ -30,6 +30,7 @@ import {
   setPrimaryProductImage,
   type UploadTicket,
 } from "@/server/catalog/product-images";
+import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
 
 // ── FormData-based actions (still wrapped in `<ActionForm>`/`useActionState`
 // for the handful of small, independent, instant actions this page keeps —
@@ -633,4 +634,38 @@ export async function createFullProductAction(
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${productId}`);
   return { ok: true, productId };
+}
+
+/** "Hide sold Closet pieces now" on the products list (D-143): archive every
+ *  sold Closet piece immediately instead of waiting out the 3 days. */
+export async function archiveSoldClosetNowAction(): Promise<ActionState> {
+  const admin = await requireAdmin();
+  try {
+    const { archived } = await archiveSoldClosetPieces(prisma, { graceDays: 0 });
+    for (const p of archived) {
+      await prisma.adminActivityLog.create({
+        data: {
+          adminUserId: admin.id,
+          action: "product.archived_sold",
+          entityType: "Product",
+          entityId: p.id,
+          before: { status: "PUBLISHED" },
+          after: { status: "ARCHIVED" },
+          reason: "Hide sold Closet pieces now",
+        },
+      });
+    }
+    revalidatePath("/admin/products");
+    revalidatePath("/closet");
+    revalidatePath("/");
+    return {
+      ok: true,
+      message:
+        archived.length === 0
+          ? "No sold Closet pieces to hide."
+          : `Hid ${archived.length} sold Closet piece${archived.length === 1 ? "" : "s"}.`,
+    };
+  } catch (e) {
+    return handle(e);
+  }
 }

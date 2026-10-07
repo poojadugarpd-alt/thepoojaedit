@@ -4,6 +4,8 @@ import { formatPaiseINR } from "@/lib/money";
 import { prisma } from "@/lib/db";
 import type { CatalogType } from "@/lib/catalog-routes";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
+import { archiveSoldClosetNowAction } from "@/app/admin/products/actions";
+import { ActionForm } from "@/features/admin/action-form";
 import { Pill, Thumb } from "@/features/admin/format";
 import { Sheet } from "@/features/admin/sheet";
 import { timed } from "@/lib/perf";
@@ -166,6 +168,23 @@ export default async function AdminProducts({
           );
         })}
       </nav>
+
+      {availability === "SOLD" && (
+        <div className="mt-3 rounded border border-line p-3">
+          <p className="text-xs text-ink-soft">
+            Sold Closet pieces leave the shop automatically 3 days after they sell.
+            They stay here under Archived, with their orders.
+          </p>
+          <ActionForm
+            action={archiveSoldClosetNowAction}
+            submitLabel="Hide sold Closet pieces now"
+            compact
+            className="mt-2"
+          >
+            {null}
+          </ActionForm>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <form method="get" className="flex min-w-0 flex-1 items-center gap-2">
