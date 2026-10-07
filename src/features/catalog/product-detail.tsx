@@ -180,7 +180,9 @@ function jsonLd(product: PublicProductDetail, url: string) {
   const availability =
     product.availability === "IN_STOCK"
       ? "https://schema.org/InStock"
-      : "https://schema.org/OutOfStock";
+      : product.availability === "ON_HOLD"
+        ? "https://schema.org/LimitedAvailability"
+        : "https://schema.org/OutOfStock";
   return {
     "@context": "https://schema.org",
     "@type": "Product",

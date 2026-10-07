@@ -80,7 +80,7 @@ export function AddToCart({
             {variants.map((v) => (
               <option key={v.id} value={v.id} disabled={!v.available}>
                 {v.size ?? v.sku}
-                {!v.available ? " — unavailable" : ""}
+                {!v.available ? (v.onHold ? " — on hold" : " — unavailable") : ""}
                 {v.pricePaise !== variants[0].pricePaise
                   ? ` (${formatPaiseINR(v.pricePaise)})`
                   : ""}
@@ -142,10 +142,19 @@ export function AddToCart({
       >
         {canAdd
           ? "Add to cart"
-          : availability === "OUT_OF_STOCK"
-            ? "Sold out"
-            : "Unavailable"}
+          : selected?.onHold
+            ? "On hold"
+            : availability === "OUT_OF_STOCK"
+              ? "Sold out"
+              : "Unavailable"}
       </button>
+
+      {!canAdd && selected?.onHold && (
+        <p className="text-[0.95rem] text-ink">
+          Someone is checking out with this right now. If they don&rsquo;t pay within
+          about 10 minutes, it comes back &mdash; refresh the page to check.
+        </p>
+      )}
 
       <p aria-live="polite" className="min-h-[1.25rem] text-[0.95rem]">
         {added && (

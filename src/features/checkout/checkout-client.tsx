@@ -194,6 +194,7 @@ export function CheckoutClient({
         keyId: res.prepaid.keyId,
         providerOrderId: res.prepaid.providerOrderId,
         amountPaise: res.prepaid.amountPaise,
+        timeoutSeconds: res.prepaid.paymentWindowSeconds,
         prefill: { name: addr.name, email, contact: addr.phone },
         onDismiss: () => {
           setBusy(false);

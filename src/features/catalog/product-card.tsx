@@ -10,12 +10,15 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
   const segment = SEGMENT_BY_CATALOG[product.catalog];
   const href = `/${segment}/${product.slug}`;
   const img = product.primaryImage;
-  const sold = product.availability !== "IN_STOCK";
+  const sold =
+    product.availability === "SOLD" || product.availability === "OUT_OF_STOCK";
   const tag =
     product.availability === "SOLD"
       ? "SOLD"
       : product.availability === "OUT_OF_STOCK"
         ? "Sold out"
+        : product.availability === "ON_HOLD"
+          ? "On hold"
         : product.isThrift && product.isOneOfOne
           ? "One of one"
           : null;

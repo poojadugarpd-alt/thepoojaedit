@@ -18,6 +18,7 @@ import {
   DiscountCodeQuoteError,
   getQuote,
   guestScope,
+  holdForPayment,
   IdempotencyConflictError,
   PriceChangedError,
   QuoteError,
@@ -126,6 +127,8 @@ export interface PlaceResult {
     keyId: string;
     providerOrderId: string;
     amountPaise: number;
+    /** Razorpay Checkout closes after this many seconds — the hold (D-150). */
+    paymentWindowSeconds: number;
   } | null;
 }
 
@@ -187,6 +190,16 @@ export async function placeCheckoutAction(
       };
     }
 
+    const hold = await holdForPayment(prisma, { orderId: order.id });
+    if (!hold.ok) {
+      return {
+        ok: false,
+        error:
+          hold.reason === "sold_out"
+            ? "Sorry, this piece just sold out. Please review your bag."
+            : "This order is not awaiting payment.",
+      };
+    }
     const attempt = await startPrepaidPayment(order.id);
     return {
       ok: true,
@@ -197,6 +210,7 @@ export async function placeCheckoutAction(
         keyId: publicEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         providerOrderId: attempt.providerOrderId!,
         amountPaise: attempt.amountPaise,
+        paymentWindowSeconds: hold.paymentWindowSeconds,
       },
     };
   } catch (e) {
@@ -242,8 +256,14 @@ export async function resumePaymentAction(raw: {
   orderNumber: string;
   token: string;
 }): Promise<
-  | { ok: true; keyId: string; providerOrderId: string; amountPaise: number }
-  | { ok: false; error: string }
+  | {
+      ok: true;
+      keyId: string;
+      providerOrderId: string;
+      amountPaise: number;
+      paymentWindowSeconds: number;
+    }
+  | { ok: false; error: string; soldOut?: boolean }
 > {
   if (!isPrepaidConfigured()) {
     return { ok: false, error: "Online payment isn't available right now." };
@@ -267,11 +287,25 @@ export async function resumePaymentAction(raw: {
   ) {
     return { ok: false, error: "This order is not awaiting payment." };
   }
+  // The hold may have run out while the order sat unpaid (D-150): re-take the
+  // stock, or cancel the order if someone else bought it meanwhile.
+  const hold = await holdForPayment(prisma, { orderId: order.id });
+  if (!hold.ok) {
+    return hold.reason === "sold_out"
+      ? {
+          ok: false,
+          soldOut: true,
+          error:
+            "Sorry, this piece sold while your payment was pending, so we've cancelled the order. You haven't been charged.",
+        }
+      : { ok: false, error: "This order is not awaiting payment." };
+  }
   const attempt = await startPrepaidPayment(order.id);
   return {
     ok: true,
     keyId: publicEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
     providerOrderId: attempt.providerOrderId!,
     amountPaise: attempt.amountPaise,
+    paymentWindowSeconds: hold.paymentWindowSeconds,
   };
 }

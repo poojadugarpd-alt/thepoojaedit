@@ -127,9 +127,9 @@ export async function releaseReservations(
 ): Promise<number> {
   const now = input.now ?? new Date();
   const rows = await tx.$queryRawUnsafe<
-    { id: string; variantId: string; quantity: number }[]
+    { id: string; variantId: string; quantity: number; expiresAt: Date }[]
   >(
-    `SELECT "id", "variantId", "quantity" FROM "InventoryReservation"
+    `SELECT "id", "variantId", "quantity", "expiresAt" FROM "InventoryReservation"
        WHERE "orderId" = $1::uuid AND "status" = 'ACTIVE'
        FOR UPDATE`,
     input.orderId,
@@ -157,7 +157,8 @@ export async function releaseReservations(
       type: "RELEASE",
       reservedDelta: -r.quantity,
       reason: input.reason,
-      idempotencyKey: key(["release", r.id]),
+      // The hold's expiry makes each round of a renewed hold distinct (D-150).
+      idempotencyKey: key(["release", r.id, r.expiresAt.getTime()]),
     });
     released++;
   }
@@ -175,9 +176,9 @@ export async function expireReservations(
   const now = input.now ?? new Date();
   const limit = Math.min(Math.max(input.limit ?? 100, 1), 500);
   const rows = await tx.$queryRawUnsafe<
-    { id: string; variantId: string; quantity: number; orderId: string }[]
+    { id: string; variantId: string; quantity: number; orderId: string; expiresAt: Date }[]
   >(
-    `SELECT "id", "variantId", "quantity", "orderId" FROM "InventoryReservation"
+    `SELECT "id", "variantId", "quantity", "orderId", "expiresAt" FROM "InventoryReservation"
        WHERE "status" = 'ACTIVE' AND "expiresAt" <= $1
        ORDER BY "expiresAt" ASC
        LIMIT ${limit}
@@ -207,11 +208,85 @@ export async function expireReservations(
       type: "RELEASE",
       reservedDelta: -r.quantity,
       reason: "expired",
-      idempotencyKey: key(["expire", r.id]),
+      idempotencyKey: key(["expire", r.id, r.expiresAt.getTime()]),
     });
     expired++;
   }
   return expired;
+}
+
+/** Seconds left on a renewed hold below which "Complete payment" tops it up. */
+export const HOLD_TOP_UP_BELOW_SECONDS = 120;
+
+/**
+ * Make sure an unpaid order holds its stock before the buyer pays (D-150), and
+ * return when that hold ends so Razorpay Checkout can close at the same moment.
+ *
+ *  - ACTIVE with ≥ 2 min left → unchanged (no endless extending by re-clicking).
+ *  - ACTIVE but under 2 min, or past its time and not yet swept → extended to a
+ *    fresh TTL; the stock is still counted as reserved, so nothing to re-take.
+ *  - EXPIRED / RELEASED (swept, or a failed payment) → re-taken with the same
+ *    conditional update as `reserveAll`; if anyone bought it meanwhile this
+ *    throws `InsufficientStockError` and the caller's transaction rolls back.
+ *
+ * Only for orders still awaiting payment — the caller checks that.
+ */
+export async function renewHold(
+  tx: Tx,
+  input: { orderId: string; ttlSeconds: number; now?: Date },
+): Promise<Date | null> {
+  const now = input.now ?? new Date();
+  const fresh = new Date(now.getTime() + input.ttlSeconds * 1000);
+  const topUpBefore = new Date(now.getTime() + HOLD_TOP_UP_BELOW_SECONDS * 1000);
+  const rows = await tx.$queryRawUnsafe<
+    { id: string; variantId: string; quantity: number; status: string; expiresAt: Date }[]
+  >(
+    `SELECT "id", "variantId", "quantity", "status", "expiresAt" FROM "InventoryReservation"
+       WHERE "orderId" = $1::uuid AND "status" <> 'CONVERTED'
+       ORDER BY "variantId"
+       FOR UPDATE`,
+    input.orderId,
+  );
+  if (rows.length === 0) return null;
+
+  const ends: Date[] = [];
+  for (const r of rows) {
+    if (r.status === "ACTIVE") {
+      if (r.expiresAt > topUpBefore) {
+        ends.push(r.expiresAt);
+        continue;
+      }
+      await tx.inventoryReservation.update({
+        where: { id: r.id },
+        data: { expiresAt: fresh },
+      });
+    } else {
+      const affected = await tx.$executeRawUnsafe(
+        `UPDATE "ProductVariant"
+           SET "reservedQty" = "reservedQty" + $2::int, "updatedAt" = now()
+         WHERE "id" = $1::uuid
+           AND "isActive" = true
+           AND ("onHandQty" - "reservedQty") >= $2::int`,
+        r.variantId,
+        r.quantity,
+      );
+      if (affected === 0) throw new InsufficientStockError(r.variantId);
+      await tx.inventoryReservation.update({
+        where: { id: r.id },
+        data: { status: "ACTIVE", expiresAt: fresh, terminalAt: null },
+      });
+      await ledger(tx, {
+        variantId: r.variantId,
+        orderId: input.orderId,
+        type: "RESERVE",
+        reservedDelta: r.quantity,
+        reason: "hold renewed for payment",
+        idempotencyKey: key(["renew", r.id, fresh.getTime()]),
+      });
+    }
+    ends.push(fresh);
+  }
+  return new Date(Math.min(...ends.map((d) => d.getTime())));
 }
 
 /**

@@ -24,6 +24,8 @@ interface RazorpayOptions {
     razorpay_signature: string;
   }) => void;
   modal?: { ondismiss?: () => void };
+  /** Seconds until Checkout closes itself (Razorpay standard option). */
+  timeout?: number;
 }
 
 interface RazorpayInstance {
@@ -61,6 +63,8 @@ export interface OpenCheckoutArgs {
   keyId: string;
   providerOrderId: string;
   amountPaise: number;
+  /** Close Checkout when the stock hold ends (D-150). */
+  timeoutSeconds?: number;
   prefill?: { name?: string; email?: string; contact?: string };
   onSuccess: (r: {
     razorpay_payment_id: string;
@@ -85,6 +89,7 @@ export async function openRazorpayCheckout(args: OpenCheckoutArgs): Promise<void
     theme: { color: "#111111" },
     handler: args.onSuccess,
     modal: { ondismiss: args.onDismiss },
+    ...(args.timeoutSeconds ? { timeout: args.timeoutSeconds } : {}),
   });
   if (args.onFailed) rzp.on("payment.failed", args.onFailed);
   rzp.open();

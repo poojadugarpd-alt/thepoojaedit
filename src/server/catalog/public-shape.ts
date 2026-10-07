@@ -19,7 +19,9 @@ import { productImageUrl } from "@/lib/storage-url";
  *    one-of-one thrift piece stays readable with `availability: "SOLD"`.
  */
 
-export type PublicAvailability = "IN_STOCK" | "OUT_OF_STOCK" | "SOLD";
+/** ON_HOLD: every unit left is held by someone else's unpaid checkout, which
+ *  either completes or frees it within the hold (D-150). */
+export type PublicAvailability = "IN_STOCK" | "ON_HOLD" | "OUT_OF_STOCK" | "SOLD";
 
 /**
  * Soft per-order ceiling for the quantity picker — a UX convenience, not a
@@ -46,6 +48,8 @@ export interface PublicVariant {
   pricePaise: number;
   compareAtPaise: number | null;
   available: boolean; // advisory only — revalidated at checkout
+  /** Not available only because an unpaid checkout holds it (D-150). */
+  onHold: boolean;
   /** Advisory quantity-picker ceiling — see `MAX_ORDER_QTY`. Never exceeds
    * real stock, but real stock above the cap is never revealed exactly. */
   maxOrderQty: number;
@@ -102,6 +106,13 @@ export function variantAvailable(
   return v.isActive && v.onHandQty - v.reservedQty > 0;
 }
 
+/** In stock, but every unit is held by an unpaid checkout (D-150). */
+export function variantOnHold(
+  v: Pick<ProductVariant, "onHandQty" | "reservedQty" | "isActive">,
+): boolean {
+  return v.isActive && v.onHandQty > 0 && v.onHandQty - v.reservedQty <= 0;
+}
+
 export function variantMaxOrderQty(
   v: Pick<ProductVariant, "onHandQty" | "reservedQty" | "isActive">,
 ): number {
@@ -117,6 +128,7 @@ export function deriveAvailability(
 ): PublicAvailability {
   // The owner's manual switch (D-138) wins over stock, which it leaves untouched.
   if (!markedSoldOut && variants.some(variantAvailable)) return "IN_STOCK";
+  if (!markedSoldOut && variants.some(variantOnHold)) return "ON_HOLD";
   // Nothing available. A one-of-one thrift piece that has run out is "SOLD"
   // (a permanent state), ordinary apparel is just "OUT_OF_STOCK" (restockable).
   if (catalog === "THRIFT" && isOneOfOne) return "SOLD";
@@ -209,6 +221,7 @@ export function toPublicDetail(
         pricePaise: v.pricePaise,
         compareAtPaise: v.compareAtPaise,
         available: !p.markedSoldOut && variantAvailable(v),
+        onHold: !p.markedSoldOut && variantOnHold(v),
         maxOrderQty: p.markedSoldOut ? 0 : variantMaxOrderQty(v),
         measurements: v.measurements ?? null,
       })),

@@ -11,6 +11,7 @@ import { placeOrder, type PlaceOrderInput } from "./place-order";
 
 export * from "./quote";
 export * from "./place-order";
+export * from "./hold";
 
 /**
  * Storefront policy: Cash on Delivery is turned off at the web checkout

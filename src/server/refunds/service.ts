@@ -3,6 +3,7 @@ import "server-only";
 import type { PrismaClient, Refund } from "@/generated/prisma";
 import { openOperationalTask } from "@/server/events/operational-tasks";
 import { createInvoiceForOrder, issueCreditNote } from "@/server/invoices/service";
+import { cancelOrder } from "@/server/orders/lifecycle";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import {
   createOrderRefund,
@@ -22,7 +23,8 @@ export interface RequestRefundInput {
   orderId: string;
   amountPaise: number;
   reason: string;
-  adminUserId: string;
+  /** Absent for the automatic late-capture refund (D-150). */
+  adminUserId?: string;
   /** REFUND (default) / RETURN / CANCELLATION — flows to the credit note. */
   creditNoteReason?: "REFUND" | "RETURN" | "CANCELLATION" | "CORRECTION";
   operationKey?: string;
@@ -48,6 +50,53 @@ export async function requestRefund(
     await onRefundCompleted(db, refund, input.creditNoteReason ?? "REFUND");
   }
   return refund;
+}
+
+export const LATE_CAPTURE_CANCEL_REASON =
+  "the piece sold out before your payment went through";
+
+/**
+ * Two buyers, one piece (D-150): a payment captured after the hold expired, and
+ * someone else had already bought the stock (`settleCapturedPayment` →
+ * NEEDS_REVIEW, timeline `order.late_capture_review`). Refund everything that
+ * was captured and cancel the order, so the buyer gets the "cancelled" and
+ * "refund completed" emails without the owner stepping in. Idempotent: the
+ * refund's operation key is fixed, and an order that has left NEEDS_REVIEW
+ * (the owner already dealt with it) is left alone.
+ */
+export async function refundLateCaptureShortfall(
+  db: PrismaClient,
+  provider: PaymentProvider,
+  input: { orderId: string },
+): Promise<{ outcome: "refunded" | "skipped"; refundId?: string }> {
+  const order = await db.order.findUniqueOrThrow({ where: { id: input.orderId } });
+  if (order.orderStatus !== "NEEDS_REVIEW" || order.fulfillmentStatus !== "UNFULFILLED") {
+    return { outcome: "skipped" };
+  }
+  const [captured, refunded] = await Promise.all([
+    db.paymentAttempt.aggregate({
+      where: { orderId: order.id, status: "CAPTURED" },
+      _sum: { amountPaise: true },
+    }),
+    db.refund.aggregate({
+      where: { orderId: order.id, status: { in: ["REQUESTED", "PROCESSING", "COMPLETED"] } },
+      _sum: { amountPaise: true },
+    }),
+  ]);
+  const amountPaise = (captured._sum.amountPaise ?? 0) - (refunded._sum.amountPaise ?? 0);
+  let refundId: string | undefined;
+  if (amountPaise > 0) {
+    const refund = await requestRefund(db, provider, {
+      orderId: order.id,
+      amountPaise,
+      reason: "Sold out before payment completed (automatic)",
+      creditNoteReason: "CANCELLATION",
+      operationKey: `late-capture-refund:${order.id}`,
+    });
+    refundId = refund.id;
+  }
+  await cancelOrder(db, { orderId: order.id, reason: LATE_CAPTURE_CANCEL_REASON });
+  return { outcome: "refunded", refundId };
 }
 
 /** Emit the completion event + issue the credit note. Idempotent. */

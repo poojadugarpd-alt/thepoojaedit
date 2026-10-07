@@ -42,12 +42,14 @@ export function ResumePayment({
       if (!res.ok) {
         setError(res.error);
         setBusy(false);
+        if (res.soldOut) router.refresh(); // order is now cancelled
         return;
       }
       await openRazorpayCheckout({
         keyId: res.keyId,
         providerOrderId: res.providerOrderId,
         amountPaise: res.amountPaise,
+        timeoutSeconds: res.paymentWindowSeconds,
         prefill: { name, email: email ?? undefined, contact: phone },
         onDismiss: () => setBusy(false),
         onSuccess: async (r) => {

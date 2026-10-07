@@ -22,7 +22,7 @@ test("admin shell + core screens render", async ({ page }) => {
   await page.goto("/admin");
   await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
   // financial cards distinguish placed / captured / refunds / COD remittance
-  await expect(page.getByText("Placed orders")).toBeVisible();
+  await expect(page.getByText("Orders (paid)")).toBeVisible(); // renamed in D-148
   await expect(page.getByText("Captured revenue")).toBeVisible();
   await expect(page.getByText("COD remittance")).toBeVisible();
 

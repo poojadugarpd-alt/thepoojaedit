@@ -25,7 +25,10 @@ import {
   createInvoiceForOrder,
   generateInvoicePdf,
 } from "@/server/invoices/service";
-import { makeRefundReconcilePort } from "@/server/refunds/service";
+import {
+  makeRefundReconcilePort,
+  refundLateCaptureShortfall,
+} from "@/server/refunds/service";
 import { notifyForDomainEvent } from "@/server/notifications";
 import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
 
@@ -218,6 +221,42 @@ export const generateInvoice = inngest.createFunction(
 );
 
 /**
+ * Two buyers paid for the same piece (D-150): the late payer's order lands in
+ * NEEDS_REVIEW with `order.late_capture_review`. Refund it in full and cancel
+ * it, so the buyer is told and repaid without waiting on the owner. A failure
+ * retries; after that the PAYMENT_REVIEW task is still open for a manual refund.
+ */
+export const refundLateCapture = inngest.createFunction(
+  { id: "refund-late-capture", retries: 4, concurrency: 1 },
+  { event: "poojaedit/outbox.dispatched" },
+  async ({ event, step }) => {
+    const { domainEventId, type, aggregateType, aggregateId } = event.data as {
+      domainEventId: string;
+      type: string;
+      aggregateType: string;
+      aggregateId: string;
+    };
+    if (aggregateType !== "Order" || type !== "order.late_capture_review") {
+      return { skipped: "not a late-capture event" };
+    }
+    if (!isPrepaidConfigured()) return { skipped: "razorpay not configured" };
+    return step.run("refund-and-cancel", () =>
+      runOnce(prisma, {
+        executionKey: `${domainEventId}:late-capture-refund`,
+        handlerName: "refund-late-capture",
+        eventId: domainEventId,
+        run: async () => {
+          const r = await refundLateCaptureShortfall(prisma, getPaymentProvider(), {
+            orderId: aggregateId,
+          });
+          return { result: r };
+        },
+      }),
+    );
+  },
+);
+
+/**
  * Send the customer + admin notifications for a dispatched domain event
  * (master §8). Independent consumer of `poojaedit/outbox.dispatched`; channel
  * failure never affects order/payment state. `runOnce` + per-delivery keys give
@@ -285,6 +324,7 @@ export const functions = [
   archiveSoldCloset,
   createShipmentOnConfirm,
   generateInvoice,
+  refundLateCapture,
   sendNotifications,
   onOutboxDispatched,
 ];
