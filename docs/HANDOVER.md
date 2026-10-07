@@ -1,6 +1,6 @@
 # PoojaEdit — Handover Summary
 
-Written 2026-09-16, refreshed 2026-10-07 evening (through D-140, `83e211b`), for moving work to a different environment/tool (another
+Written 2026-09-16, refreshed 2026-10-07 late night (through D-151, `9fb1840`), for moving work to a different environment/tool (another
 Claude Code session, Cursor, ChatGPT, a human dev, etc.). Everything here is
 verifiable in this repo — treat it as a map, not a source of truth; re-check
 against the actual files/`git log`/`docs/decisions.md` before relying on a
@@ -114,7 +114,7 @@ outside the `npm run db:*` scripts; a format+typecheck-on-edit hook; skills
 `log-decision`, `db-migration`, `structured-data-audit`, `llms-txt`; subagents
 `money-safety-reviewer`, `e2e-unblocker`, `seo-aeo-reviewer`.
 
-## 5. Current live state (as of `83e211b`, 2026-10-07)
+## 5. Current live state (as of `9fb1840`, 2026-10-07 late night)
 
 `main` == `origin/main` == what's deployed. Vercel auto-deploys `main` to
 Production and runs `prisma migrate deploy` first (`scripts/vercel-migrate.mjs`,
@@ -157,6 +157,15 @@ Production only).
 **None of D-138–D-140's admin screens have been clicked by a human on the live
 site yet.** Worth one quick try each (see §8, item 1).
 
+**D-150 on production (checked 2026-10-07 night in the live admin):** the
+2-minute `sweep-reservations` cron works. Abandoned order `PE-261007-ZCXN45`'s
+holds were released as "expired" at 6:08 pm, two tees went back on sale and
+both sweat shorts then sold to `PE-261007-CT28KP`. **Still unverified:**
+Razorpay's `timeout` closing Checkout at hold end, and the `refund-late-capture`
+Inngest function firing (no late double-buy has happened yet; the Inngest
+dashboard isn't signed in on the Pooja Chrome profile). `PE-261007-ZCXN45` is a
+real customer's unpaid order whose shorts are now sold: contact her or cancel it.
+
 **Older, still true**
 - Admin "Cancel order" works for `PROCESSING` orders with a booked but
   uncollected Shadowfax pickup (D-133). The real Shadowfax cancel API has
@@ -175,15 +184,22 @@ site yet.** Worth one quick try each (see §8, item 1).
 2. **Supabase Storage quota**: the org was over the Free-plan 1 GB. The dev
    project's Storage was emptied (D-132, ≈519 MB freed). Re-check usage
    before the grace period ends on **2026-10-23**.
-3. **The dev Supabase project (used by Vercel Preview) has none of the 3
-   migrations from 2026-10-07** (`product_marked_sold_out`,
-   `variant_measurements`, `discount_codes`). Preview deployments
-   of current `main` will fail until `prisma migrate deploy` is run against it.
-   Production is fine.
-4. **`npm audit --audit-level=high` fails** on newly published advisories
-   (vitest < 4.1.10 critical, tinypool, sharp, the eslint-config-next chain), so
-   CI's audit job is red. It doesn't block Vercel deploys. The fix needs a
-   vitest major upgrade, as its own task.
+3. **Dev Supabase migrations: done.** Checked 2026-10-07 night with
+   `npm run db:migrate:status` (`.env.local` → `aws-0-ap-northeast-1`, the
+   Tokyo dev project): all 10 migrations applied, "Database schema is up to
+   date". Migrations still apply automatically only on Production deploys
+   (`scripts/vercel-migrate.mjs`); apply new ones to dev by hand with
+   `npm run db:migrate:deploy`.
+   **Cleanup pending:** ~30 junk discount codes (`T` + 6 letters/digits,
+   ₹200 off Closet, active) were created in that dev database on 2026-10-07
+   night by an e2e run started outside `scripts/e2e-local.sh`. The owner is
+   deleting them. Production is unaffected (only `POOJA10` there).
+4. **npm audit (D-151): fixed for production dependencies.** CI now blocks on
+   `npm audit --omit=dev --audit-level=high` (0 findings). The full audit
+   still runs report-only: its only high finding is `braces` <=3.0.3 inside
+   `eslint-config-next` → `fast-glob`, dev-only, with no fixed release yet.
+   When `braces` (or a `@next/eslint-plugin-next` without `fast-glob` 3.3.1)
+   ships a fix, upgrade and consider making the full audit blocking again.
 5. **Shadowfax**: no self-serve label-download or COD-remittance API, so this
    needs their account manager.
 6. **WhatsApp (Meta)**: deferred by the owner. Email (Resend) is live.
@@ -209,6 +225,11 @@ Full detail in `docs/decisions.md`.
 | 10-07 | D-138 | Sold out switch |
 | 10-07 | D-139 | Closet sizes, quantity and per-size measurements |
 | 10-07 | D-140 | Discount codes |
+| 10-07 | D-141–D-148 | Other Mac: image-quota outage fix, photo ordering, sold-Closet archive, checkout credentials outage, required email + AWB email, test orders, new-order "cha-ching", unpaid checkouts hidden (see §8 item 0 and `decisions.md`) |
+| 10-07 | D-149 | Product thumbnails on the admin order page |
+| 10-07 | D-150 | Payment window = stock hold; late double-buy auto-refund; "On hold" label |
+| 10-07 | (`2e280fc`) | Admin and order-page times shown in India time (were UTC, 5h30m early) |
+| 10-07 | D-151 | Maintenance: vitest 4, Next 15.5.27, audit gate on prod deps, Prettier on all code |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -253,11 +274,28 @@ backfill was superseded in the 2026-10-07 merge.
    "via source / medium / campaign" in the admin order header. Orders from
    before the release carry no source. Worth confirming once on the live
    site: open a tagged link, place (or start) an order, check the admin header.
-   **Flaky test to look into:** `e2e/admin.spec.ts` "create a discount code in
-   admin" sometimes stays on "Working…" when many e2e tests share one local
-   `next start`. The code is saved, but the admin page's RSC stream never
-   finishes. It reproduces on `main` under the same load, so it wasn't caused
-   by D-136. Not seen in production; worth a proper look.
+   **Flaky test, investigated 2026-10-07 night, NOT fixed (owner wants to
+   resume 2026-10-08):** `e2e/admin.spec.ts` "create a discount code in admin"
+   fails ~10–40% of runs in isolation (also with `--workers=1`, in streaks;
+   a full chromium suite run usually passes). Findings:
+   - The server always creates the code and re-renders `/admin/discounts`
+     in < 25 ms. The failure is client-side: Next's router never commits the
+     action result. With today's `redirect("/admin/discounts")` (a redirect
+     to the page you're on) the follow-up RSC fetch comes back tiny (~247 B)
+     and the page body renders empty; with `return { ok: true }` instead, the
+     button stays "Working…" forever. No console or page errors.
+   - Ruled out, each by experiment: the admin service worker, `staleTimes`,
+     `NewOrderAlert` polling, middleware, JS chunk loading, DB pool load.
+     Playwright's `net::ERR_ABORTED` on action POSTs is noise (passing runs
+     show it too). Next 15.5.27 didn't change the rate.
+   - Product create (redirect to a new URL) flaked once on a cold server too
+     ("Product created." not shown), so this may affect other admin actions.
+   - Next steps: build a minimal page that reproduces it; try the latest
+     Next 15.x / 16 on a branch; check the live admin by hand for a blank
+     page after creating a code.
+   - Only run e2e via `npm run test:e2e:local`. A plain `npx playwright test`
+     or `npm run build` picks up `.env.local` (remote dev DB, real Supabase
+     keys baked into the build).
 3. **First real order** (test purchase): proves Razorpay live payment +
    signed webhook (D-134) and a real Shadowfax production shipment (D-131).
    Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled.
