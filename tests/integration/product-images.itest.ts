@@ -7,7 +7,9 @@ import { AuthorizationError } from "../../src/server/auth/errors";
 import {
   ImageValidationError,
   confirmProductImageUpload,
+  moveProductImage,
   requestProductImageUpload,
+  setPrimaryProductImage,
 } from "../../src/server/catalog/product-images";
 import type { StoragePort } from "../../src/lib/storage";
 import { makeClient, resetDb } from "./helpers";
@@ -143,5 +145,96 @@ describe("confirmProductImageUpload", () => {
         },
       ),
     ).rejects.toBeInstanceOf(ImageValidationError);
+  });
+});
+
+/** Images straight into the table, as the real upload flow leaves them. */
+async function seedImages(
+  productId: string,
+  rows: { pos: number; primary?: boolean; type?: "PRIMARY" | "GALLERY" | "FLAW" }[],
+) {
+  const ids: string[] = [];
+  for (const [i, r] of rows.entries()) {
+    const im = await db.productImage.create({
+      data: {
+        productId,
+        path: `the-pooja-edit/${productId}/${i}.webp`,
+        altText: `photo ${i + 1}`,
+        sortPosition: r.pos,
+        isPrimary: r.primary ?? false,
+        type: r.type ?? (r.primary ? "PRIMARY" : "GALLERY"),
+      },
+    });
+    ids.push(im.id);
+  }
+  return ids;
+}
+
+async function gallery(productId: string) {
+  const rows = await db.productImage.findMany({
+    where: { productId },
+    orderBy: { sortPosition: "asc" },
+  });
+  return rows.map((r) => ({
+    alt: r.altText,
+    pos: r.sortPosition,
+    primary: r.isPrimary,
+    type: r.type,
+  }));
+}
+
+describe("setPrimaryProductImage", () => {
+  it("moves the new primary to the front, keeps the rest in order, and demotes the old one", async () => {
+    const product = await makeProduct();
+    const [, , third] = await seedImages(product.id, [
+      { pos: 0, primary: true },
+      { pos: 1 },
+      { pos: 2 },
+      { pos: 3, type: "FLAW" },
+    ]);
+    await setPrimaryProductImage(db, product.id, third);
+    expect(await gallery(product.id)).toEqual([
+      { alt: "photo 3", pos: 0, primary: true, type: "PRIMARY" },
+      { alt: "photo 1", pos: 1, primary: false, type: "GALLERY" },
+      { alt: "photo 2", pos: 2, primary: false, type: "GALLERY" },
+      { alt: "photo 4", pos: 3, primary: false, type: "FLAW" },
+    ]);
+  });
+
+  it("leaves no two images sharing a position (the old code forced the primary to 0)", async () => {
+    const product = await makeProduct();
+    const [, second] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }]);
+    await setPrimaryProductImage(db, product.id, second);
+    const positions = (await gallery(product.id)).map((g) => g.pos);
+    expect(new Set(positions).size).toBe(positions.length);
+  });
+});
+
+describe("moveProductImage", () => {
+  it("swaps with the neighbour", async () => {
+    const product = await makeProduct();
+    const [, , third] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }, { pos: 2 }]);
+    await moveProductImage(db, product.id, third, "up");
+    expect((await gallery(product.id)).map((g) => g.alt)).toEqual(["photo 1", "photo 3", "photo 2"]);
+  });
+
+  it("still moves an image whose position is shared with its neighbour", async () => {
+    const product = await makeProduct();
+    // What production had after "Primary" forced a photo to 0: a tie.
+    const [first, second] = await seedImages(product.id, [{ pos: 0 }, { pos: 0, primary: true }, { pos: 1 }]);
+    const before = (await gallery(product.id)).map((g) => g.alt);
+    const lower = before[1] === "photo 1" ? first : second;
+    await moveProductImage(db, product.id, lower, "up");
+    const after = await gallery(product.id);
+    expect(after.map((g) => g.alt)).toEqual([before[1], before[0], before[2]]);
+    expect(after.map((g) => g.pos)).toEqual([0, 1, 2]);
+  });
+
+  it("is a no-op at either end", async () => {
+    const product = await makeProduct();
+    const [first, , last] = await seedImages(product.id, [{ pos: 0, primary: true }, { pos: 1 }, { pos: 2 }]);
+    await moveProductImage(db, product.id, first, "up");
+    await moveProductImage(db, product.id, last, "down");
+    expect((await gallery(product.id)).map((g) => g.alt)).toEqual(["photo 1", "photo 2", "photo 3"]);
   });
 });

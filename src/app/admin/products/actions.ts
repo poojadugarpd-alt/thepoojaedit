@@ -25,7 +25,9 @@ import {
 import {
   ImageValidationError,
   confirmProductImageUpload,
+  moveProductImage,
   requestProductImageUpload,
+  setPrimaryProductImage,
   type UploadTicket,
 } from "@/server/catalog/product-images";
 
@@ -104,7 +106,15 @@ export async function deleteImageAction(
   const admin = await requireAdmin();
   const imageId = str(form.get("imageId"));
   try {
-    await prisma.productImage.delete({ where: { id: imageId } });
+    const deleted = await prisma.productImage.delete({ where: { id: imageId } });
+    // Never leave a product without a primary: promote the next photo.
+    if (deleted.isPrimary) {
+      const next = await prisma.productImage.findFirst({
+        where: { productId },
+        orderBy: [{ sortPosition: "asc" }, { createdAt: "asc" }],
+      });
+      if (next) await setPrimaryProductImage(prisma, productId, next.id);
+    }
     await prisma.adminActivityLog.create({
       data: {
         adminUserId: admin.id,
@@ -128,16 +138,7 @@ export async function setPrimaryImageAction(
   await requireAdmin();
   const imageId = str(form.get("imageId"));
   try {
-    await prisma.$transaction([
-      prisma.productImage.updateMany({
-        where: { productId },
-        data: { isPrimary: false },
-      }),
-      prisma.productImage.update({
-        where: { id: imageId },
-        data: { isPrimary: true, type: "PRIMARY", sortPosition: 0 },
-      }),
-    ]);
+    await setPrimaryProductImage(prisma, productId, imageId);
   } catch (e) {
     return handle(e);
   }
@@ -155,27 +156,7 @@ export async function reorderImageAction(
   const imageId = str(form.get("imageId"));
   const direction = str(form.get("direction"));
   try {
-    const images = await prisma.productImage.findMany({
-      where: { productId },
-      orderBy: { sortPosition: "asc" },
-    });
-    const idx = images.findIndex((im) => im.id === imageId);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (idx === -1 || swapIdx < 0 || swapIdx >= images.length) {
-      return { ok: true }; // already at an end — silently a no-op
-    }
-    const a = images[idx];
-    const b = images[swapIdx];
-    await prisma.$transaction([
-      prisma.productImage.update({
-        where: { id: a.id },
-        data: { sortPosition: b.sortPosition },
-      }),
-      prisma.productImage.update({
-        where: { id: b.id },
-        data: { sortPosition: a.sortPosition },
-      }),
-    ]);
+    await moveProductImage(prisma, productId, imageId, direction === "up" ? "up" : "down");
   } catch (e) {
     return handle(e);
   }

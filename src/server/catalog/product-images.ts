@@ -217,3 +217,67 @@ export async function confirmProductImageUpload(
   ]);
   return created;
 }
+
+/**
+ * A product's images in display order, renumbered 0..n-1. Older rows can share
+ * a `sortPosition` (setting a primary used to force it to 0 without moving the
+ * rest), and swapping two equal numbers is a no-op — so every reorder starts
+ * from this clean sequence instead of trusting the stored values.
+ */
+async function orderedImages(db: PrismaClient, productId: string) {
+  return db.productImage.findMany({
+    where: { productId },
+    orderBy: [{ sortPosition: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+  });
+}
+
+async function writeOrder(
+  db: PrismaClient,
+  images: ProductImage[],
+  primaryId: string | null,
+): Promise<void> {
+  await db.$transaction(
+    images.map((im, i) => {
+      const isPrimary = primaryId ? im.id === primaryId : im.isPrimary;
+      return db.productImage.update({
+        where: { id: im.id },
+        data: {
+          sortPosition: i,
+          isPrimary,
+          // A demoted primary goes back to an ordinary gallery shot; FLAW and
+          // DETAIL photos keep their type.
+          type: isPrimary ? "PRIMARY" : im.type === "PRIMARY" ? "GALLERY" : im.type,
+        },
+      });
+    }),
+  );
+}
+
+/** Make one image the primary and move it to the front; the rest keep their order. */
+export async function setPrimaryProductImage(
+  db: PrismaClient,
+  productId: string,
+  imageId: string,
+): Promise<void> {
+  const images = await orderedImages(db, productId);
+  const target = images.find((im) => im.id === imageId);
+  if (!target) throw new ResourceNotFoundError("Image not found.");
+  await writeOrder(db, [target, ...images.filter((im) => im.id !== imageId)], imageId);
+}
+
+/** Move an image one place up or down in the gallery. No-op at either end. */
+export async function moveProductImage(
+  db: PrismaClient,
+  productId: string,
+  imageId: string,
+  direction: "up" | "down",
+): Promise<void> {
+  const images = await orderedImages(db, productId);
+  const idx = images.findIndex((im) => im.id === imageId);
+  if (idx === -1) throw new ResourceNotFoundError("Image not found.");
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= images.length) return;
+  const next = [...images];
+  [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+  await writeOrder(db, next, null);
+}

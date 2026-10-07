@@ -225,12 +225,11 @@ backfill was superseded in the 2026-10-07 merge.
      directly (`cc7250a`, live, verified 200). Photos are now 0.5–2.7 MB
      each, so pages are heavy on mobile. Follow-up: shrink the Shopify-era
      originals, or upgrade Vercel and remove the flag.
-   - **Admin uploader bug (not fixed):** uploading several photos at once to
-     a product with no images sends `isPrimary: true` for every file
-     (`hasExistingImages` is a stale prop in `image-uploader.tsx`), so the
-     *last* photo becomes primary. Workaround: click "Primary" on photo 1.
-     Also, image ↑/↓, Delete and Primary only show their result after a
-     page reload.
+   - **Fixed (D-142):** multi-photo upload no longer makes the last photo
+     primary; "Primary" moves the photo to the front without creating
+     position ties; ↑/↓ work again (old ties heal on the next click);
+     deleting the primary promotes the next photo. The buttons take ~5 s to
+     show their result on production.
 
 1. **Try the new admin features once on the live site** (needs an admin
    login): tick and untick Sold out on a product; create a Closet item with two

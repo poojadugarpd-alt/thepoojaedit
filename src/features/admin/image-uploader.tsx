@@ -79,7 +79,6 @@ export function ImageUploader({
   productId,
   isThrift,
   defaultAltPrefix,
-  hasExistingImages,
 }: {
   /** Null before the product's first Save — files can still be picked and
    *  previewed, just not actually uploaded yet (there's nowhere to attach
@@ -88,7 +87,6 @@ export function ImageUploader({
   productId: string | null;
   isThrift: boolean;
   defaultAltPrefix: string;
-  hasExistingImages: boolean;
 }) {
   const router = useRouter();
   const [queue, setQueue] = useState<QueueItem[]>([]);
@@ -173,7 +171,11 @@ export function ImageUploader({
       contentType: item.file.type,
       altText: item.altText.trim() || defaultAltPrefix,
       type: item.isFlaw ? "FLAW" : "GALLERY",
-      isPrimary: !hasExistingImages,
+      // Never ask for primary here: the server already makes a product's
+      // first image primary. Asking "primary if the product had no images"
+      // made every photo in a multi-photo batch claim it (that flag only
+      // refreshed after the whole batch), so the last photo won.
+      isPrimary: false,
       width: item.width,
       height: item.height,
     });

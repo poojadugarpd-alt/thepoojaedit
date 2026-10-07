@@ -436,7 +436,6 @@ export function ProductEditor({
               productId={productId}
               isThrift={isThrift}
               defaultAltPrefix={title || "product"}
-              hasExistingImages={(initial?.images.length ?? 0) > 0}
             />
             {initial && initial.images.length > 0 && (
               <ul className="flex flex-wrap gap-3">
