@@ -154,7 +154,7 @@ backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
 
-**Owner feature requests (added 2026-10-07, not started):**
+**Owner feature requests (added 2026-10-07, not started; build plan with the owner's answers in `docs/plan-owner-requests-2026-10.md`):**
 
 - **A. Discount code at checkout.** A field where the customer enters a code
   and gets a discount. Nothing exists yet. `deferred-scope.md` lists
