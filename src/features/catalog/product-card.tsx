@@ -10,8 +10,15 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
   const segment = SEGMENT_BY_CATALOG[product.catalog];
   const href = `/${segment}/${product.slug}`;
   const img = product.primaryImage;
-  const sold = product.availability === "SOLD";
-  const tag = sold ? "SOLD" : product.isThrift ? "One of one" : null;
+  const sold = product.availability !== "IN_STOCK";
+  const tag =
+    product.availability === "SOLD"
+      ? "SOLD"
+      : product.availability === "OUT_OF_STOCK"
+        ? "Sold out"
+        : product.isThrift
+          ? "One of one"
+          : null;
 
   return (
     <Link href={href} className="group flex flex-col">

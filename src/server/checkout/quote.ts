@@ -23,8 +23,10 @@ export class ItemUnavailableError extends QuoteError {
   constructor(
     readonly variantId: string,
     reason: string,
+    /** Shown to the shopper instead of the raw variant id when known. */
+    title?: string,
   ) {
-    super(`Variant ${variantId}: ${reason}`);
+    super(title ? `${title}: ${reason}` : `Variant ${variantId}: ${reason}`);
     this.name = "ItemUnavailableError";
   }
 }
@@ -166,13 +168,25 @@ export async function computeQuote(
   for (const reqLine of input.lines) {
     const v = byId.get(reqLine.variantId);
     if (!v) throw new ItemUnavailableError(reqLine.variantId, "not found");
-    if (!v.isActive) throw new ItemUnavailableError(v.id, "variant inactive");
+    if (!v.isActive)
+      throw new ItemUnavailableError(v.id, "no longer available", v.product.title);
     if (v.product.status !== "PUBLISHED" || v.product.publishedAt == null) {
-      throw new ItemUnavailableError(v.id, "product not published");
+      throw new ItemUnavailableError(v.id, "no longer available", v.product.title);
+    }
+    if (v.product.markedSoldOut) {
+      throw new ItemUnavailableError(
+        v.id,
+        "sold out — please remove it from your cart",
+        v.product.title,
+      );
     }
     const available = v.onHandQty - v.reservedQty;
     if (available < reqLine.quantity) {
-      throw new ItemUnavailableError(v.id, `only ${available} available`);
+      throw new ItemUnavailableError(
+        v.id,
+        `only ${available} available`,
+        v.product.title,
+      );
     }
 
     const rule =

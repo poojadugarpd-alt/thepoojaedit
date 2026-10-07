@@ -259,8 +259,18 @@ describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
         publishedAt: new Date(),
         variants: {
           create: [
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 100000, onHandQty: 1 },
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "M", pricePaise: 110000, onHandQty: 1 },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "S",
+              pricePaise: 100000,
+              onHandQty: 1,
+            },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "M",
+              pricePaise: 110000,
+              onHandQty: 1,
+            },
           ],
         },
         thriftDetails: {
@@ -301,7 +311,12 @@ describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
         publishedAt: new Date(),
         variants: {
           create: [
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 50000, onHandQty: 1 },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "S",
+              pricePaise: 50000,
+              onHandQty: 1,
+            },
           ],
         },
       },
@@ -315,7 +330,12 @@ describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
         publishedAt: new Date(),
         variants: {
           create: [
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 500000, onHandQty: 1 },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "S",
+              pricePaise: 500000,
+              onHandQty: 1,
+            },
           ],
         },
       },
@@ -349,8 +369,18 @@ describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
         publishedAt: new Date(),
         variants: {
           create: [
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "L", pricePaise: 30000, onHandQty: 1 },
-            { sku: `SKU-${randomUUID().slice(0, 8)}`, size: "S", pricePaise: 90000, onHandQty: 1 },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "L",
+              pricePaise: 30000,
+              onHandQty: 1,
+            },
+            {
+              sku: `SKU-${randomUUID().slice(0, 8)}`,
+              size: "S",
+              pricePaise: 90000,
+              onHandQty: 1,
+            },
           ],
         },
         thriftDetails: {
@@ -385,5 +415,32 @@ describe("pagination", () => {
     const slugs = [...p1.items, ...p2.items, ...p3.items].map((c) => c.slug);
     expect(new Set(slugs).size).toBe(7);
     expect(p3.nextCursor).toBeNull();
+  });
+});
+
+describe("Sold out switch (D-138)", () => {
+  it("keeps the product listed, last, unbuyable, with its stock untouched", async () => {
+    const flagged = await makeProduct({ catalog: "THE_POOJA_EDIT", onHand: 7 });
+    await makeProduct({ catalog: "THE_POOJA_EDIT" });
+    await db.product.update({
+      where: { id: flagged.id },
+      data: { markedSoldOut: true },
+    });
+
+    const page = await listPublishedProducts(db, { catalog: "THE_POOJA_EDIT" });
+    expect(page.items).toHaveLength(2);
+    const last = page.items[page.items.length - 1];
+    expect(last.slug).toBe(flagged.slug);
+    expect(last.availability).toBe("OUT_OF_STOCK");
+
+    const detail = await getPublishedProduct(db, "THE_POOJA_EDIT", flagged.slug);
+    expect(detail?.availability).toBe("OUT_OF_STOCK");
+    expect(detail?.variants.every((v) => !v.available && v.maxOrderQty === 0)).toBe(
+      true,
+    );
+    const v = await db.productVariant.findFirstOrThrow({
+      where: { productId: flagged.id },
+    });
+    expect(v.onHandQty).toBe(7);
   });
 });

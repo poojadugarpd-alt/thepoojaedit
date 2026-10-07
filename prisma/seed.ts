@@ -472,6 +472,16 @@ async function main() {
     pricePaise: 89900,
     onHandQty: 0, // SOLD
   });
+  // Flipped by the "Sold out switch" e2e (D-138). Its own piece, so that test
+  // never races the specs that buy the first in-stock Closet item.
+  await seedThriftPiece({
+    slug: "linen-shirt-stripe",
+    title: "Linen Shirt — Stripe",
+    categoryId: outerwear.id,
+    sku: "THR-LINEN-001",
+    pricePaise: 129900,
+    onHandQty: 1,
+  });
 
   const kurtaVariants = await prisma.productVariant.findMany({
     where: { productId: kurta.id },

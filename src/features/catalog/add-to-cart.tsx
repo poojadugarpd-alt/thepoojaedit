@@ -140,14 +140,21 @@ export function AddToCart({
         }}
         className="u-pill w-full"
       >
-        {canAdd ? "Add to cart" : "Unavailable"}
+        {canAdd
+          ? "Add to cart"
+          : availability === "OUT_OF_STOCK"
+            ? "Sold out"
+            : "Unavailable"}
       </button>
 
       <p aria-live="polite" className="min-h-[1.25rem] text-[0.95rem]">
         {added && (
           <span className="text-ink">
             Added to cart.{" "}
-            <Link href="/cart" className="underline underline-offset-2 hover:opacity-70">
+            <Link
+              href="/cart"
+              className="underline underline-offset-2 hover:opacity-70"
+            >
               View cart
             </Link>
           </span>

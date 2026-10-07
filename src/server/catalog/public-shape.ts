@@ -111,8 +111,10 @@ export function deriveAvailability(
   catalog: CatalogType,
   isOneOfOne: boolean,
   variants: Pick<ProductVariant, "onHandQty" | "reservedQty" | "isActive">[],
+  markedSoldOut = false,
 ): PublicAvailability {
-  if (variants.some(variantAvailable)) return "IN_STOCK";
+  // The owner's manual switch (D-138) wins over stock, which it leaves untouched.
+  if (!markedSoldOut && variants.some(variantAvailable)) return "IN_STOCK";
   // Nothing available. A one-of-one thrift piece that has run out is "SOLD"
   // (a permanent state), ordinary apparel is just "OUT_OF_STOCK" (restockable).
   if (catalog === "THRIFT" && isOneOfOne) return "SOLD";
@@ -153,6 +155,7 @@ type ProductRow = {
   variants: ProductVariant[];
   images: ProductImage[];
   thriftDetails: ThriftDetails | null;
+  markedSoldOut?: boolean;
 };
 
 export function toPublicCard(p: ProductRow): PublicProductCard {
@@ -173,7 +176,12 @@ export function toPublicCard(p: ProductRow): PublicProductCard {
     primaryImage: primary ? toPublicImage(primary) : null,
     fromPricePaise: fromPrice(p.variants),
     compareAtPaise: bestCompareAt(p.variants),
-    availability: deriveAvailability(p.catalog, isOneOfOne, p.variants),
+    availability: deriveAvailability(
+      p.catalog,
+      isOneOfOne,
+      p.variants,
+      p.markedSoldOut ?? false,
+    ),
     sizes: [...new Set(p.variants.map((v) => v.size).filter((s): s is string => !!s))],
   };
 }
@@ -198,8 +206,8 @@ export function toPublicDetail(
         color: v.color,
         pricePaise: v.pricePaise,
         compareAtPaise: v.compareAtPaise,
-        available: variantAvailable(v),
-        maxOrderQty: variantMaxOrderQty(v),
+        available: !p.markedSoldOut && variantAvailable(v),
+        maxOrderQty: p.markedSoldOut ? 0 : variantMaxOrderQty(v),
       })),
     thrift: p.thriftDetails
       ? {

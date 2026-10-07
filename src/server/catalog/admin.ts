@@ -109,6 +109,7 @@ export async function listAdminProducts(
       : null,
     onHand: p.variants.reduce((s, v) => s + v.onHandQty, 0),
     available: p.variants.reduce((s, v) => s + (v.onHandQty - v.reservedQty), 0),
+    markedSoldOut: p.markedSoldOut,
   }));
 
   if (availability === "ALL") {
@@ -117,7 +118,9 @@ export async function listAdminProducts(
   }
 
   const filtered = shaped.filter((p) =>
-    availability === "SOLD" ? p.available <= 0 : p.available > 0,
+    availability === "SOLD"
+      ? p.available <= 0 || p.markedSoldOut
+      : p.available > 0 && !p.markedSoldOut,
   );
   const skip = opts.skip ?? 0;
   const page = filtered.slice(skip, skip + take);
@@ -351,6 +354,35 @@ export async function setProductStatus(
     before: { status: before.status },
     after: { status: after.status },
     reason: reason ?? null,
+  });
+  return after;
+}
+
+/**
+ * The owner's manual "Sold out" switch (D-138). The product stays listed and
+ * readable but can't be bought; stock is left untouched, so turning it off
+ * puts the same quantities back on sale.
+ */
+export async function setProductSoldOut(
+  db: PrismaClient,
+  admin: AdminUser,
+  id: string,
+  soldOut: boolean,
+): Promise<Product> {
+  const before = await db.product.findUniqueOrThrow({ where: { id } });
+  if (before.markedSoldOut === soldOut) return before;
+  const after = await db.product.update({
+    where: { id },
+    data: { markedSoldOut: soldOut },
+  });
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: soldOut ? "product.marked_sold_out" : "product.unmarked_sold_out",
+    entityType: "Product",
+    entityId: id,
+    before: { markedSoldOut: before.markedSoldOut },
+    after: { markedSoldOut: after.markedSoldOut },
+    reason: null,
   });
   return after;
 }

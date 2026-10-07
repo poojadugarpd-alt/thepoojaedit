@@ -14,6 +14,7 @@ import {
   createProduct,
   deleteProduct,
   publishProduct,
+  setProductSoldOut,
   setProductStatus,
   switchProductCatalog,
   toggleFeatureOnHomePage,
@@ -186,8 +187,7 @@ export async function reorderImageAction(
 // so these return plain result objects rather than ActionState). ──
 
 export type UploadTicketResult =
-  | ({ ok: true } & UploadTicket)
-  | { ok: false; message: string };
+  ({ ok: true } & UploadTicket) | { ok: false; message: string };
 
 /** Step 1: ask for a short-lived URL the browser uploads the file bytes to. */
 export async function requestImageUploadAction(
@@ -216,8 +216,7 @@ export async function requestImageUploadAction(
 }
 
 export type ConfirmImageResult =
-  | { ok: true; imageId: string }
-  | { ok: false; message: string };
+  { ok: true; imageId: string } | { ok: false; message: string };
 
 /** Step 2: once the PUT to the signed URL succeeds, register the row. */
 export async function confirmImageUploadAction(
@@ -269,7 +268,8 @@ export async function confirmImageUploadAction(
 // state across the whole product, so its save actions take that state
 // directly rather than a FormData a `<form>` would have serialized. ──
 
-export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string; errors?: string[] };
+export type SimpleResult =
+  { ok: true; message?: string } | { ok: false; message: string; errors?: string[] };
 
 export type ProductCoreInput = {
   slug?: string;
@@ -332,7 +332,8 @@ export async function switchCatalogAction(
       `removed from ${result.removedFromCollections} collection${result.removedFromCollections === 1 ? "" : "s"} that belonged to the other catalogue`,
     );
   }
-  if (result.thriftDetailsCreated) notes.push("added placeholder condition/measurements to fill in");
+  if (result.thriftDetailsCreated)
+    notes.push("added placeholder condition/measurements to fill in");
   if (result.thriftDetailsRemoved) notes.push("its thrift details were removed");
   if (result.categoryCleared) notes.push("its category was cleared");
   const suffix = notes.length ? ` (${notes.join("; ")})` : "";
@@ -366,6 +367,27 @@ export async function statusAction(
   return { ok: true, message: "Status changed." };
 }
 
+/** Saves the "Sold out" switch (D-138) and refreshes the storefront pages. */
+export async function soldOutAction(
+  productId: string,
+  soldOut: boolean,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
+  let p;
+  try {
+    p = await setProductSoldOut(prisma, admin, productId, soldOut);
+  } catch (e) {
+    return handleResult(e);
+  }
+  const segment = p.catalog === "THRIFT" ? "closet" : "label";
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath("/admin/products");
+  revalidatePath(`/${segment}`);
+  revalidatePath(`/${segment}/${p.slug}`);
+  revalidatePath("/");
+  return { ok: true, message: soldOut ? "Marked sold out." : "Back on sale." };
+}
+
 export type VariantInput = {
   id?: string;
   /** Omit/empty for Closet — generated automatically. Required for Label. */
@@ -380,8 +402,7 @@ export type VariantInput = {
 };
 
 export type VariantResult =
-  | { ok: true; variantId: string }
-  | { ok: false; message: string; errors?: string[] };
+  { ok: true; variantId: string } | { ok: false; message: string; errors?: string[] };
 
 export async function upsertVariantAction(
   productId: string,
@@ -404,7 +425,11 @@ export async function upsertVariantAction(
     return { ok: true, variantId: variant.id };
   } catch (e) {
     const h = handle(e);
-    return { ok: false, message: h.message ?? "Something went wrong.", errors: h.errors };
+    return {
+      ok: false,
+      message: h.message ?? "Something went wrong.",
+      errors: h.errors,
+    };
   }
 }
 
@@ -540,7 +565,11 @@ export async function createFullProductAction(
         variantResults.push({ ok: true, variantId: variant.id });
       } catch (e) {
         const h = handle(e);
-        variantResults.push({ ok: false, message: h.message ?? "Something went wrong.", errors: h.errors });
+        variantResults.push({
+          ok: false,
+          message: h.message ?? "Something went wrong.",
+          errors: h.errors,
+        });
       }
     }
     const variantFailures = variantResults.filter((r) => !r.ok);
@@ -561,7 +590,12 @@ export async function createFullProductAction(
         try {
           measurements = JSON.parse(raw);
         } catch {
-          return { ok: false, message: "Measurements must be valid JSON.", productId, variantResults };
+          return {
+            ok: false,
+            message: "Measurements must be valid JSON.",
+            productId,
+            variantResults,
+          };
         }
       }
       await upsertThriftDetails(prisma, admin, productId, {

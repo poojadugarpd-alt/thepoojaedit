@@ -259,6 +259,27 @@ describe("shipping fee: Label free, ₹100 once with any Closet item (D-137)", (
   });
 });
 
+describe("Sold out switch blocks checkout (D-138)", () => {
+  it("rejects a cart holding a product marked sold out, naming it", async () => {
+    const variantId = await makeVariant({ onHand: 5 });
+    const v = await db.productVariant.findUniqueOrThrow({
+      where: { id: variantId },
+      include: { product: true },
+    });
+    await db.product.update({
+      where: { id: v.productId },
+      data: { markedSoldOut: true },
+    });
+    await expect(
+      computeQuote(db, {
+        lines: [{ variantId, quantity: 1 }],
+        paymentMethod: "PREPAID_RAZORPAY",
+        destination: { stateCode: "08", postcode: "302001" },
+      }),
+    ).rejects.toThrow(`${v.product.title}: sold out`);
+  });
+});
+
 describe("prepaid vs COD placement (AC-09)", () => {
   it("prepaid → PENDING_PAYMENT + reservation; COD → PENDING_CONFIRMATION + committed stock", async () => {
     const v1 = await makeVariant({ onHand: 5 });

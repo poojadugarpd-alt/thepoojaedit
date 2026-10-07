@@ -203,7 +203,10 @@ export function ProductDetail({
       />
 
       <nav aria-label="Breadcrumb" className="mb-10 text-[0.8125rem] text-ink-soft">
-        <Link href={`/${segment}`} className="font-bold uppercase tracking-[0.06em] hover:opacity-70">
+        <Link
+          href={`/${segment}`}
+          className="font-bold uppercase tracking-[0.06em] hover:opacity-70"
+        >
           {CATALOG_LABEL[product.catalog]}
         </Link>
         <span aria-hidden> / </span>

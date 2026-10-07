@@ -212,7 +212,14 @@ export default async function AdminProducts({
                       {CATALOG_LABEL[p.catalog]} · {p.slug}
                     </p>
                   </div>
-                  <Pill value={p.status} />
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <Pill value={p.status} />
+                    {p.markedSoldOut && (
+                      <span className="text-[11px] font-medium text-stop">
+                        Sold out
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-soft">
                   <div>
@@ -282,6 +289,11 @@ export default async function AdminProducts({
               <td className="py-2">{CATALOG_LABEL[p.catalog]}</td>
               <td className="py-2">
                 <Pill value={p.status} />
+                {p.markedSoldOut && (
+                  <span className="ml-2 text-[11px] font-medium text-stop">
+                    Sold out
+                  </span>
+                )}
               </td>
               <td className="py-2">{p.variantCount}</td>
               <td className="py-2">{p.imageCount}</td>

@@ -415,6 +415,9 @@ model Product {
   taxClass       TaxClass?     @relation(fields: [taxClassId], references: [id], onDelete: Restrict)
   metaTitle      String?
   metaDescription String?
+  // Owner's manual "Sold out" switch (D-138): the product stays listed but
+  // can't be bought, and stock is left untouched so switching back restores it.
+  markedSoldOut  Boolean       @default(false)
   publishedAt    DateTime?     @db.Timestamptz(6)
   createdAt      DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime      @updatedAt @db.Timestamptz(6)

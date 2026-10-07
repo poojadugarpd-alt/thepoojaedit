@@ -21,6 +21,7 @@ import {
   deleteProductAction,
   reorderImageAction,
   setPrimaryImageAction,
+  soldOutAction,
   statusAction,
   switchCatalogAction,
   thriftDetailsAction,
@@ -30,7 +31,12 @@ import {
   type VariantInput,
 } from "@/app/admin/products/actions";
 
-import { SelectInput, TextAreaInput, TextInput } from "./controlled-fields";
+import {
+  CheckboxInput,
+  SelectInput,
+  TextAreaInput,
+  TextInput,
+} from "./controlled-fields";
 import {
   MeasurementsEditor,
   measurementsToRows,
@@ -114,6 +120,7 @@ export function ProductEditor({
   );
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [status, setStatus] = useState(initial?.status ?? "DRAFT");
+  const [soldOut, setSoldOut] = useState(initial?.markedSoldOut ?? false);
   const [reason, setReason] = useState("");
 
   const initialMatrix = initial
@@ -265,6 +272,11 @@ export function ProductEditor({
             : "DRAFT";
       const statusRes = await statusAction(productId, next, reason || undefined);
       if (!statusRes.ok) errors.push(statusRes.message);
+    }
+
+    if (soldOut !== (initial?.markedSoldOut ?? false)) {
+      const soldRes = await soldOutAction(productId, soldOut);
+      if (!soldRes.ok) errors.push(soldRes.message);
     }
 
     const activeRows = rows.filter((r) => !r.orphaned);
@@ -615,6 +627,19 @@ export function ProductEditor({
               onChange={(v) => setStatus(v as typeof status)}
               options={STATUS_OPTIONS}
             />
+            {productId && (
+              <div>
+                <CheckboxInput
+                  label="Sold out"
+                  checked={soldOut}
+                  onChange={setSoldOut}
+                />
+                <p className="text-[11px] text-ink-soft">
+                  Stays on the site marked “Sold out” but can’t be bought. Stock is
+                  kept, so unticking puts it back on sale.
+                </p>
+              </div>
+            )}
             {initialCheck && (
               <ul className="text-xs">
                 {initialCheck.ok ? (

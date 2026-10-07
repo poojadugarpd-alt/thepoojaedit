@@ -19,6 +19,7 @@ import {
   listCollectionsAdmin,
   publishProduct,
   removeProductFromCollection,
+  setProductSoldOut,
   reorderCollectionProduct,
   searchAddableCollectionProducts,
   switchProductCatalog,
@@ -180,7 +181,9 @@ describe("updateProduct", () => {
       title: "Retag Me",
       tags: ["old-tag"],
     });
-    const updated = await updateProduct(db, admin, p.id, { tags: ["new-tag", "second"] });
+    const updated = await updateProduct(db, admin, p.id, {
+      tags: ["new-tag", "second"],
+    });
     expect(updated.tags).toEqual(["new-tag", "second"]);
   });
 });
@@ -904,9 +907,19 @@ describe("switchProductCatalog", () => {
       catalog: "THE_POOJA_EDIT",
       title: "Mislabelled Skirt",
     });
-    await upsertVariant(db, admin, p.id, { sku: "MIS-1", pricePaise: 50000, onHandQty: 5 });
+    await upsertVariant(db, admin, p.id, {
+      sku: "MIS-1",
+      pricePaise: 50000,
+      onHandQty: 5,
+    });
     await db.productImage.create({
-      data: { productId: p.id, bucket: "b", path: `p/${p.id}/0`, altText: "x", isPrimary: true },
+      data: {
+        productId: p.id,
+        bucket: "b",
+        path: `p/${p.id}/0`,
+        altText: "x",
+        isPrimary: true,
+      },
     });
     await publishProduct(db, admin, p.id);
 
@@ -926,7 +939,10 @@ describe("switchProductCatalog", () => {
   });
 
   it("moves Closet → Label: removes the now-invalid thrift details", async () => {
-    const p = await createProduct(db, admin, { catalog: "THRIFT", title: "Actually New" });
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Actually New",
+    });
     await upsertThriftDetails(db, admin, p.id, {
       conditionGrade: "NEW_WITH_TAGS",
       measurements: { bust: { value: "34", unit: "in" } },
@@ -935,7 +951,9 @@ describe("switchProductCatalog", () => {
     const result = await switchProductCatalog(db, admin, p.id, "THE_POOJA_EDIT");
     expect(result.product.catalog).toBe("THE_POOJA_EDIT");
     expect(result.thriftDetailsRemoved).toBe(true);
-    expect(await db.thriftDetails.findUnique({ where: { productId: p.id } })).toBeNull();
+    expect(
+      await db.thriftDetails.findUnique({ where: { productId: p.id } }),
+    ).toBeNull();
   });
 
   it("drops membership in a collection that belongs to the old catalogue, keeps one that doesn't", async () => {
@@ -947,7 +965,10 @@ describe("switchProductCatalog", () => {
       catalog: "THE_POOJA_EDIT",
       name: "Label Favourites",
     });
-    const p = await createProduct(db, admin, { catalog: "THRIFT", title: "Moving Piece" });
+    const p = await createProduct(db, admin, {
+      catalog: "THRIFT",
+      title: "Moving Piece",
+    });
     await addProductToCollection(db, admin, closetOnly.id, p.id);
 
     const result = await switchProductCatalog(db, admin, p.id, "THE_POOJA_EDIT");
@@ -976,7 +997,10 @@ describe("switchProductCatalog", () => {
       slug: "sale",
       name: "Sale",
     });
-    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Top" });
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Top",
+    });
     await updateProduct(db, admin, p.id, { categoryId: labelCategory.id });
 
     const result = await switchProductCatalog(db, admin, p.id, "THRIFT");
@@ -984,7 +1008,10 @@ describe("switchProductCatalog", () => {
     expect(result.product.categoryId).toBeNull();
 
     // A global category (catalog: null) is untouched by a switch.
-    const p2 = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Top 2" });
+    const p2 = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Top 2",
+    });
     await updateProduct(db, admin, p2.id, { categoryId: globalCategory.id });
     const result2 = await switchProductCatalog(db, admin, p2.id, "THRIFT");
     expect(result2.categoryCleared).toBe(false);
@@ -1008,8 +1035,15 @@ describe("switchProductCatalog", () => {
   });
 
   it("is safe with real order history — OrderItem keeps its own immutable catalog snapshot", async () => {
-    const p = await createProduct(db, admin, { catalog: "THE_POOJA_EDIT", title: "Ordered Once" });
-    const v = await upsertVariant(db, admin, p.id, { sku: "ORD-1", pricePaise: 50000, onHandQty: 3 });
+    const p = await createProduct(db, admin, {
+      catalog: "THE_POOJA_EDIT",
+      title: "Ordered Once",
+    });
+    const v = await upsertVariant(db, admin, p.id, {
+      sku: "ORD-1",
+      pricePaise: 50000,
+      onHandQty: 3,
+    });
     const order = await db.order.create({
       data: {
         orderNumber: `PE-${randomUUID().slice(0, 10)}`,
@@ -1041,5 +1075,31 @@ describe("switchProductCatalog", () => {
 
     const item = await db.orderItem.findFirst({ where: { orderId: order.id } });
     expect(item?.catalog).toBe("THE_POOJA_EDIT"); // untouched, still what was actually sold
+  });
+});
+
+describe("setProductSoldOut (D-138)", () => {
+  it("flips the flag, audits each real change, and is a no-op when unchanged", async () => {
+    const p = await db.product.create({
+      data: {
+        catalog: "THE_POOJA_EDIT",
+        slug: `so-${randomUUID().slice(0, 6)}`,
+        title: "SO",
+      },
+    });
+    await setProductSoldOut(db, admin, p.id, true);
+    await setProductSoldOut(db, admin, p.id, true);
+    expect(
+      (await db.product.findUniqueOrThrow({ where: { id: p.id } })).markedSoldOut,
+    ).toBe(true);
+    await setProductSoldOut(db, admin, p.id, false);
+    const logs = await db.adminActivityLog.findMany({
+      where: { entityId: p.id },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(logs.map((l) => l.action)).toEqual([
+      "product.marked_sold_out",
+      "product.unmarked_sold_out",
+    ]);
   });
 });

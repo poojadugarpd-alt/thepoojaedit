@@ -2,7 +2,7 @@ import type { PublicAvailability } from "@/server/catalog/public-shape";
 
 const LABEL: Record<PublicAvailability, string> = {
   IN_STOCK: "Available",
-  OUT_OF_STOCK: "Out of stock",
+  OUT_OF_STOCK: "Sold out",
   SOLD: "Sold",
 };
 
