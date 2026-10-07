@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma, PrismaClient } from "@/generated/prisma";
+import { productImageUrl } from "@/lib/storage-url";
 
 /**
  * Admin order reads (master §10). Composition only — every state change goes
@@ -155,4 +156,45 @@ export async function getAdminOrder(
     where: { orderNumber },
     include: DETAIL_INCLUDE,
   });
+}
+
+/**
+ * Thumbnail URL per order item id (owner request, 2026-10-07).
+ * `OrderItem.imageBucket/imagePath` are never filled at checkout, so this reads
+ * the product's current primary photo (else its first by position) — the same
+ * pick as the storefront card. Lines without a `productId` (seeded/older rows)
+ * fall back to their variant's product. Items with no photo are absent.
+ */
+export async function getOrderItemImages(
+  db: PrismaClient,
+  items: { id: string; productId: string | null; variantId: string | null }[],
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const missing = items.filter((i) => !i.productId && i.variantId).map((i) => i.variantId!);
+  const variantProduct = new Map<string, string>();
+  if (missing.length > 0) {
+    const variants = await db.productVariant.findMany({
+      where: { id: { in: [...new Set(missing)] } },
+      select: { id: true, productId: true },
+    });
+    for (const v of variants) variantProduct.set(v.id, v.productId);
+  }
+  const productOf = (i: (typeof items)[number]) =>
+    i.productId ?? (i.variantId ? variantProduct.get(i.variantId) : undefined);
+  const ids = [...new Set(items.map(productOf).filter((id): id is string => !!id))];
+  if (ids.length === 0) return out;
+  const images = await db.productImage.findMany({
+    where: { productId: { in: ids } },
+    orderBy: [{ isPrimary: "desc" }, { sortPosition: "asc" }],
+    select: { productId: true, bucket: true, path: true, publicUrl: true },
+  });
+  const byProduct = new Map<string, string>();
+  for (const im of images) {
+    if (!byProduct.has(im.productId)) byProduct.set(im.productId, productImageUrl(im));
+  }
+  for (const i of items) {
+    const url = byProduct.get(productOf(i) ?? "");
+    if (url) out.set(i.id, url);
+  }
+  return out;
 }

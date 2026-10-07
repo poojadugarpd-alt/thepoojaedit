@@ -7,6 +7,7 @@ import { AuthorizationError } from "../../src/server/auth/errors";
 import {
   assertActiveAdmin,
   getAdminOrder,
+  getOrderItemImages,
   listOpenTasks,
   listOrders,
   resolveTaskChecked,
@@ -199,6 +200,41 @@ describe("operator drives a COD lifecycle", () => {
 
     detail = await getAdminOrder(db, order.orderNumber);
     expect(detail?.paymentStatus).toBe("COD_COLLECTED");
+  });
+});
+
+describe("order item thumbnails", () => {
+  it("picks the primary photo, else the first by position; falls back via the variant; skips products without photos", async () => {
+    const [a, b, c] = await Promise.all([makeVariant({}), makeVariant({}), makeVariant({})]);
+    const pid = async (variantId: string) =>
+      (await db.productVariant.findUniqueOrThrow({ where: { id: variantId } })).productId;
+    const [pa, pb, pc] = await Promise.all([pid(a), pid(b), pid(c)]);
+    await db.productImage.createMany({
+      data: [
+        { productId: pa, bucket: "product-images", path: "a/first.jpg", altText: "", sortPosition: 0 },
+        { productId: pa, bucket: "product-images", path: "a/primary.jpg", altText: "", sortPosition: 1, isPrimary: true },
+        { productId: pb, bucket: "product-images", path: "b/second.jpg", altText: "", sortPosition: 1 },
+        { productId: pb, bucket: "product-images", path: "b/first.jpg", altText: "", sortPosition: 0 },
+      ],
+    });
+
+    const line = (id: string, productId: string | null, variantId: string | null) => ({
+      id,
+      productId,
+      variantId,
+    });
+    const map = await getOrderItemImages(db, [
+      line("1", pa, a),
+      line("2", pb, b),
+      line("3", pc, c),
+      line("4", null, b), // no productId → resolved through the variant
+      line("5", null, null),
+    ]);
+    expect(map.get("1")).toMatch(/a\/primary\.jpg$/);
+    expect(map.get("2")).toMatch(/b\/first\.jpg$/);
+    expect(map.has("3")).toBe(false);
+    expect(map.get("4")).toMatch(/b\/first\.jpg$/);
+    expect(map.has("5")).toBe(false);
   });
 });
 

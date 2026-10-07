@@ -4,9 +4,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { ActionForm } from "@/features/admin/action-form";
-import { money, Pill, ts } from "@/features/admin/format";
+import { money, Pill, Thumb, ts } from "@/features/admin/format";
 import { timed } from "@/lib/perf";
-import { getAdminOrder, listActivity } from "@/server/admin";
+import { getAdminOrder, getOrderItemImages, listActivity } from "@/server/admin";
 import { isShippingConfigured } from "@/server/shipping";
 
 import {
@@ -39,10 +39,15 @@ export default async function AdminOrderDetail({
   // there is no cheaper way to learn it first. Measured and reported as its
   // own step rather than folded into the query above, so the report shows
   // it honestly instead of hiding it inside one bracket.
-  const activity = await timed(
-    "admin:order-detail (activity, depends on order.id)",
-    () => listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
-  );
+  const [activity, itemImages] = await Promise.all([
+    timed(
+      "admin:order-detail (activity, depends on order.id)",
+      () => listActivity(prisma, { entityType: "Order", entityId: order.id, limit: 20 }),
+    ),
+    timed("admin:order-detail (item images)", () =>
+      getOrderItemImages(prisma, order.items),
+    ),
+  ]);
   const shipment = order.shipments[0];
   const hidden = <input type="hidden" name="orderNumber" value={order.orderNumber} />;
   const capturedPaise = order.paymentAttempts
@@ -249,11 +254,19 @@ export default async function AdminOrderDetail({
                 {order.items.map((i) => (
                   <tr key={i.id} className="border-b border-line/60">
                     <td className="py-1.5">
-                      {i.title}
-                      {i.size ? ` · ${i.size}` : ""}
-                      <span className="block text-[11px] text-ink-soft">
-                        {CATALOG_LABEL[i.catalog]} · {i.sku} · qty {i.quantity}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <Thumb
+                          url={itemImages.get(i.id) ?? null}
+                          alt={i.title}
+                        />
+                        <div>
+                          {i.title}
+                          {i.size ? ` · ${i.size}` : ""}
+                          <span className="block text-[11px] text-ink-soft">
+                            {CATALOG_LABEL[i.catalog]} · {i.sku} · qty {i.quantity}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-1.5 text-right">{money(i.totalPaise)}</td>
                   </tr>
