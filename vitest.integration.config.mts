@@ -19,6 +19,8 @@ const TEST_DB_URL =
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  // tsconfig keeps `jsx: "preserve"` for Next; tests must compile JSX themselves.
+  oxc: { jsx: { runtime: "automatic" } },
   resolve: {
     alias: [
       { find: /^server-only$/, replacement: emptyModule },
