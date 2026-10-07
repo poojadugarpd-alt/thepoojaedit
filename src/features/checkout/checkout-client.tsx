@@ -248,9 +248,10 @@ export function CheckoutClient({
               autoComplete="tel"
             />
             <Input
-              label="Email (optional)"
+              label="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
               type="email"
               autoComplete="email"
               className="sm:col-span-2"

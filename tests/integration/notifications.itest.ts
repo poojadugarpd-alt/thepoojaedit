@@ -400,3 +400,54 @@ describe("admin push subscriptions + preferences", () => {
     ).resolves.toMatchObject({ status: "OPEN" });
   });
 });
+
+describe("AWB assigned email (D-145)", () => {
+  async function booked(awb: string | null) {
+    const order = await seedOrder({ method: "PREPAID_RAZORPAY" });
+    const shipment = await db.shipment.create({
+      data: {
+        orderId: order.id,
+        provider: "shadowfax",
+        awb,
+        courier: "Shadowfax",
+        statusNormalized: "PROCESSING",
+        merchantReference: `TPJ-${randomUUID().slice(0, 12)}`,
+      },
+    });
+    return { order, shipment };
+  }
+
+  it("emails the customer the AWB once Shadowfax books the shipment", async () => {
+    const { order, shipment } = await booked("SF123456789");
+    const T = fakeTransports(db);
+    const ev = {
+      type: "shipment.created",
+      aggregateType: "Order" as const,
+      aggregateId: order.id,
+      payload: { shipmentId: shipment.id, awb: "SF123456789" },
+    };
+    await notifyForDomainEvent(db, { ...ev, domainEventId: randomUUID() }, T);
+    // A re-delivered event for the same booking must not email twice.
+    await notifyForDomainEvent(db, { ...ev, domainEventId: randomUUID() }, T);
+
+    const deliveries = await db.notificationDelivery.findMany({ where: { orderId: order.id } });
+    expect(deliveries).toHaveLength(1);
+    expect(deliveries[0].templateKey).toBe("shipment_awb_assigned");
+    expect(deliveries[0].channel).toBe("EMAIL");
+    expect(T.email.sent).toHaveLength(1);
+    expect(JSON.stringify(T.email.sent[0])).toContain("SF123456789");
+  });
+
+  it("sends nothing when the carrier returned no AWB", async () => {
+    const { order, shipment } = await booked(null);
+    const T = fakeTransports(db);
+    await notifyForDomainEvent(db, {
+      domainEventId: randomUUID(),
+      type: "shipment.created",
+      aggregateType: "Order",
+      aggregateId: order.id,
+      payload: { shipmentId: shipment.id, awb: null },
+    }, T);
+    expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(0);
+  });
+});

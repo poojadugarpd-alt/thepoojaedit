@@ -53,7 +53,8 @@ export const placeCheckoutSchema = z.object({
   idempotencyKey: z.string().min(8).max(200),
   lines: z.array(checkoutLineSchema).min(1).max(50),
   paymentMethod: paymentMethodSchema,
-  email: z.string().email().max(200).optional().or(z.literal("")),
+  // Required (D-145): the order confirmation and AWB/shipping emails go here.
+  email: z.string().trim().email("Enter a valid email address").max(200),
   contactPhone: phone,
   billing: addressSchema,
   shipping: addressSchema,

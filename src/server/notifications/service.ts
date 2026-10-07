@@ -305,6 +305,31 @@ export async function notifyForDomainEvent(
       });
       break;
 
+    case "shipment.created": {
+      // Shadowfax assigned an AWB (D-145). The event payload carries the AWB of
+      // the shipment just booked; no email if the carrier returned none.
+      const p = (event.payload ?? {}) as { shipmentId?: string; awb?: string | null };
+      const booked = order.shipments.find((s) => s.id === p.shipmentId) ?? shipment;
+      const awb = p.awb ?? booked?.awb ?? null;
+      if (awb) {
+        await run({
+          dedupeSeed: `awb:${booked?.id ?? order.id}:${awb}`,
+          channel: "EMAIL",
+          templateKey: "shipment_awb_assigned",
+          recipient: custEmail,
+          orderId: order.id,
+          customerId: order.customerId,
+          variables: {
+            orderNumber: order.orderNumber,
+            orderUrl,
+            awb,
+            courier: booked?.courier ?? "Shadowfax",
+          },
+        });
+      }
+      break;
+    }
+
     case "shipment.shipped":
       for (const ch of ["EMAIL", "WHATSAPP"] as const) {
         await run({

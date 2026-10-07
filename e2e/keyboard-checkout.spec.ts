@@ -25,7 +25,8 @@ test("a customer can complete the checkout form with the keyboard only", async (
   await page.keyboard.type("Keyboard Buyer");
   await page.keyboard.press("Tab");
   await page.keyboard.type("+919812345678"); // Phone
-  await page.getByLabel("Email (optional)").focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.type("buyer@example.com"); // Email (required, D-145)
   await page.keyboard.press("Tab");
   await page.keyboard.type("12 Test Lane"); // Address
   await page.keyboard.press("Tab"); // Apartment

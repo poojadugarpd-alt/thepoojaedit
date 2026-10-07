@@ -37,6 +37,7 @@ test("checkout offers online payment only — Cash on delivery is not shown", as
 
   await page.getByLabel("Full name").fill("Test Buyer");
   await page.getByLabel("Phone").fill("+919812345678");
+  await page.getByLabel("Email").fill("buyer@example.com");
   await page.getByLabel("Address", { exact: true }).fill("12 Test Lane");
   await page.getByLabel("City").fill("Jaipur");
   await page.getByLabel("State").selectOption({ label: "Rajasthan" });
@@ -86,6 +87,7 @@ test("a discount code lowers the total and can be removed", async ({ page }) => 
   await page.goto("/checkout");
   await page.getByLabel("Full name").fill("Test Buyer");
   await page.getByLabel("Phone").fill("+919812345678");
+  await page.getByLabel("Email").fill("buyer@example.com");
   await page.getByLabel("Address", { exact: true }).fill("12 Test Lane");
   await page.getByLabel("City").fill("Jaipur");
   await page.getByLabel("State").selectOption({ label: "Rajasthan" });

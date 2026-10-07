@@ -130,6 +130,26 @@ export const TEMPLATES = {
     }),
   }),
 
+  shipment_awb_assigned: defineTemplate({
+    version: 1,
+    channels: ["EMAIL"],
+    schema: orderRef.extend({
+      awb: z.string(),
+      courier: z.string().default("Shadowfax"),
+    }),
+    email: (v) => ({
+      subject: `Order ${v.orderNumber} is packed — AWB ${v.awb}`,
+      text: `Your order ${v.orderNumber} is packed and booked with ${v.courier}. AWB: ${v.awb}. We'll email you again when it ships.${v.orderUrl ? ` View your order: ${v.orderUrl}` : ""}`,
+      html: emailShell(
+        `Order ${v.orderNumber} is packed`,
+        `<p>Your order is packed and booked with <strong>${v.courier}</strong>.</p>
+         <p>AWB number: <strong>${v.awb}</strong></p>
+         <p>We'll email you again when the courier picks it up.</p>
+         ${v.orderUrl ? `<p><a href="${v.orderUrl}">View your order</a></p>` : ""}`,
+      ),
+    }),
+  }),
+
   shipment_dispatched: defineTemplate({
     version: 1,
     channels: ["EMAIL", "WHATSAPP"],
