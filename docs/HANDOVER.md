@@ -217,6 +217,21 @@ backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
 
+0. **From 2026-10-07 evening (Closet drop + image outage):**
+   - 24 one-of-one Closet pieces were added as **DRAFT** (owner publishes at
+     8pm). Titles end in a colour where they would otherwise repeat.
+   - **D-141:** Vercel image optimization hit its plan quota (402), blanking
+     product photos; `images.unoptimized: true` now serves Supabase files
+     directly (`cc7250a`, live, verified 200). Photos are now 0.5–2.7 MB
+     each, so pages are heavy on mobile. Follow-up: shrink the Shopify-era
+     originals, or upgrade Vercel and remove the flag.
+   - **Admin uploader bug (not fixed):** uploading several photos at once to
+     a product with no images sends `isPrimary: true` for every file
+     (`hasExistingImages` is a stale prop in `image-uploader.tsx`), so the
+     *last* photo becomes primary. Workaround: click "Primary" on photo 1.
+     Also, image ↑/↓, Delete and Primary only show their result after a
+     page reload.
+
 1. **Try the new admin features once on the live site** (needs an admin
    login): tick and untick Sold out on a product; create a Closet item with two
    sizes; create a discount code, apply it at live checkout without paying,
