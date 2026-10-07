@@ -21,10 +21,7 @@ export const addressSchema = z.object({
   line2: z.string().trim().max(200).optional().or(z.literal("")),
   landmark: z.string().trim().max(120).optional().or(z.literal("")),
   city: z.string().trim().min(1, "City is required").max(120),
-  stateCode: z
-    .string()
-    .trim()
-    .refine(isValidStateCode, "Choose a state"),
+  stateCode: z.string().trim().refine(isValidStateCode, "Choose a state"),
   postcode: z
     .string()
     .trim()
@@ -45,7 +42,11 @@ export const prepareCheckoutSchema = z.object({
   lines: z.array(checkoutLineSchema).min(1, "Your cart is empty").max(50),
   paymentMethod: paymentMethodSchema,
   destinationStateCode: z.string().trim().refine(isValidStateCode, "Choose a state"),
-  destinationPostcode: z.string().trim().regex(/^[1-9][0-9]{5}$/),
+  destinationPostcode: z
+    .string()
+    .trim()
+    .regex(/^[1-9][0-9]{5}$/),
+  discountCode: z.string().trim().max(40).optional(),
 });
 
 export const placeCheckoutSchema = z.object({
@@ -58,6 +59,7 @@ export const placeCheckoutSchema = z.object({
   shipping: addressSchema,
   clientQuoteHash: z.string().min(8).max(128),
   source: z.string().max(60).optional(),
+  discountCode: z.string().trim().max(40).optional(),
 });
 
 export type PlaceCheckoutInput = z.infer<typeof placeCheckoutSchema>;

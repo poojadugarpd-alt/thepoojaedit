@@ -19,8 +19,21 @@ const ITEMS = [
     label: "Collections",
     hint: "What shows on the home page, and in what order",
   },
-  { href: "/admin/inventory", label: "Inventory", hint: "Stock levels and corrections" },
-  { href: "/admin/returns", label: "Returns", hint: "Requests, inspection, resolution" },
+  {
+    href: "/admin/discounts",
+    label: "Discount codes",
+    hint: "Codes shoppers enter at checkout",
+  },
+  {
+    href: "/admin/inventory",
+    label: "Inventory",
+    hint: "Stock levels and corrections",
+  },
+  {
+    href: "/admin/returns",
+    label: "Returns",
+    hint: "Requests, inspection, resolution",
+  },
   { href: "/admin/customers", label: "Customers", hint: "History and private notes" },
   {
     href: "/admin/notifications",

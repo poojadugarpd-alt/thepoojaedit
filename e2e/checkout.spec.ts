@@ -32,9 +32,7 @@ test("checkout offers online payment only — Cash on delivery is not shown", as
   const prepaid = page.getByRole("radio").first();
   const prepaidEnabled = !(await prepaid.isDisabled());
   if (!prepaidEnabled) {
-    await expect(
-      page.getByText(/not available in this environment/i),
-    ).toBeVisible();
+    await expect(page.getByText(/not available in this environment/i)).toBeVisible();
   }
 
   await page.getByLabel("Full name").fill("Test Buyer");
@@ -76,4 +74,39 @@ test("checkout with an empty cart invites you to shop", async ({ page }) => {
   await page.evaluate(() => localStorage.removeItem("pe-cart-v1"));
   await page.goto("/checkout");
   await expect(page.getByText(/your cart is empty/i)).toBeVisible();
+});
+
+/** D-140: a discount code is applied at review, lowers the total, and can be removed. */
+test("a discount code lowers the total and can be removed", async ({ page }) => {
+  await page.goto("/label");
+  await page.locator("ul.grid > li a").first().click();
+  await page.getByRole("button", { name: /add to cart/i }).click();
+  await expect(page.getByText(/added to cart/i)).toBeVisible();
+
+  await page.goto("/checkout");
+  await page.getByLabel("Full name").fill("Test Buyer");
+  await page.getByLabel("Phone").fill("+919812345678");
+  await page.getByLabel("Address", { exact: true }).fill("12 Test Lane");
+  await page.getByLabel("City").fill("Jaipur");
+  await page.getByLabel("State").selectOption({ label: "Rajasthan" });
+  await page.getByLabel("PIN code").fill("302001");
+  await page.getByRole("button", { name: /review order/i }).click();
+  await expect(page.getByText("Review & pay")).toBeVisible();
+
+  const payButton = page.getByRole("button", { name: /^Pay ₹/ });
+  const before = await payButton.textContent();
+
+  await page.getByLabel("Discount code").fill("nope");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByText("That code isn't valid.")).toBeVisible();
+  await expect(payButton).toHaveText(before!);
+
+  await page.getByLabel("Discount code").fill("e2etest10");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByText("Discount (E2ETEST10)")).toBeVisible();
+  await expect(payButton).not.toHaveText(before!);
+
+  await page.getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByText("Discount (E2ETEST10)")).toHaveCount(0);
+  await expect(payButton).toHaveText(before!);
 });

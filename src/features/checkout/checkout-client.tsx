@@ -65,6 +65,11 @@ export function CheckoutClient({
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Discount code (D-140): what's typed, what the current quote applied, and
+  // a message under the box when a code can't be used.
+  const [codeInput, setCodeInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
 
   const orderLines = useMemo(
     () => lines.map((l) => ({ variantId: l.variantId, quantity: l.quantity })),
@@ -94,25 +99,53 @@ export function CheckoutClient({
       setQuote(null);
     };
 
-  async function onReview(e: React.FormEvent) {
-    e.preventDefault();
+  /** Prices the order, with `code` if given. A code that can't be used is
+   *  reported under the code box and the order is priced without it. */
+  async function requote(code: string | null) {
     setError(null);
     setBusy(true);
     try {
-      const res = await prepareCheckoutAction({
-        lines: orderLines,
-        paymentMethod: method,
-        destinationStateCode: addr.stateCode,
-        destinationPostcode: addr.postcode,
-      });
+      const ask = (discountCode: string | null) =>
+        prepareCheckoutAction({
+          lines: orderLines,
+          paymentMethod: method,
+          destinationStateCode: addr.stateCode,
+          destinationPostcode: addr.postcode,
+          ...(discountCode ? { discountCode } : {}),
+        });
+      let res = await ask(code);
+      if (!res.ok && res.field === "discountCode") {
+        setCodeError(res.error);
+        setAppliedCode(null);
+        res = await ask(null);
+      } else {
+        setCodeError(null);
+      }
       if (!res.ok) {
         setError(res.error);
         return;
       }
       setQuote(res.quote);
+      setAppliedCode(res.quote.discountCode);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onReview(e: React.FormEvent) {
+    e.preventDefault();
+    await requote(appliedCode);
+  }
+
+  async function onApplyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!codeInput.trim()) return;
+    await requote(codeInput.trim());
+  }
+
+  async function onRemoveCode() {
+    setCodeInput("");
+    await requote(null);
   }
 
   async function onPlace() {
@@ -131,6 +164,7 @@ export function CheckoutClient({
         shipping: field(addr),
         clientQuoteHash: quote.hash,
         source: "web-checkout",
+        ...(appliedCode ? { discountCode: appliedCode } : {}),
       });
 
       if (!res.ok) {
@@ -335,10 +369,61 @@ export function CheckoutClient({
                   ))}
                 </tbody>
               </table>
+              {appliedCode ? (
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
+                  <span>
+                    Code{" "}
+                    <span className="font-bold tracking-[0.04em]">{appliedCode}</span>{" "}
+                    applied
+                  </span>
+                  <button
+                    type="button"
+                    onClick={onRemoveCode}
+                    disabled={busy}
+                    className="u-textlink text-sm"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={onApplyCode}
+                  className="mt-4 flex items-end gap-2 border-t border-line pt-4"
+                >
+                  <Input
+                    label="Discount code"
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value)}
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    className="flex-1"
+                    aria-describedby={codeError ? "discount-code-error" : undefined}
+                  />
+                  <button
+                    type="submit"
+                    disabled={busy || !codeInput.trim()}
+                    className="u-pill shrink-0"
+                  >
+                    Apply
+                  </button>
+                </form>
+              )}
+              {codeError && (
+                <p
+                  id="discount-code-error"
+                  role="alert"
+                  className="mt-2 text-sm text-stop"
+                >
+                  {codeError}
+                </p>
+              )}
               <dl className="mt-4 space-y-1.5 border-t border-line pt-4 text-sm">
                 <Line label="Subtotal" value={quote.subtotalPaise} />
                 {quote.discountPaise > 0 && (
-                  <Line label="Discount" value={-quote.discountPaise} />
+                  <Line
+                    label={appliedCode ? `Discount (${appliedCode})` : "Discount"}
+                    value={-quote.discountPaise}
+                  />
                 )}
                 <Line label="Shipping" value={quote.shippingPaise} zeroLabel="Free" />
                 {quote.codFeePaise > 0 && (

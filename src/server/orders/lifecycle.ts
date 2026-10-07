@@ -111,6 +111,11 @@ export async function cancelOrder(
         version: { increment: 1 },
       },
     });
+    // Gives a limited discount code's use back (D-140).
+    await tx.discountRedemption.updateMany({
+      where: { orderId: order.id, releasedAt: null },
+      data: { releasedAt: new Date() },
+    });
     await timeline(
       tx,
       order.id,

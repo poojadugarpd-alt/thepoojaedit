@@ -86,6 +86,17 @@ enum InventoryTxnType {
   RTO_RESTOCK
 }
 
+enum DiscountKind {
+  PERCENT
+  FIXED
+}
+
+enum DiscountScope {
+  ALL
+  LABEL
+  CLOSET
+}
+
 enum OrderStatus {
   PENDING_PAYMENT
   PENDING_CONFIRMATION
@@ -585,6 +596,8 @@ model Order {
   totalPaise         Int
 
   taxBreakdown       Json?             // resolved treatment, rates, inputs, split amounts
+  // Code the shopper applied (D-140), stored as typed-in-uppercase snapshot.
+  discountCode       String?
 
   placedAt           DateTime?         @db.Timestamptz(6)
   confirmedAt        DateTime?         @db.Timestamptz(6)
@@ -608,6 +621,7 @@ model Order {
   events             OrderEvent[]
   notifications      NotificationDelivery[]
   codRemittances     CodRemittance[]
+  discountRedemption DiscountRedemption?
 
   @@index([createdAt, id])
   @@index([paymentStatus, createdAt])
@@ -650,6 +664,47 @@ model OrderItem {
   shipmentItems     ShipmentItem[]
 
   @@index([orderId])
+}
+
+/// A discount code the owner creates in admin (D-140). One code per order.
+model DiscountCode {
+  id               String        @id @default(uuid(7)) @db.Uuid
+  /// Stored uppercase; matched case-insensitively by uppercasing input.
+  code             String        @unique
+  kind             DiscountKind
+  /// PERCENT: basis points (1000 = 10%).
+  percentBps       Int?
+  /// FIXED: rupees off, in paise.
+  amountPaise      Int?
+  appliesTo        DiscountScope @default(ALL)
+  /// Minimum value of the items the code applies to, in paise.
+  minSubtotalPaise Int?
+  startsAt         DateTime?     @db.Timestamptz(6)
+  endsAt           DateTime?     @db.Timestamptz(6)
+  /// Null = unlimited. Uses are counted live from redemptions (see quote.ts).
+  maxRedemptions   Int?
+  isActive         Boolean       @default(true)
+  note             String?
+  createdAt        DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(6)
+
+  redemptions      DiscountRedemption[]
+}
+
+/// One use of a code by one order. `releasedAt` is set when that order is
+/// cancelled, which gives the use back.
+model DiscountRedemption {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  discountCodeId String       @db.Uuid
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Restrict)
+  orderId        String       @unique @db.Uuid
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  /// The price reduction the code gave (incl. tax), in paise.
+  amountPaise    Int
+  releasedAt     DateTime?    @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+
+  @@index([discountCodeId, releasedAt])
 }
 
 model OrderAddress {

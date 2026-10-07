@@ -12,6 +12,7 @@ import { getCurrentCustomer } from "@/server/auth/current-customer";
 import {
   checkout,
   CHECKOUT_COD_ENABLED,
+  DiscountCodeQuoteError,
   getQuote,
   guestScope,
   IdempotencyConflictError,
@@ -47,6 +48,7 @@ export interface QuoteSummary {
   }[];
   subtotalPaise: number;
   discountPaise: number;
+  discountCode: string | null;
   shippingPaise: number;
   codFeePaise: number;
   taxPaise: number;
@@ -58,7 +60,10 @@ export interface QuoteSummary {
 
 export async function prepareCheckoutAction(
   raw: unknown,
-): Promise<{ ok: true; quote: QuoteSummary } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; quote: QuoteSummary }
+  | { ok: false; error: string; field?: "discountCode" }
+> {
   const parsed = prepareCheckoutSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request" };
@@ -75,6 +80,7 @@ export async function prepareCheckoutAction(
         stateCode: input.destinationStateCode,
         postcode: input.destinationPostcode,
       },
+      discountCode: input.discountCode || null,
     });
     return {
       ok: true,
@@ -89,6 +95,7 @@ export async function prepareCheckoutAction(
         })),
         subtotalPaise: quote.subtotalPaise,
         discountPaise: quote.discountPaise,
+        discountCode: quote.discountCode,
         shippingPaise: quote.shippingPaise,
         codFeePaise: quote.codFeePaise,
         taxPaise: quote.taxPaise,
@@ -99,6 +106,9 @@ export async function prepareCheckoutAction(
       },
     };
   } catch (e) {
+    if (e instanceof DiscountCodeQuoteError) {
+      return { ok: false, error: e.message, field: "discountCode" };
+    }
     if (e instanceof QuoteError) return { ok: false, error: e.message };
     throw e;
   }
@@ -154,6 +164,7 @@ export async function placeCheckoutAction(
       contact: { email, phone: input.contactPhone },
       lines: input.lines,
       paymentMethod: input.paymentMethod,
+      discountCode: input.discountCode || null,
       billing: withStateName(input.billing),
       shipping: withStateName(input.shipping),
       source: input.source ?? null,

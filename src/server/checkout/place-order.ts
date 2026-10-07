@@ -10,7 +10,14 @@ import { generateOrderNumber } from "@/server/orders/order-number";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import type { ShippingPort } from "@/server/shipping";
 
-import { computeQuote, QuoteError, type QuoteInput } from "./quote";
+import { countActiveUses } from "@/server/discounts";
+
+import {
+  computeQuote,
+  DiscountCodeQuoteError,
+  QuoteError,
+  type QuoteInput,
+} from "./quote";
 
 export class CheckoutError extends Error {}
 export class IdempotencyConflictError extends CheckoutError {
@@ -46,6 +53,8 @@ export interface PlaceOrderInput {
   contact: { email?: string | null; phone: string };
   lines: { variantId: string; quantity: number }[];
   paymentMethod: "PREPAID_RAZORPAY" | "COD";
+  /** The discount code the shopper applied, if any (D-140). */
+  discountCode?: string | null;
   billing: AddressInput;
   shipping: AddressInput;
   source?: string | null;
@@ -103,6 +112,7 @@ export async function placeOrder(
       stateCode: input.shipping.stateCode,
       postcode: input.shipping.postcode,
     },
+    discountCode: input.discountCode ?? null,
     shipping: input.shippingPort,
     now: input.now,
   };
@@ -180,6 +190,26 @@ export async function placeOrder(
         checkoutRequestId = other.id;
       }
 
+      // A limited code: lock its row so two checkouts can't both take the
+      // last use, then recount inside the lock (D-140).
+      if (quote.discountCodeId) {
+        const [code] = await tx.$queryRawUnsafe<{ maxRedemptions: number | null }[]>(
+          `SELECT "maxRedemptions" FROM "DiscountCode" WHERE "id" = $1::uuid FOR UPDATE`,
+          quote.discountCodeId,
+        );
+        if (code?.maxRedemptions != null) {
+          const used = await countActiveUses(tx, quote.discountCodeId, {
+            now,
+            ttlSeconds: quote.reservationTtlSeconds,
+          });
+          if (used >= code.maxRedemptions) {
+            throw new DiscountCodeQuoteError(
+              "That code has just been fully used. Remove it to continue.",
+            );
+          }
+        }
+      }
+
       const orderStatus =
         input.paymentMethod === "COD" ? "PENDING_CONFIRMATION" : "PENDING_PAYMENT";
       const paymentStatus = input.paymentMethod === "COD" ? "COD_PENDING" : "UNPAID";
@@ -204,6 +234,7 @@ export async function placeOrder(
               utmCampaign: input.utm?.campaign ?? null,
               subtotalPaise: quote.subtotalPaise,
               discountPaise: quote.discountPaise,
+              discountCode: quote.discountCode,
               shippingPaise: quote.shippingPaise,
               codFeePaise: quote.codFeePaise,
               taxPaise: quote.taxPaise,
@@ -223,7 +254,7 @@ export async function placeOrder(
                   color: l.color,
                   quantity: l.quantity,
                   unitPricePaise: l.unitPricePaise,
-                  discountPaise: 0,
+                  discountPaise: l.discountPaise,
                   hsnCode: l.hsnCode,
                   taxTreatment: l.taxTreatment,
                   taxRateBps: l.taxRateBps,
@@ -248,6 +279,16 @@ export async function placeOrder(
         }
       }
       if (!order) throw new CheckoutError("Could not allocate an order number.");
+
+      if (quote.discountCodeId) {
+        await tx.discountRedemption.create({
+          data: {
+            discountCodeId: quote.discountCodeId,
+            orderId: order.id,
+            amountPaise: quote.discountGrossPaise,
+          },
+        });
+      }
 
       const reserveLines = quote.lines.map((l) => ({
         variantId: l.variantId,

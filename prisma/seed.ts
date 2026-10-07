@@ -99,7 +99,11 @@ async function seedTaxAndSettings() {
           secondaryCta: "Shop the Closet",
         },
         editorial: { linkLabel: "Shop the piece" },
-        newIn: { eyebrow: "New apparel", heading: "New in", linkLabel: "All new pieces" },
+        newIn: {
+          eyebrow: "New apparel",
+          heading: "New in",
+          linkLabel: "All new pieces",
+        },
         fromCloset: {
           eyebrow: "Pre-loved",
           heading: "From the Closet",
@@ -416,23 +420,80 @@ async function seedNotificationTemplates() {
     vars: string[];
     providerTemplateId?: string;
   }[] = [
-    { key: "order_confirmation_prepaid", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"], providerTemplateId: "order_confirmed_prepaid" },
-    { key: "order_confirmation_cod", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"], providerTemplateId: "order_received_cod" },
-    { key: "shipment_dispatched", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "awb", "courier", "trackingUrl"], providerTemplateId: "shipment_dispatched" },
-    { key: "shipment_out_for_delivery", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "trackingUrl"], providerTemplateId: "out_for_delivery" },
-    { key: "order_delivered", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber"], providerTemplateId: "order_delivered" },
-    { key: "delivery_failed", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "reason", "trackingUrl"], providerTemplateId: "delivery_failed" },
-    { key: "order_cancelled", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "reason"], providerTemplateId: "order_cancelled" },
-    { key: "refund_completed", channels: ["EMAIL", "WHATSAPP"], vars: ["orderNumber", "amountPaise"], providerTemplateId: "refund_completed" },
-    { key: "admin_new_order", channels: ["IN_APP"], vars: ["orderNumber", "paymentMethod", "totalPaise"] },
-    { key: "admin_pending_cod", channels: ["IN_APP"], vars: ["orderNumber", "totalPaise"] },
-    { key: "admin_delivery_failed", channels: ["IN_APP"], vars: ["orderNumber", "reason"] },
+    {
+      key: "order_confirmation_prepaid",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"],
+      providerTemplateId: "order_confirmed_prepaid",
+    },
+    {
+      key: "order_confirmation_cod",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "totalPaise", "itemCount", "orderUrl"],
+      providerTemplateId: "order_received_cod",
+    },
+    {
+      key: "shipment_dispatched",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "awb", "courier", "trackingUrl"],
+      providerTemplateId: "shipment_dispatched",
+    },
+    {
+      key: "shipment_out_for_delivery",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "trackingUrl"],
+      providerTemplateId: "out_for_delivery",
+    },
+    {
+      key: "order_delivered",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber"],
+      providerTemplateId: "order_delivered",
+    },
+    {
+      key: "delivery_failed",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "reason", "trackingUrl"],
+      providerTemplateId: "delivery_failed",
+    },
+    {
+      key: "order_cancelled",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "reason"],
+      providerTemplateId: "order_cancelled",
+    },
+    {
+      key: "refund_completed",
+      channels: ["EMAIL", "WHATSAPP"],
+      vars: ["orderNumber", "amountPaise"],
+      providerTemplateId: "refund_completed",
+    },
+    {
+      key: "admin_new_order",
+      channels: ["IN_APP"],
+      vars: ["orderNumber", "paymentMethod", "totalPaise"],
+    },
+    {
+      key: "admin_pending_cod",
+      channels: ["IN_APP"],
+      vars: ["orderNumber", "totalPaise"],
+    },
+    {
+      key: "admin_delivery_failed",
+      channels: ["IN_APP"],
+      vars: ["orderNumber", "reason"],
+    },
   ];
   for (const d of defs) {
     for (const channel of d.channels) {
       await prisma.notificationTemplate.upsert({
         where: {
-          key_channel_version_language: { key: d.key, channel, version: 1, language: "en" },
+          key_channel_version_language: {
+            key: d.key,
+            channel,
+            version: 1,
+            language: "en",
+          },
         },
         update: { isEnabled: true },
         create: {
@@ -441,7 +502,8 @@ async function seedNotificationTemplates() {
           version: 1,
           language: "en",
           isEnabled: true,
-          providerTemplateId: channel === "WHATSAPP" ? (d.providerTemplateId ?? null) : null,
+          providerTemplateId:
+            channel === "WHATSAPP" ? (d.providerTemplateId ?? null) : null,
           variableSchema: { required: d.vars },
         },
       });
@@ -453,6 +515,12 @@ async function main() {
   const taxClass = await seedTaxAndSettings();
   await seedAdmin();
   await seedNotificationTemplates();
+  // Discount code for the checkout e2e (D-140). Dev/test data only.
+  await prisma.discountCode.upsert({
+    where: { code: "E2ETEST10" },
+    update: {},
+    create: { code: "E2ETEST10", kind: "PERCENT", percentBps: 1000, appliesTo: "ALL" },
+  });
   const { dresses, outerwear } = await seedCategories();
 
   const kurta = await seedNewApparel(taxClass.id, dresses.id);

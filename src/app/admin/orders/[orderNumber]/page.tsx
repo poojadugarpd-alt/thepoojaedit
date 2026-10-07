@@ -239,7 +239,12 @@ export default async function AdminOrderDetail({
             <dl className="mt-2 ml-auto max-w-xs space-y-0.5 text-sm">
               <Row k="Subtotal" v={money(order.subtotalPaise)} />
               {order.discountPaise > 0 && (
-                <Row k="Discount" v={`-${money(order.discountPaise)}`} />
+                <Row
+                  k={
+                    order.discountCode ? `Discount (${order.discountCode})` : "Discount"
+                  }
+                  v={`-${money(order.discountPaise)}`}
+                />
               )}
               <Row k="Shipping" v={money(order.shippingPaise)} />
               {order.codFeePaise > 0 && (

@@ -202,7 +202,10 @@ export default async function OrderPage({ params, searchParams }: Params) {
       <div className="mt-5 ml-auto max-w-xs">
         <Row label="Subtotal" value={formatPaiseINR(order.subtotalPaise)} />
         {order.discountPaise > 0 && (
-          <Row label="Discount" value={`-${formatPaiseINR(order.discountPaise)}`} />
+          <Row
+            label={order.discountCode ? `Discount (${order.discountCode})` : "Discount"}
+            value={`-${formatPaiseINR(order.discountPaise)}`}
+          />
         )}
         <Row
           label="Shipping"

@@ -258,3 +258,19 @@ test("unticking Only one piece and adding sizes saves in one click", async ({
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved.")).toBeVisible();
 });
+
+/** D-140: the owner creates a discount code from admin and sees it listed. */
+test("create a discount code in admin", async ({ page }) => {
+  const code = `T${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  await page.goto("/admin/discounts");
+  await expect(page.getByRole("heading", { name: "Discount codes" })).toBeVisible();
+  await page.getByLabel("Code").fill(code);
+  await page.getByLabel("Type").selectOption("FIXED");
+  await page.getByLabel("Amount (% or ₹)").fill("200");
+  await page.getByLabel("Works on").selectOption("CLOSET");
+  await page.getByLabel("Usage limit (optional)").fill("5");
+  await page.getByRole("button", { name: "Create code" }).click();
+  const row = page.getByRole("link", { name: new RegExp(code) });
+  await expect(row).toBeVisible();
+  await expect(row).toContainText("₹200 off · Pooja’s Closet · used 0 of 5");
+});

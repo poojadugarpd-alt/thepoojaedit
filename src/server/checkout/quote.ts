@@ -8,6 +8,13 @@ import {
   getCheckoutRules,
   getShippingRules,
 } from "@/server/settings";
+import {
+  allocateDiscount,
+  assertCodeUsable,
+  countActiveUses,
+  DiscountCodeError,
+  findCode,
+} from "@/server/discounts";
 import { computeOrderTax, type PricingMode } from "@/server/tax/calculator";
 import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
 
@@ -19,6 +26,13 @@ import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
  */
 
 export class QuoteError extends Error {}
+/** A discount code that can't be used; the message is shown under the code box. */
+export class DiscountCodeQuoteError extends QuoteError {
+  constructor(message: string) {
+    super(message);
+    this.name = "DiscountCodeQuoteError";
+  }
+}
 export class ItemUnavailableError extends QuoteError {
   constructor(
     readonly variantId: string,
@@ -40,6 +54,8 @@ export interface QuoteInput {
   lines: QuoteRequestLine[];
   paymentMethod: "PREPAID_RAZORPAY" | "COD";
   destination: { stateCode: string; postcode: string };
+  /** What the shopper typed in the discount box (D-140), if anything. */
+  discountCode?: string | null;
   shipping?: ShippingPort;
   now?: Date;
 }
@@ -59,6 +75,8 @@ export interface QuoteLine {
   taxRateBps: number;
   pricingMode: PricingMode;
   taxableValuePaise: number;
+  /** This line's share of the code's discount, as a reduction of the taxable value. */
+  discountPaise: number;
   cgstPaise: number;
   sgstPaise: number;
   igstPaise: number;
@@ -76,6 +94,10 @@ export interface Quote {
   codFeePaise: number;
   taxPaise: number;
   totalPaise: number;
+  /** The applied code (stored form) and what it took off, tax included. */
+  discountCode: string | null;
+  discountCodeId: string | null;
+  discountGrossPaise: number;
   currency: "INR";
   interState: boolean;
   supplierStateCode: string;
@@ -95,6 +117,8 @@ function hashQuote(parts: {
   }[];
   paymentMethod: string;
   placeOfSupplyStateCode: string;
+  discountCode: string | null;
+  discountPaise: number;
   subtotalPaise: number;
   shippingPaise: number;
   codFeePaise: number;
@@ -107,6 +131,8 @@ function hashQuote(parts: {
       .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
     pm: parts.paymentMethod,
     pos: parts.placeOfSupplyStateCode,
+    dc: parts.discountCode,
+    d: parts.discountPaise,
     s: parts.subtotalPaise,
     sh: parts.shippingPaise,
     cf: parts.codFeePaise,
@@ -157,6 +183,7 @@ export async function computeQuote(
     | "taxRateBps"
     | "pricingMode"
     | "taxableValuePaise"
+    | "discountPaise"
     | "cgstPaise"
     | "sgstPaise"
     | "igstPaise"
@@ -248,6 +275,40 @@ export async function computeQuote(
     ? shippingRules.fees.withClosetPaise
     : shippingRules.fees.labelOnlyPaise;
 
+  // Discount code (D-140): validated against live uses, then spread over the
+  // lines it applies to as each line's pre-tax reduction.
+  let discountCode: string | null = null;
+  let discountCodeId: string | null = null;
+  let discountGrossPaise = 0;
+  if (input.discountCode?.trim()) {
+    const row = await findCode(db, input.discountCode);
+    try {
+      const usedCount = row
+        ? await countActiveUses(db, row.id, {
+            now,
+            ttlSeconds: rules.reservationTtlSeconds,
+          })
+        : 0;
+      assertCodeUsable(row, { now, usedCount });
+      const alloc = allocateDiscount(
+        row,
+        base.map((l) => ({
+          catalog: l.catalog,
+          grossPaise: l.unitPricePaise * l.quantity,
+        })),
+      );
+      alloc.perLinePaise.forEach((d, i) => {
+        taxLines[i].discountPaise = d;
+      });
+      discountCode = row.code;
+      discountCodeId = row.id;
+      discountGrossPaise = alloc.totalPaise;
+    } catch (e) {
+      if (e instanceof DiscountCodeError) throw new DiscountCodeQuoteError(e.message);
+      throw e;
+    }
+  }
+
   const tax = computeOrderTax({
     lines: taxLines,
     shippingPaise,
@@ -261,6 +322,7 @@ export async function computeQuote(
       taxRateBps: t.rateBps,
       pricingMode: t.pricingMode,
       taxableValuePaise: t.taxableValuePaise,
+      discountPaise: t.discountPaise,
       cgstPaise: t.split.cgstPaise,
       sgstPaise: t.split.sgstPaise,
       igstPaise: t.split.igstPaise,
@@ -277,6 +339,8 @@ export async function computeQuote(
     })),
     paymentMethod: input.paymentMethod,
     placeOfSupplyStateCode,
+    discountCode,
+    discountPaise: tax.discountPaise,
     subtotalPaise: tax.subtotalPaise,
     shippingPaise: tax.shippingPaise,
     codFeePaise: tax.codFeePaise,
@@ -292,6 +356,9 @@ export async function computeQuote(
     codFeePaise: tax.codFeePaise,
     taxPaise: tax.taxPaise,
     totalPaise: tax.totalPaise,
+    discountCode,
+    discountCodeId,
+    discountGrossPaise,
     currency: "INR",
     interState,
     supplierStateCode,

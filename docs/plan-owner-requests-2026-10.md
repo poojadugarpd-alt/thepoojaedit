@@ -1,5 +1,7 @@
 # Plan: owner feature requests A–D (2026-10-07)
 
+> **Status: all shipped 2026-10-07** — D (shipping) D-137, C (sold out) D-138, B (Closet sizes) D-139, A (discount codes) D-140. See `docs/decisions.md` for what was actually built, including deviations.
+
 The four requests from HANDOVER §8, with the owner's answers (2026-10-07) and
 how each will be built. They ship one at a time, smallest first: **D → C → B → A**.
 Each gets its own decision number when it ships. D-136 is already taken by the
