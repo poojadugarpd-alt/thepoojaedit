@@ -8,8 +8,8 @@ specific detail.
 
 ## 0. Start here (switching computers)
 
-1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub.
-   `git fetch` also brings branch `utm-attribution` (§8, item 2).
+1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub, including
+   the UTM attribution work (D-136, merged the same evening).
 2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-140).
 3. Local setup: `npm install`, `npm run db:dev` in one terminal, then
    `npm run check`, `npm run test:integration` and
@@ -72,7 +72,7 @@ Driven by two owner-supplied docs: `docs/01-master-specification.md`
 feature, it gets diagnosed/built/verified in one pass, logged, shipped.
 
 **Every non-trivial decision is logged in `docs/decisions.md`** (currently
-through **D-140**; D-136 sits on an unmerged branch) — one row per decision with *what*, *when*, *why*. This is
+through **D-140**) — one row per decision with *what*, *when*, *why*. This is
 the single best file to skim for real history; it's more reliable than this
 handover doc for anything past 2026-10-07. `docs/build-progress.md` covers
 the original phase-by-phase build (stops at Phase 12 — later work lives in
@@ -204,7 +204,7 @@ Full detail in `docs/decisions.md`.
 | 09-27 | D-133 | Cancel an order with a booked but uncollected Shadowfax pickup |
 | 09-27 | D-134 | Razorpay LIVE keys + live webhook in Production |
 | 10-07 | D-135 | Hardening deployed (merge `48c28bc`); same-day image regression fixed (`1190569`); "Product created." banner fix |
-| 10-03 | D-136 | UTM attribution on orders: **branch `utm-attribution` only, not merged** (§8) |
+| 10-07 | D-136 | UTM attribution on orders (built 10-03, merged 10-07 with a cookie-encoding fix) |
 | 10-07 | D-137 | Shipping: Label free, ₹100 once with any Closet item |
 | 10-07 | D-138 | Sold out switch |
 | 10-07 | D-139 | Closet sizes, quantity and per-size measurements |
@@ -221,14 +221,17 @@ backfill was superseded in the 2026-10-07 merge.
    login): tick and untick Sold out on a product; create a Closet item with two
    sizes; create a discount code, apply it at live checkout without paying,
    then switch the code off.
-2. **UTM attribution (D-136)**: on branch `utm-attribution` (`734f392`,
-   pushed to GitHub 2026-10-07). Built on `186fbab`, so it's 14 commits
-   behind. Rebase onto `main` before merging; expect conflicts in
-   `docs/decisions.md`, `src/server/checkout/place-order.ts` and
-   `src/app/checkout/actions.ts` (D-140 touched both). The Instagram
-   experiment (6 Oct – 3 Nov, UTM pattern
-   `?utm_source=instagram&utm_medium=<bio|story|reel>&utm_campaign=…`)
-   needs this live to attribute orders.
+2. **UTM attribution (D-136) is live** from 2026-10-07. Orders placed after
+   a visit to a tagged link
+   (`?utm_source=instagram&utm_medium=<bio|story|reel>&utm_campaign=…`) show
+   "via source / medium / campaign" in the admin order header. Orders from
+   before the release carry no source. Worth confirming once on the live
+   site: open a tagged link, place (or start) an order, check the admin header.
+   **Flaky test to look into:** `e2e/admin.spec.ts` "create a discount code in
+   admin" sometimes stays on "Working…" when many e2e tests share one local
+   `next start`. The code is saved, but the admin page's RSC stream never
+   finishes. It reproduces on `main` under the same load, so it wasn't caused
+   by D-136. Not seen in production; worth a proper look.
 3. **First real order** (test purchase): proves Razorpay live payment +
    signed webhook (D-134) and a real Shadowfax production shipment (D-131).
    Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled.
