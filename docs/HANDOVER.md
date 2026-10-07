@@ -170,9 +170,10 @@ backfill was superseded in the 2026-10-07 merge.
   2026-09-14, `listPublishedProducts`). What's missing is an admin switch to
   mark a product sold out without editing stock, so it shows "Sold out" and
   can't be bought.
-- **D. Fixed ₹100 shipping on Pooja's Closet items.** Still to confirm with
-  the owner: ₹100 per closet item, or ₹100 once per order that has closet
-  items? Also what applies to Label items in a mixed cart. The current
+- **D. Fixed ₹100 shipping on Pooja's Closet items.** Owner confirmed
+  2026-10-07: **₹100 once per order** that contains any Closet item,
+  regardless of how many. Still open: what applies to Label items in a
+  mixed cart. The current
   shipping quote (`src/server/shipping/`) is per order, not per catalog.
 
 1. **First real order** (test purchase): proves Razorpay live payment +
