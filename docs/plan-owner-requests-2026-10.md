@@ -26,10 +26,8 @@ for every order. The test adapter charges ₹100.
    defaults `{ labelFlatPaise: 0, closetFlatPaise: 10_000 }`, so they can be
    changed later without a deploy. No admin screen for now.
 3. Checkout and cart summary show "Free" when shipping is ₹0.
-4. Policy copy: the shipping page FAQ currently says charges are "shown at
-   checkout". Propose adding "Label orders ship free; orders with Closet pieces
-   have a flat ₹100 shipping charge" to the page, its FAQ JSON-LD and `llms.txt`.
-   **Wording needs owner sign-off** (policy copy was reconciled with her in D-129).
+4. Policy copy: **no change** (owner, 2026-10-07: "no need"). The shipping
+   page keeps saying charges are shown at checkout.
 5. Tests: update the integration tests that assume ₹100 on Label carts, and add
    Label-only, Closet-only and mixed-cart cases.
 
@@ -85,8 +83,12 @@ ticked by default and easy to miss.
 3. Check the automatic Closet SKU generation (`CLO-000123`) when a product has
    more than one size. Every row needs its own SKU.
 4. Closet return policy stays final sale (`RETURN_POLICY.THRIFT`), whatever the size count.
-5. Not in scope: per-size measurements. Thrift measurements and "labelled size"
-   stay one set per product. Flag this to the owner if she needs them per size.
+5. **Per-size measurements (owner: yes, 2026-10-07).** Additive migration:
+   `ProductVariant.measurements Json?`. In the editor, when a Closet product has
+   more than one size, the measurements form appears once per size (same form
+   component as D-122). With one size, it stays on `ThriftDetails.measurements`
+   as today. The PDP shows the selected size's measurements and falls back to the
+   product-level set. Public payload: add `measurements` per variant.
 6. Tests: e2e creating a Closet product with two sizes and stock 3, and checking
    the storefront quantity picker allows up to 3.
 
@@ -152,9 +154,8 @@ code used. The invoice already prints the discount (check the PDF).
 
 ---
 
-## Open questions for the owner (none block starting D)
+## Owner answers (2026-10-07)
 
-1. Shipping policy wording for D (item 4).
-2. Should discount codes be usable alongside sale prices (compare-at)? The
-   default plan says yes, because the code applies to the selling price.
-3. For B, does she need measurements per size on Closet items?
+1. Shipping policy wording: no change needed.
+2. Discount codes work on sale (compare-at) items too. The code applies to the selling price.
+3. Closet items with several sizes need measurements per size (added to B, item 5).
