@@ -32,6 +32,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     orderStatus: sp.orderStatus,
     fulfillmentStatus: sp.fulfillmentStatus,
     paymentMethod: sp.paymentMethod,
+    includeTest: sp.test === "1",
     cursor: sp.cursor,
     limit: 25,
   };
@@ -119,6 +120,11 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <h1 className="text-xl font-semibold text-ink-strong">Orders</h1>
         <Poll />
       </div>
+      <p className="text-xs text-ink-soft">
+        <Link href={qs({ test: sp.test === "1" ? undefined : "1" })} className="underline">
+          {sp.test === "1" ? "Hide test orders" : "Show test orders"}
+        </Link>
+      </p>
 
       {/* Serviceability checker (decision #2) — read-only, no order touched. */}
       <details className="rounded border border-line p-3 text-sm">
@@ -187,6 +193,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               </div>
               <p className="mt-0.5 text-xs text-ink-soft">
                 {ts(r.placedAt ?? r.createdAt)} · {r.paymentMethod === "COD" ? "COD" : "prepaid"}
+                {r.isTest && " · test"}
               </p>
               <p className="text-xs text-ink-soft">
                 {r.contactPhone}
@@ -230,6 +237,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                 </Link>
                 <span className="ml-1 text-[11px] text-ink-soft">
                   {r.paymentMethod === "COD" ? "COD" : "prepaid"}
+                  {r.isTest && " · test"}
                 </span>
               </td>
               <td className="py-2 text-xs text-ink-soft">{ts(r.placedAt ?? r.createdAt)}</td>

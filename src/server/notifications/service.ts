@@ -77,6 +77,16 @@ export async function sendNotification(
     return { status: "skipped", reason: "template disabled" };
   }
 
+  // A channel with no provider set up (e.g. WhatsApp, deferred by the owner) is
+  // skipped quietly rather than recorded as a failure — otherwise every order
+  // opened a JOB_FAILURE task nobody could act on (D-146).
+  if (
+    (input.channel === "EMAIL" && !transports.email.configured) ||
+    (input.channel === "WHATSAPP" && !transports.whatsapp.configured)
+  ) {
+    return { status: "skipped", reason: `${input.channel.toLowerCase()} not configured` };
+  }
+
   // Eligibility
   if (input.channel === "EMAIL") {
     if (!input.recipient || !input.recipient.includes("@")) {

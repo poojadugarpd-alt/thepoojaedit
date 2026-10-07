@@ -12,6 +12,7 @@ import { isShippingConfigured } from "@/server/shipping";
 import {
   addOrderNoteAction,
   cancelOrderAction,
+  setTestOrderAction,
   confirmCodAction,
   createShipmentAction,
   generateInvoiceAction,
@@ -61,6 +62,11 @@ export default async function AdminOrderDetail({
         <Pill value={order.orderStatus} />
         <Pill value={order.paymentStatus} />
         <Pill value={order.fulfillmentStatus} />
+        {order.isTest && (
+          <span className="rounded bg-wait-bg px-2 py-0.5 text-xs font-semibold text-wait">
+            TEST ORDER
+          </span>
+        )}
         <span className="w-full text-xs text-ink-soft sm:w-auto">
           {order.paymentMethod === "COD" ? "Cash on delivery" : "Prepaid"} · placed{" "}
           {ts(order.placedAt)}
@@ -195,6 +201,19 @@ export default async function AdminOrderDetail({
                     />
                   </ActionForm>
                 )}
+              <ActionForm
+                action={setTestOrderAction}
+                submitLabel={order.isTest ? "Not a test order" : "Mark as test order"}
+                compact
+              >
+                {hidden}
+                <input type="hidden" name="isTest" value={order.isTest ? "0" : "1"} />
+                <p className="text-xs text-ink-soft">
+                  {order.isTest
+                    ? "This test order is hidden from the dashboard, analytics and the orders list."
+                    : "Hides this order from the dashboard, analytics and the orders list. Nothing else changes."}
+                </p>
+              </ActionForm>
             </div>
           </Section>
 

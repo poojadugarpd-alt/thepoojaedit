@@ -49,7 +49,8 @@ export async function getFinancialSummary(
   db: PrismaClient,
   range: DateRange = defaultRange(),
 ): Promise<FinancialSummary> {
-  const placedWhere = { placedAt: { gte: range.from, lte: range.to } } as const;
+  // Test orders (D-146) never count towards the numbers.
+  const placedWhere = { placedAt: { gte: range.from, lte: range.to }, isTest: false } as const;
 
   const [placedAgg, placedByMethod, lineByCatalog, prepaidCaptured, codCollected, refundAgg, codRows] =
     await Promise.all([
@@ -226,9 +227,9 @@ export async function getOverview(
     getFinancialSummary(db, range),
     getAttentionSummary(db),
     getLowStock(db, { limit: 20 }),
-    db.order.groupBy({ by: ["orderStatus"], _count: true }),
+    db.order.groupBy({ by: ["orderStatus"], where: { isTest: false }, _count: true }),
     db.order.count({
-      where: { orderStatus: "CONFIRMED", fulfillmentStatus: "UNFULFILLED" },
+      where: { orderStatus: "CONFIRMED", fulfillmentStatus: "UNFULFILLED", isTest: false },
     }),
   ]);
   const count = (s: string) =>

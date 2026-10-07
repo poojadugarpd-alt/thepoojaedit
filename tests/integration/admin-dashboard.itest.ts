@@ -382,3 +382,25 @@ describe("inventory corrections", () => {
     ).toBe(1);
   });
 });
+
+describe("test orders (D-146)", () => {
+  it("are left out of the overview, analytics, customer counts and the default orders list", async () => {
+    const v = await makeVariant({ price: 30000, onHand: 5 });
+    const real = await place("COD", [{ variantId: v, quantity: 1 }]);
+    const test = await place("COD", [{ variantId: v, quantity: 1 }]);
+    await db.order.update({ where: { id: test.id }, data: { isTest: true } });
+
+    const f = await getFinancialSummary(db);
+    expect(f.placed.orders).toBe(1);
+    expect(f.placed.grossPaise).toBe(real.totalPaise);
+
+    const o = await getOverview(db);
+    expect(o.openOrders.pendingCodConfirmation).toBe(1);
+
+    const list = await listOrders(db, {});
+    expect(list.rows.map((r) => r.orderNumber)).toEqual([real.orderNumber]);
+    // …but a search, or the "show test orders" view, still finds it.
+    expect((await listOrders(db, { q: test.orderNumber })).rows).toHaveLength(1);
+    expect((await listOrders(db, { includeTest: true })).rows).toHaveLength(2);
+  });
+});

@@ -43,7 +43,7 @@ export async function searchCustomers(
       email: true,
       phone: true,
       createdAt: true,
-      _count: { select: { orders: true } },
+      _count: { select: { orders: { where: { isTest: false } } } },
     },
   });
   return rows.map((r) => ({

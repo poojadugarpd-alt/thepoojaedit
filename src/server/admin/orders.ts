@@ -15,6 +15,9 @@ export interface OrderListFilter {
   paymentStatus?: string;
   fulfillmentStatus?: string;
   paymentMethod?: string;
+  /** Include orders marked as test (D-146). Hidden by default; a search for
+   *  an order number / phone / email always finds them. */
+  includeTest?: boolean;
   /** keyset cursor: `<iso>|<id>` of the last row from the previous page */
   cursor?: string;
   limit?: number;
@@ -32,6 +35,7 @@ export interface OrderListRow {
   fulfillmentStatus: string;
   paymentMethod: string;
   totalPaise: number;
+  isTest: boolean;
 }
 
 export interface OrderListPage {
@@ -51,6 +55,7 @@ export async function listOrders(
   if (filter.fulfillmentStatus)
     and.push({ fulfillmentStatus: filter.fulfillmentStatus as never });
   if (filter.paymentMethod) and.push({ paymentMethod: filter.paymentMethod as never });
+  if (!filter.includeTest && !filter.q?.trim()) and.push({ isTest: false });
   if (filter.q?.trim()) {
     const q = filter.q.trim();
     and.push({
@@ -85,6 +90,7 @@ export async function listOrders(
       fulfillmentStatus: true,
       paymentMethod: true,
       totalPaise: true,
+      isTest: true,
     },
   });
 
@@ -100,7 +106,11 @@ export async function listOrders(
 export async function orderStatusCounts(
   db: PrismaClient,
 ): Promise<Record<string, number>> {
-  const rows = await db.order.groupBy({ by: ["orderStatus"], _count: true });
+  const rows = await db.order.groupBy({
+    by: ["orderStatus"],
+    where: { isTest: false },
+    _count: true,
+  });
   return Object.fromEntries(rows.map((r) => [r.orderStatus, r._count]));
 }
 

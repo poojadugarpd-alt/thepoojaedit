@@ -451,3 +451,21 @@ describe("AWB assigned email (D-145)", () => {
     expect(await db.notificationDelivery.count({ where: { orderId: order.id } })).toBe(0);
   });
 });
+
+describe("unconfigured channels (D-146)", () => {
+  it("a channel with no provider is skipped quietly — no failed delivery, no task", async () => {
+    const t = fakeTransports(db);
+    (t.whatsapp as { configured: boolean }).configured = false;
+    const r = await sendNotification(db, t, {
+      eventType: "order.payment_settled",
+      dedupeSeed: "x",
+      channel: "WHATSAPP",
+      templateKey: "order_confirmation_prepaid",
+      recipient: "+919812345678",
+      variables: orderVars("PE-1"),
+    });
+    expect(r.status).toBe("skipped");
+    expect(await db.notificationDelivery.count()).toBe(0);
+    expect(await db.operationalTask.count()).toBe(0);
+  });
+});

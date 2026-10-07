@@ -580,6 +580,9 @@ model Order {
   paymentStatus      PaymentStatus     @default(UNPAID)
   fulfillmentStatus  FulfillmentStatus @default(UNFULFILLED)
   paymentMethod      PaymentMethod
+  // An internal test order (D-146): hidden from the dashboard, analytics and the
+  // default orders list; the records themselves are kept intact.
+  isTest             Boolean   @default(false)
   currency           String            @default("INR")
 
   source             String?

@@ -236,3 +236,40 @@ export async function checkServiceabilityAction(
     return fail(e);
   }
 }
+
+/** Mark / unmark an internal test order (D-146). A test order is hidden from
+ *  the Overview, Analytics, customer order counts and the default orders list;
+ *  nothing else about it changes. */
+export async function setTestOrderAction(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const orderNumber = str(form.get("orderNumber"));
+  const isTest = str(form.get("isTest")) === "1";
+  try {
+    const before = await prisma.order.findUniqueOrThrow({ where: { orderNumber } });
+    if (before.isTest !== isTest) {
+      await prisma.order.update({ where: { id: before.id }, data: { isTest } });
+      await auditLog(prisma, {
+        adminUserId: admin.id,
+        action: isTest ? "order.marked_test" : "order.unmarked_test",
+        entityType: "Order",
+        entityId: before.id,
+        before: { isTest: before.isTest },
+        after: { isTest },
+      });
+    }
+    revalidate(orderNumber);
+    revalidatePath("/admin/analytics");
+    revalidatePath("/admin/customers");
+    return {
+      ok: true,
+      message: isTest
+        ? "Marked as a test order — hidden from the dashboard and analytics."
+        : "No longer a test order.",
+    };
+  } catch (e) {
+    return fail(e);
+  }
+}
