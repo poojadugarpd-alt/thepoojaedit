@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ActionForm } from "@/features/admin/action-form";
 import { ts } from "@/features/admin/format";
+import { OrderSoundSettings } from "@/features/admin/order-sound-settings";
 import { PushSettings } from "@/features/admin/push-settings";
 import { credentialHealth, listSettings } from "@/server/admin";
 import { requireAdmin } from "@/server/auth/require-admin";
@@ -39,6 +40,7 @@ export default async function AdminSettingsPage() {
           on/off per device below, and per category for your account.
         </p>
         <PushSettings />
+        <OrderSoundSettings />
         <ActionForm
           action={updateNotificationPreferenceAction}
           submitLabel="Save preferences"

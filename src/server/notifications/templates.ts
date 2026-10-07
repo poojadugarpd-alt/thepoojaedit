@@ -287,7 +287,7 @@ export const TEMPLATES = {
     inApp: (v) => ({
       type: "NEW_ORDER",
       title: `New order ${v.orderNumber}`,
-      message: `${v.paymentMethod} · ${formatPaiseINR(v.totalPaise)}`,
+      message: `${formatPaiseINR(v.totalPaise)} · ${v.paymentMethod === "COD" ? "Cash on delivery" : "Paid online"}`,
       priority: 1,
     }),
   }),

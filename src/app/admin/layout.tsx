@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 
 import { MobileNav } from "@/features/admin/mobile-nav";
+import { NewOrderAlert } from "@/features/admin/new-order-alert";
 import { RegisterServiceWorker } from "@/features/admin/register-sw";
 import { APP_ENV, APP_ENV_LABEL } from "@/lib/app-env";
 import { AuthenticationError, AuthorizationError } from "@/server/auth/errors";
@@ -99,6 +100,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="mx-auto flex max-w-6xl gap-8 px-4 py-4 sm:py-8">
       {adminManifestLink}
+      <NewOrderAlert />
       {/* Mobile top bar — brand + env only; navigation is the bottom tab bar. */}
       <div className="u-safe-top fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-line bg-ground px-4 py-3 sm:hidden">
         <div>
