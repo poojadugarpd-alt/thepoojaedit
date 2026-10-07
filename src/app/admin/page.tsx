@@ -58,9 +58,9 @@ export default async function AdminOverview() {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           [
-            "Pending payment",
+            "Unpaid checkouts",
             o.openOrders.pendingPayment,
-            "/admin/orders?orderStatus=PENDING_PAYMENT",
+            "/admin/orders?view=unpaid",
           ],
           [
             "Pending COD",
@@ -100,7 +100,7 @@ export default async function AdminOverview() {
         </div>
         <div className="mt-2 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Stat
-            label="Placed orders"
+            label="Orders (paid)"
             main={String(f.placed.orders)}
             sub={money(f.placed.grossPaise)}
           />

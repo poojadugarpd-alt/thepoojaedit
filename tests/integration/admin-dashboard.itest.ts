@@ -404,3 +404,24 @@ describe("test orders (D-146)", () => {
     expect((await listOrders(db, { includeTest: true })).rows).toHaveLength(2);
   });
 });
+
+describe("unpaid checkouts are not orders (D-148)", () => {
+  it("an unpaid online checkout is left out of the totals and the default list", async () => {
+    const v = await makeVariant({ price: 50000, onHand: 5 });
+    const rzp = new FakeRazorpay();
+    const paid = await place("PREPAID_RAZORPAY", [{ variantId: v, quantity: 1 }]);
+    await capture(paid.id, rzp);
+    const unpaid = await place("PREPAID_RAZORPAY", [{ variantId: v, quantity: 1 }]);
+
+    const f = await getFinancialSummary(db);
+    expect(f.placed.orders).toBe(1);
+    expect(f.placed.grossPaise).toBe(paid.totalPaise);
+
+    const list = await listOrders(db, {});
+    expect(list.rows.map((r) => r.orderNumber)).toEqual([paid.orderNumber]);
+    const unpaidView = await listOrders(db, { unpaid: "only" });
+    expect(unpaidView.rows.map((r) => r.orderNumber)).toEqual([unpaid.orderNumber]);
+    // A search still finds it.
+    expect((await listOrders(db, { q: unpaid.orderNumber })).rows).toHaveLength(1);
+  });
+});

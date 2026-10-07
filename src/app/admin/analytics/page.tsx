@@ -14,13 +14,14 @@ export default async function AdminAnalyticsPage() {
     <div className="space-y-6">
       <h1 className="text-xl font-semibold text-ink-strong">Analytics — last 30 days</h1>
       <p className="text-xs text-ink-soft">
-        Placed, captured, refunds and COD remittance are distinct amounts and are
+        Orders count once paid (unpaid checkouts are left out). Orders, captured,
+        refunds and COD remittance are distinct amounts and are
         never conflated. Catalogue revenue is line-allocated so a mixed order counts
         toward both. Acquisition / margin cost is never shown here.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-sm">
-        <Card title="Placed orders">
+        <Card title="Orders (paid)">
           <Big>{f.placed.orders}</Big>
           <p>{money(f.placed.grossPaise)} gross</p>
           <p className="text-xs text-ink-soft">

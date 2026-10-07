@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, Prisma, PrismaClient } from "@/generated/prisma";
 
 /**
  * analytics domain service (master §10). Financial summaries derive ONLY from
@@ -49,8 +49,18 @@ export async function getFinancialSummary(
   db: PrismaClient,
   range: DateRange = defaultRange(),
 ): Promise<FinancialSummary> {
-  // Test orders (D-146) never count towards the numbers.
-  const placedWhere = { placedAt: { gte: range.from, lte: range.to }, isTest: false } as const;
+  // An order counts once it is real (D-148): paid online, or a COD order.
+  // A prepaid checkout whose payment never completed is an unpaid checkout,
+  // not an order — it shows only in the "Pending payment" tile. Test orders
+  // (D-146) never count.
+  const placedWhere: Prisma.OrderWhereInput = {
+    placedAt: { gte: range.from, lte: range.to },
+    isTest: false,
+    NOT: {
+      paymentMethod: "PREPAID_RAZORPAY",
+      paymentStatus: { in: ["UNPAID", "PENDING", "FAILED"] },
+    },
+  };
 
   const [placedAgg, placedByMethod, lineByCatalog, prepaidCaptured, codCollected, refundAgg, codRows] =
     await Promise.all([

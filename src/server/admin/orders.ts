@@ -18,6 +18,9 @@ export interface OrderListFilter {
   /** Include orders marked as test (D-146). Hidden by default; a search for
    *  an order number / phone / email always finds them. */
   includeTest?: boolean;
+  /** "only" = just unpaid online checkouts; default hides them (D-148). A
+   *  search or an explicit payment/order-status filter shows everything. */
+  unpaid?: "only" | "hide" | "show";
   /** keyset cursor: `<iso>|<id>` of the last row from the previous page */
   cursor?: string;
   limit?: number;
@@ -56,6 +59,15 @@ export async function listOrders(
     and.push({ fulfillmentStatus: filter.fulfillmentStatus as never });
   if (filter.paymentMethod) and.push({ paymentMethod: filter.paymentMethod as never });
   if (!filter.includeTest && !filter.q?.trim()) and.push({ isTest: false });
+  const unpaidCheckout: Prisma.OrderWhereInput = {
+    paymentMethod: "PREPAID_RAZORPAY",
+    paymentStatus: { in: ["UNPAID", "PENDING", "FAILED"] },
+  };
+  const unpaid =
+    filter.unpaid ??
+    (filter.q?.trim() || filter.orderStatus || filter.paymentStatus ? "show" : "hide");
+  if (unpaid === "only") and.push(unpaidCheckout);
+  else if (unpaid === "hide") and.push({ NOT: unpaidCheckout });
   if (filter.q?.trim()) {
     const q = filter.q.trim();
     and.push({

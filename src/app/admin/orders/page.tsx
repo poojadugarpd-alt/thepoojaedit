@@ -33,6 +33,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
     fulfillmentStatus: sp.fulfillmentStatus,
     paymentMethod: sp.paymentMethod,
     includeTest: sp.test === "1",
+    unpaid: sp.view === "unpaid" ? ("only" as const) : undefined,
     cursor: sp.cursor,
     limit: 25,
   };
@@ -120,11 +121,21 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         <h1 className="text-xl font-semibold text-ink-strong">Orders</h1>
         <Poll />
       </div>
-      <p className="text-xs text-ink-soft">
+      <p className="flex flex-wrap gap-4 text-xs text-ink-soft">
+        <Link href={qs({ view: sp.view === "unpaid" ? undefined : "unpaid" })} className="underline">
+          {sp.view === "unpaid" ? "Back to orders" : "Unpaid checkouts"}
+        </Link>
         <Link href={qs({ test: sp.test === "1" ? undefined : "1" })} className="underline">
           {sp.test === "1" ? "Hide test orders" : "Show test orders"}
         </Link>
       </p>
+      {sp.view === "unpaid" && (
+        <p className="text-xs text-ink-soft">
+          Online checkouts where the buyer didn&rsquo;t finish paying. They aren&rsquo;t
+          orders yet and don&rsquo;t count in the totals; stock was only held for 10
+          minutes. If the payment comes through later, the order confirms itself.
+        </p>
+      )}
 
       {/* Serviceability checker (decision #2) — read-only, no order touched. */}
       <details className="rounded border border-line p-3 text-sm">
