@@ -154,6 +154,27 @@ backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
 
+**Owner feature requests (added 2026-10-07, not started):**
+
+- **A. Discount code at checkout.** A field where the customer enters a code
+  and gets a discount. Nothing exists yet. `deferred-scope.md` lists
+  "promotions / coupons" as not built, but orders already store per-line
+  discount allocations (`OrderItem`), so the order and invoice side has a
+  place for it. Needs admin to create codes (amount or %, expiry, usage limit).
+- **B. Size and quantity on Pooja's Closet items.** Closet (`THRIFT`)
+  products are one-of-one by default (`isOneOfOne`), and a one-of-one with
+  more than one variant is blocked in the editor. The owner wants to set size
+  and stock quantity on closet pieces, like Label products.
+- **C. Mark a product "Sold out" by hand and keep it on the page.** Products
+  with zero stock already stay listed and sink to the end (owner request,
+  2026-09-14, `listPublishedProducts`). What's missing is an admin switch to
+  mark a product sold out without editing stock, so it shows "Sold out" and
+  can't be bought.
+- **D. Fixed ₹100 shipping on Pooja's Closet items.** Still to confirm with
+  the owner: ₹100 per closet item, or ₹100 once per order that has closet
+  items? Also what applies to Label items in a mixed cart. The current
+  shipping quote (`src/server/shipping/`) is per order, not per catalog.
+
 1. **First real order** (test purchase): proves Razorpay live payment +
    signed webhook (D-134) and a real Shadowfax production shipment (D-131).
    Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled now that
