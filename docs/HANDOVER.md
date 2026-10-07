@@ -1,10 +1,33 @@
 # PoojaEdit — Handover Summary
 
-Written 2026-09-16, refreshed 2026-10-07 (D-135 merge), for moving work to a different environment/tool (another
+Written 2026-09-16, refreshed 2026-10-07 evening (through D-140, `83e211b`), for moving work to a different environment/tool (another
 Claude Code session, Cursor, ChatGPT, a human dev, etc.). Everything here is
 verifiable in this repo — treat it as a map, not a source of truth; re-check
 against the actual files/`git log`/`docs/decisions.md` before relying on a
 specific detail.
+
+## 0. Start here (switching computers)
+
+1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub.
+   `git fetch` also brings branch `utm-attribution` (§8, item 2).
+2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-140).
+3. Local setup: `npm install`, `npm run db:dev` in one terminal, then
+   `npm run check`, `npm run test:integration` and
+   `npm run test:e2e:local -- --project=chromium` to confirm a clean baseline.
+   **`.env.local` points at the remote dev Supabase project.** When creating a
+   migration, override `DIRECT_URL`/`DATABASE_URL` with a local
+   `postgresql://postgres:postgres@127.0.0.1:5433/<new db>` so
+   `prisma migrate dev` never touches a remote database.
+4. Facts that live in the `poojadugar` Mac's Claude notes, not in this repo:
+   - Owner decisions are asked as pop-up multiple-choice questions, not long
+     text lists.
+   - The Instagram audit and experiment (6 Oct – 3 Nov, review 3 Nov) live in
+     `~/Documents/Pooja Instagram/` on the `poojadugar` Mac; read its
+     `HANDOFF.md`. Owner rule: Closet pieces sell only via `/closet`
+     (dm2buy retired). Closet drops are created as DRAFT and published by hand
+     at 8pm.
+   - In Chrome, the Pooja profile (GitHub `poojadugarpd-alt`) is the one to
+     use for this project.
 
 ## 1. What this is
 
@@ -16,9 +39,11 @@ panel daily). This is **not a demo or prototype — real customers place real
 orders on it today.**
 
 Repo: `~/Documents/PoojaEdit` (own git repo). GitHub: `poojadugarpd-alt/thepoojaedit`
-(private). Push auth differs per Mac: on the `poojadugar` macOS account
-neither SSH (`~/.ssh/id_ed25519`) nor HTTPS is authorised yet, so commits from
-there have gone up via GitHub's web upload.
+(private). Push auth per Mac: on the `poojadugar` macOS account, `origin`
+is SSH (`git@github.com:poojadugarpd-alt/thepoojaedit.git`) with
+`~/.ssh/id_ed25519` added to GitHub as "PoojaEdit Mac" on 2026-10-07, so it
+pushes directly. Check how the other Mac authenticates before relying on it
+(it previously pushed `186fbab` successfully).
 
 Live production URL: **`https://thepoojaedit.in`** (Vercel, since the D-131
 cutover; `https://thepoojaedit.vercel.app` remains a working alias).
@@ -47,7 +72,7 @@ Driven by two owner-supplied docs: `docs/01-master-specification.md`
 feature, it gets diagnosed/built/verified in one pass, logged, shipped.
 
 **Every non-trivial decision is logged in `docs/decisions.md`** (currently
-through **D-135**) — one row per decision with *what*, *when*, *why*. This is
+through **D-140**; D-136 sits on an unmerged branch) — one row per decision with *what*, *when*, *why*. This is
 the single best file to skim for real history; it's more reliable than this
 handover doc for anything past 2026-10-07. `docs/build-progress.md` covers
 the original phase-by-phase build (stops at Phase 12 — later work lives in
@@ -72,13 +97,15 @@ Working norms observed throughout, worth continuing:
 | `01-master-specification.md` | Fixed architecture/spec |
 | `02-execution-playbook.md` | Original 14-phase build plan (historical) |
 | `build-progress.md` | Phase-by-phase build log through Phase 12 |
-| `decisions.md` | **The real changelog** — D-1 through D-135+, read this |
+| `decisions.md` | **The real changelog** — D-1 through D-140, read this |
 | `acceptance-evidence.md` | AC-01..AC-18 status matrix |
 | `release-candidate.md` | 8 launch blockers + status (most now closed, see §6) |
 | `deferred-scope.md` | Explicitly out-of-scope items |
 | `module-map.md`, `compatibility-plan.md` | Architecture reference |
 | `integration-setup.md`, `supabase-setup.md`, `operations-runbook.md` | Provider setup + on-call/runbook |
 | `admin-pwa-*.md` | The installable admin PWA + push notifications sub-effort |
+| `plan-owner-requests-2026-10.md` | Plan + owner answers for D-137–D-140 (all shipped) |
+| `briefs/pooja-website-agent-brief*.md` | Parked `/picks` + `/styling` brief and its assessment (§8, item 7) |
 
 Project-scoped Claude Code tooling (commit `9328414`, 2026-09-21) lives in
 `.claude/` + `.mcp.json`: context7 + Supabase (dev/staging, read-only) MCP
@@ -87,38 +114,60 @@ outside the `npm run db:*` scripts; a format+typecheck-on-edit hook; skills
 `log-decision`, `db-migration`, `structured-data-audit`, `llms-txt`; subagents
 `money-safety-reviewer`, `e2e-unblocker`, `seo-aeo-reviewer`.
 
-## 5. Current live state (as of the D-135 merge, 2026-10-07)
+## 5. Current live state (as of `83e211b`, 2026-10-07)
 
+`main` == `origin/main` == what's deployed. Vercel auto-deploys `main` to
+Production and runs `prisma migrate deploy` first (`scripts/vercel-migrate.mjs`,
+Production only).
+
+**Infrastructure**
 - **Live on `https://thepoojaedit.in`** since 2026-09-27 (D-131): GoDaddy
   `A @` → 216.198.79.1, `CNAME www` → Vercel; `www` 308s to the apex.
   `thepoojaedit.vercel.app` stays a live production alias, and the
   Razorpay/Shadowfax webhooks + Inngest app URL deliberately still point at it.
-- Production runs `APP_ENV=production` (`NEXT_PUBLIC_APP_ENV=preview` is now
-  scoped to Pre-Production only) with **Shadowfax's production token** (D-131)
-  and **Razorpay LIVE keys** + a live webhook on `thepoojaedit.in` (D-134).
-  Neither has a verified real transaction yet: the first real order is the
-  proof for both.
+- Production runs `APP_ENV=production` with **Shadowfax's production token**
+  (D-131) and **Razorpay LIVE keys** + a live webhook on `thepoojaedit.in`
+  (D-134). Neither has a verified real transaction yet: the first real order
+  is the proof for both.
 - Old Shopify URLs 308 to their new-site equivalents (D-131). The two
-  `untitled-jul…` handles go to TPE Set 1 White/Black (corrected in D-135).
-- Product images: 458 `ProductImage.publicUrl` rows that still pointed at the
-  dev project were repointed at prod after a ~20-minute outage (D-132). Since
-  D-135 image URLs are built at read time from `bucket`/`path`
-  (`src/lib/storage-url.ts`), so a project move can't strand them again.
-- Admin "Cancel order" works for `PROCESSING` orders with a booked-but-not-
-  collected Shadowfax pickup: it cancels the pickup first, then the order
-  (D-133). The UI button for this was only added in D-135. The real Shadowfax
-  cancel API has never been exercised (fake provider in tests only).
-- Admin image uploads are compressed client-side (≤2400px, JPEG q0.85, D-135).
-- Local e2e works again: `npm run test:e2e:local` (`scripts/e2e-local.sh`)
-  uses a fresh local Postgres DB + `DEV_ADMIN_AUTH=1` (D-135).
-- Storefront, checkout (Razorpay prepaid; COD off, D-90), order tracking,
-  invoices, refunds/returns and the admin dashboard are live. The admin product
-  editor (D-121–D-125) and the admin PWA push still haven't been walked
-  through end-to-end by a human.
+  `untitled-jul…` handles go to TPE Set 1 White/Black (D-135).
+- **Product images** are built at read time (`src/lib/storage-url.ts`). A
+  cached Storage URL keeps its own object path and only gets the current
+  project host. Don't trust `ProductImage.bucket/path` for rows from the
+  Shopify import: their `bucket` is the placeholder `legacy-import`. Building
+  from it broke every imported image for about 15 minutes on 2026-10-07; fixed
+  in `1190569` (logged under D-135).
 
-## 6. What's still open (from `docs/release-candidate.md`'s 8 blockers)
+**Shipped 2026-10-07 (owner requests A–D; plan in `docs/plan-owner-requests-2026-10.md`)**
+- **D-137 Shipping:** Label-only orders ship free; any Closet item makes the
+  order ₹100, charged once. Decided in `computeQuote`; amounts in the
+  `shipping.rules` setting (`fees.labelOnlyPaise` / `fees.withClosetPaise`).
+- **D-138 Sold out switch:** `Product.markedSoldOut`. A checkbox under Status
+  in the product editor. The product stays listed (sinks to the end, "Sold out"
+  tag), can't be bought, and keeps its stock.
+- **D-139 Closet sizes and quantity:** new Closet items start unticked
+  "Only one piece (one of one)". Per-size measurements live in
+  `ProductVariant.measurements`. Also fixed: unticking one of one and adding a
+  size in one save used to be rejected.
+- **D-140 Discount codes:** Admin → Discount codes (`/admin/discounts`).
+  % or ₹ off; Label, Closet or both; minimum, dates, usage limit. Shoppers
+  apply them at Review & pay. Uses are counted live (cancelled and abandoned
+  unpaid orders don't count), and the code row is locked at placement.
 
-Domain cutover and the Shadowfax production token are done (D-131). Still open:
+**None of D-138–D-140's admin screens have been clicked by a human on the live
+site yet.** Worth one quick try each (see §8, item 1).
+
+**Older, still true**
+- Admin "Cancel order" works for `PROCESSING` orders with a booked but
+  uncollected Shadowfax pickup (D-133). The real Shadowfax cancel API has
+  never run (fake provider in tests only).
+- Admin image uploads are compressed client-side (D-135).
+- Local e2e: `npm run test:e2e:local` (`scripts/e2e-local.sh`) uses a fresh
+  local Postgres DB + `DEV_ADMIN_AUTH=1`. CI runs Chromium only; WebKit isn't
+  installed on the `poojadugar` Mac.
+
+## 6. What's still open
+
 1. **GST/tax/invoice config**: agreed values are legal name "The Pooja Edit",
    GSTIN `09ADWPD2873P1ZM` (Shadowfax profile, UP), supplier state Haryana (06),
    Gurugram pickup address (must not change). The owner has **not** let
@@ -126,10 +175,19 @@ Domain cutover and the Shadowfax production token are done (D-131). Still open:
 2. **Supabase Storage quota**: the org was over the Free-plan 1 GB. The dev
    project's Storage was emptied (D-132, ≈519 MB freed). Re-check usage
    before the grace period ends on **2026-10-23**.
-3. **Shadowfax**: no self-serve label-download or COD-remittance API, so this
+3. **The dev Supabase project (used by Vercel Preview) has none of the 3
+   migrations from 2026-10-07** (`product_marked_sold_out`,
+   `variant_measurements`, `discount_codes`). Preview deployments
+   of current `main` will fail until `prisma migrate deploy` is run against it.
+   Production is fine.
+4. **`npm audit --audit-level=high` fails** on newly published advisories
+   (vitest < 4.1.10 critical, tinypool, sharp, the eslint-config-next chain), so
+   CI's audit job is red. It doesn't block Vercel deploys. The fix needs a
+   vitest major upgrade, as its own task.
+5. **Shadowfax**: no self-serve label-download or COD-remittance API, so this
    needs their account manager.
-4. **WhatsApp (Meta)**: deferred by the owner. Email (Resend) is live.
-5. **Phase 13 operational drills**: backup/restore, rollback and budget
+6. **WhatsApp (Meta)**: deferred by the owner. Email (Resend) is live.
+7. **Phase 13 operational drills**: backup/restore, rollback and budget
    alerts are not done.
 
 ## 7. What we worked on most recently (2026-09-15 → 2026-10-07)
@@ -143,9 +201,14 @@ Full detail in `docs/decisions.md`.
 | 09-21 | D-128–D-130 | SEO/AEO/GEO JSON-LD, `llms.txt`, policy copy + FAQ JSON-LD |
 | 09-27 | D-131 | Domain cutover to Vercel, prod `APP_ENV`, Shadowfax prod token, legacy-URL redirects |
 | 09-27 | D-132 | Image outage after emptying dev Storage; `publicUrl` repointed to prod |
-| 09-27 | D-133 | Cancel an order with a booked-but-not-collected Shadowfax pickup |
+| 09-27 | D-133 | Cancel an order with a booked but uncollected Shadowfax pickup |
 | 09-27 | D-134 | Razorpay LIVE keys + live webhook in Production |
-| 09-27 | D-135 | Hardening: read-time image URLs, upload compression, local e2e, TPE Set 1 redirects, Cancel button for `PROCESSING` |
+| 10-07 | D-135 | Hardening deployed (merge `48c28bc`); same-day image regression fixed (`1190569`); "Product created." banner fix |
+| 10-03 | D-136 | UTM attribution on orders: **branch `utm-attribution` only, not merged** (§8) |
+| 10-07 | D-137 | Shipping: Label free, ₹100 once with any Closet item |
+| 10-07 | D-138 | Sold out switch |
+| 10-07 | D-139 | Closet sizes, quantity and per-size measurements |
+| 10-07 | D-140 | Discount codes |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -154,50 +217,41 @@ backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
 
-**Owner feature requests (added 2026-10-07) — all four shipped 2026-10-07: D = D-137, C = D-138, B = D-139, A = D-140. Plan and owner answers: `docs/plan-owner-requests-2026-10.md`.**
-
-- **A. Discount code at checkout.** A field where the customer enters a code
-  and gets a discount. Nothing exists yet. `deferred-scope.md` lists
-  "promotions / coupons" as not built, but orders already store per-line
-  discount allocations (`OrderItem`), so the order and invoice side has a
-  place for it. Needs admin to create codes (amount or %, expiry, usage limit).
-- **B. Size and quantity on Pooja's Closet items.** Closet (`THRIFT`)
-  products are one-of-one by default (`isOneOfOne`), and a one-of-one with
-  more than one variant is blocked in the editor. The owner wants to set size
-  and stock quantity on closet pieces, like Label products.
-- **C. Mark a product "Sold out" by hand and keep it on the page.** Products
-  with zero stock already stay listed and sink to the end (owner request,
-  2026-09-14, `listPublishedProducts`). What's missing is an admin switch to
-  mark a product sold out without editing stock, so it shows "Sold out" and
-  can't be bought.
-- **D. Fixed ₹100 shipping on Pooja's Closet items.** Owner confirmed
-  2026-10-07: **₹100 once per order** that contains any Closet item,
-  regardless of how many. Still open: what applies to Label items in a
-  mixed cart. The current
-  shipping quote (`src/server/shipping/`) is per order, not per catalog.
-
-1. **First real order** (test purchase): proves Razorpay live payment +
+1. **Try the new admin features once on the live site** (needs an admin
+   login): tick and untick Sold out on a product; create a Closet item with two
+   sizes; create a discount code, apply it at live checkout without paying,
+   then switch the code off.
+2. **UTM attribution (D-136)**: on branch `utm-attribution` (`734f392`,
+   pushed to GitHub 2026-10-07). Built on `186fbab`, so it's 14 commits
+   behind. Rebase onto `main` before merging; expect conflicts in
+   `docs/decisions.md`, `src/server/checkout/place-order.ts` and
+   `src/app/checkout/actions.ts` (D-140 touched both). The Instagram
+   experiment (6 Oct – 3 Nov, UTM pattern
+   `?utm_source=instagram&utm_medium=<bio|story|reel>&utm_campaign=…`)
+   needs this live to attribute orders.
+3. **First real order** (test purchase): proves Razorpay live payment +
    signed webhook (D-134) and a real Shadowfax production shipment (D-131).
-   Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled now that
-   D-135 is deployed.
-2. **Save the GST `business.profile`** (§6.1) once the owner agrees, so
-   invoices leave DRAFT. Then legal name/GST can go into `llms.txt` and the
-   `Organization` JSON-LD (held back in D-128).
-3. **Supabase Storage quota** before 2026-10-23 (§6.2).
-4. **UTM attribution (D-136)**: done on branch `utm-attribution` (worktree
-   `~/Documents/PoojaEdit-utm`, commit `734f392`). Not merged or deployed.
-   It needs a rebase onto this merge (its `decisions.md` row will conflict).
-5. Optional tidy-up: move the Razorpay/Shadowfax webhooks and Inngest app URL
+   Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled.
+4. **Save the GST `business.profile`** (§6.1) once the owner agrees.
+5. **Supabase Storage quota** before 2026-10-23 (§6.2), and run the 3 new
+   migrations on the dev project (§6.3).
+6. **Fix `npm audit`** (§6.4).
+7. **Website agent brief: parked.** `docs/briefs/pooja-website-agent-brief.md`
+   (proposed `/picks` affiliate reviews + `/styling` service) was assessed on
+   2026-10-07; the owner chose to keep the analysis and build nothing yet. Read
+   `docs/briefs/pooja-website-agent-brief-ANALYSIS.md` first. If revived, the
+   recommended order is UTM → `/styling` + private enquiry inbox → "Looks"
+   (Shop this Reel, own products first) after the 3 Nov Instagram review →
+   Picks reviews only once real reviews exist.
+8. Optional tidy-up: move the Razorpay/Shadowfax webhooks and Inngest app URL
    from `thepoojaedit.vercel.app` to `thepoojaedit.in`.
-6. **Owner live walkthrough of the admin product editor**, and delete the
-   stuck "Mango Satin Skirt - waist 26" product if it's still there.
-7. **Remaining live verifications**: a real Shadowfax pickup cancel (D-133),
+9. **Remaining live verifications**: a real Shadowfax pickup cancel (D-133),
    a Shadowfax push-callback, an Inngest cron end-to-end, iPhone PWA install +
    push, and the prod signed-URL upload / private-bucket download (AC-12).
-8. **Phase 13 operational drills**.
-9. **Catalogue curation** (owner content work): thrift descriptions, SKUs,
-   duplicate thrift listings, a size guide.
-10. Deferred by the owner: WhatsApp (Meta Cloud API) and a customer `/account` area.
+10. **Phase 13 operational drills**.
+11. **Catalogue curation** (owner content work): thrift descriptions, SKUs,
+    duplicate thrift listings, a size guide.
+12. Deferred by the owner: WhatsApp (Meta Cloud API) and a customer `/account` area.
 
 ## 9. Real production incidents fixed so far (patterns worth knowing)
 
