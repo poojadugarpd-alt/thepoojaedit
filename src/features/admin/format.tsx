@@ -8,9 +8,11 @@ export function money(paise: number | null | undefined): string {
 
 export function ts(d: Date | string | null | undefined): string {
   if (!d) return "—";
+  // Rendered on the server (UTC on Vercel), so the zone must be explicit.
   return new Date(d).toLocaleString("en-IN", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "Asia/Kolkata",
   });
 }
 

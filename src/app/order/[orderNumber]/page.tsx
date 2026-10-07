@@ -98,7 +98,7 @@ export default async function OrderPage({ params, searchParams }: Params) {
       )}
       <p className="mt-2 text-sm text-ink-soft">
         Placed{" "}
-        {order.placedAt ? new Date(order.placedAt).toLocaleDateString("en-IN") : "—"}
+        {order.placedAt ? new Date(order.placedAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }) : "—"}
       </p>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -157,7 +157,7 @@ export default async function OrderPage({ params, searchParams }: Params) {
                     <li key={e.id}>
                       {(e.statusNormalized ?? e.statusRaw ?? "").replaceAll("_", " ")}
                       {e.occurredAt
-                        ? ` — ${new Date(e.occurredAt).toLocaleDateString("en-IN")}`
+                        ? ` — ${new Date(e.occurredAt).toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}`
                         : ""}
                     </li>
                   ))}
