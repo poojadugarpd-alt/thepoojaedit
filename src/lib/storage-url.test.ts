@@ -28,6 +28,30 @@ describe("storagePublicUrl (D-135)", () => {
     );
   });
 
+  it("keeps a cached URL's object path, so placeholder legacy-import rows still resolve", async () => {
+    const { productImageUrl } = await load({
+      NEXT_PUBLIC_SUPABASE_URL: "https://newproj.supabase.co",
+      NEXT_PUBLIC_STORAGE_PUBLIC_URL: undefined,
+    });
+    expect(
+      productImageUrl({
+        bucket: "legacy-import",
+        path: "legacy/thepoojaedit:untitled-jul14/0",
+        publicUrl:
+          "https://oldproj.supabase.co/storage/v1/object/public/product-images/images/thepoojaedit/set-1/00-a.jpg",
+      }),
+    ).toBe(
+      "https://newproj.supabase.co/storage/v1/object/public/product-images/images/thepoojaedit/set-1/00-a.jpg",
+    );
+    expect(
+      productImageUrl({
+        bucket: "x",
+        path: "y",
+        publicUrl: "https://cdn.shopify.com/a.jpg",
+      }),
+    ).toBe("https://cdn.shopify.com/a.jpg");
+  });
+
   it("prefers the storage read override (Preview reading production images)", async () => {
     const { storagePublicUrl } = await load({
       NEXT_PUBLIC_SUPABASE_URL: "https://devproj.supabase.co",
