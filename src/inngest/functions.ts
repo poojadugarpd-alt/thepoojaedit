@@ -28,6 +28,7 @@ import {
 } from "@/server/refunds/service";
 import { notifyForDomainEvent } from "@/server/notifications";
 import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
+import { cancelAbandonedCheckouts } from "@/server/orders/lifecycle";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -59,6 +60,13 @@ export const sweepReservations = inngest.createFunction(
   { id: "sweep-reservations", concurrency: 1 },
   { cron: "*/2 * * * *" },
   async ({ step }) => step.run("sweep", () => runReservationSweep(prisma)),
+);
+
+/** Unpaid online checkouts are cancelled 30 min after they start, silently. */
+export const cancelUnpaidCheckouts = inngest.createFunction(
+  { id: "cancel-unpaid-checkouts", concurrency: 1 },
+  { cron: "*/5 * * * *" },
+  async ({ step }) => step.run("cancel", () => cancelAbandonedCheckouts(prisma)),
 );
 
 export const outboxHealth = inngest.createFunction(
@@ -315,6 +323,7 @@ export const onOutboxDispatched = inngest.createFunction(
 export const functions = [
   dispatchOutbox,
   sweepReservations,
+  cancelUnpaidCheckouts,
   outboxHealth,
   reconcilePayments,
   reconcileShipments,

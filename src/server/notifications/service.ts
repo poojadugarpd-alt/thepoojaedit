@@ -449,7 +449,10 @@ export async function notifyForDomainEvent(
     }
 
     case "order.cancelled": {
-      const reason = (event.payload as { reason?: string })?.reason ?? "as requested";
+      const p = (event.payload ?? {}) as { reason?: string; notifyCustomer?: boolean };
+      // An abandoned checkout auto-cancelled after 30 min: no customer message.
+      if (p.notifyCustomer === false) break;
+      const reason = p.reason ?? "as requested";
       for (const ch of ["EMAIL", "WHATSAPP"] as const) {
         await run({
           dedupeSeed: `cancelled:${order.id}`,

@@ -67,7 +67,10 @@ export async function listOrders(
   const unpaid =
     filter.unpaid ??
     (filter.q?.trim() || filter.orderStatus || filter.paymentStatus ? "show" : "hide");
-  if (unpaid === "only") and.push(unpaidCheckout);
+  // The Unpaid checkouts view shows only checkouts still open for payment;
+  // abandoned ones are auto-cancelled after 30 min (D-154) and drop out.
+  if (unpaid === "only")
+    and.push({ ...unpaidCheckout, orderStatus: "PENDING_PAYMENT" });
   else if (unpaid === "hide") and.push({ NOT: unpaidCheckout });
   if (filter.q?.trim()) {
     const q = filter.q.trim();

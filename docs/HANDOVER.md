@@ -242,6 +242,7 @@ Full detail in `docs/decisions.md`.
 | 10-07 | D-151 | Maintenance: vitest 4, Next 15.5.27, audit gate on prod deps, Prettier on all code |
 | 10-08 | D-152 | Link existing AWB (Shadowfax360 or another courier, manual status); unconfirmed-PIN task |
 | 10-08 | D-153 | Admin "Other courier" tab, Delhivery default, tracking link in AWB email |
+| 10-08 | D-154 | Unpaid checkouts auto-cancelled after 30 min (no email); late payment on a cancelled order refunded |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The

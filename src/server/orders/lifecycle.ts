@@ -101,7 +101,13 @@ export async function confirmCodOrder(
  */
 export async function cancelOrder(
   db: PrismaClient,
-  input: { orderId: string; reason: string; actor?: string },
+  input: {
+    orderId: string;
+    reason: string;
+    actor?: string;
+    /** false = no "order cancelled" email/WhatsApp (an abandoned checkout). */
+    notifyCustomer?: boolean;
+  },
 ): Promise<Order> {
   return db.$transaction(async (tx) => {
     const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId } });
@@ -155,7 +161,10 @@ export async function cancelOrder(
       tx,
       order.id,
       "order.cancelled",
-      { reason: input.reason },
+      {
+        reason: input.reason,
+        ...(input.notifyCustomer === false ? { notifyCustomer: false } : {}),
+      },
       input.actor,
     );
     await resolveOperationalTask(tx, serviceabilityTaskKey(order.id));
@@ -175,6 +184,29 @@ export async function settleCapturedPayment(
 ): Promise<{ order: Order; outcome: "converted" | "reacquired" | "needs_review" }> {
   return db.$transaction(async (tx) => {
     const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId } });
+
+    // Money arrived for an order that was already cancelled (e.g. an unpaid
+    // checkout auto-cancelled after 30 min, then a slow UPI payment captured).
+    // Never revive it: hand it to the late-capture refund (D-150), which
+    // refunds in full and cancels it again. Its fulfilment was CANCELLED, so it
+    // is reset to UNFULFILLED for that consumer; nothing ships from here.
+    if (order.orderStatus === "CANCELLED") {
+      const updated = await tx.order.update({
+        where: { id: order.id, version: order.version },
+        data: {
+          orderStatus: "NEEDS_REVIEW",
+          paymentStatus: "PAID",
+          fulfillmentStatus: "UNFULFILLED",
+          version: { increment: 1 },
+        },
+      });
+      await timeline(tx, order.id, "order.late_capture_review", {
+        capturedAmountPaise: input.capturedAmountPaise,
+        note: "payment captured after the order was cancelled; refund required",
+      });
+      return { order: updated, outcome: "needs_review" as const };
+    }
+
     const lines = await tx.orderItem.findMany({
       where: { orderId: order.id, variantId: { not: null } },
       select: { variantId: true, quantity: true },
@@ -228,4 +260,50 @@ export async function settleCapturedPayment(
     await raiseUnconfirmedServiceability(tx, order.id);
     return { order: updated, outcome };
   });
+}
+
+/** Unpaid online checkouts older than this are cancelled automatically. */
+export const ABANDONED_CHECKOUT_MINUTES = 30;
+export const ABANDONED_CHECKOUT_REASON = "Not paid within 30 minutes (automatic)";
+
+/**
+ * Cancel prepaid checkouts still unpaid 30 minutes after they started, so
+ * they leave Unpaid checkouts and the Overview. The customer is not emailed.
+ * Skips any order with a payment that is authorised or captured (that one is
+ * settling, not abandoned). Stock holds were already released at 10 minutes;
+ * releasing again is a no-op. A payment that still lands later is refunded
+ * automatically (see `settleCapturedPayment`).
+ */
+export async function cancelAbandonedCheckouts(
+  db: PrismaClient,
+  input: { now?: Date; limit?: number } = {},
+): Promise<{ cancelled: string[] }> {
+  const now = input.now ?? new Date();
+  const cutoff = new Date(now.getTime() - ABANDONED_CHECKOUT_MINUTES * 60_000);
+  const stale = await db.order.findMany({
+    where: {
+      paymentMethod: "PREPAID_RAZORPAY",
+      orderStatus: "PENDING_PAYMENT",
+      paymentStatus: { in: ["UNPAID", "PENDING", "FAILED"] },
+      placedAt: { lt: cutoff },
+      paymentAttempts: { none: { status: { in: ["AUTHORIZED", "CAPTURED"] } } },
+    },
+    select: { id: true, orderNumber: true },
+    orderBy: { placedAt: "asc" },
+    take: input.limit ?? 50,
+  });
+  const cancelled: string[] = [];
+  for (const o of stale) {
+    try {
+      await cancelOrder(db, {
+        orderId: o.id,
+        reason: ABANDONED_CHECKOUT_REASON,
+        notifyCustomer: false,
+      });
+      cancelled.push(o.orderNumber);
+    } catch {
+      // Raced with a payment or a manual action — leave it for the next run.
+    }
+  }
+  return { cancelled };
 }
