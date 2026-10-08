@@ -34,4 +34,35 @@ describe("R2 client (D-159)", () => {
     );
     expect(url.searchParams.get("X-Amz-Signature")).toMatch(/^[0-9a-f]{64}$/);
   });
+
+  it("uploads with a known length (R2 answers 411 to a chunked PUT)", async () => {
+    const { createR2Client } = await load({
+      R2_ACCOUNT_ID: "acc123",
+      R2_ACCESS_KEY_ID: "AKID",
+      R2_SECRET_ACCESS_KEY: "secret",
+      R2_BUCKET: "poojaedit-photos",
+    });
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await createR2Client().put(
+        "site-media/a.jpg",
+        new Uint8Array(1234),
+        "image/jpeg",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe(
+      "https://acc123.r2.cloudflarestorage.com/poojaedit-photos/site-media/a.jpg",
+    );
+    expect(init.body).toBeInstanceOf(Blob);
+    expect((init.body as Blob).size).toBe(1234);
+    const headers = new Headers(init.headers);
+    expect(headers.get("authorization")).toMatch(/^AWS4-HMAC-SHA256 Credential=AKID\//);
+    expect(headers.get("content-type")).toBe("image/jpeg");
+    expect(headers.get("x-amz-content-sha256")).toBeTruthy();
+  });
 });

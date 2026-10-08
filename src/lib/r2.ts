@@ -67,10 +67,17 @@ export function createR2Client(): R2Client {
     },
 
     async put(key, bytes, contentType) {
-      const res = await aws.fetch(urlFor(key), {
+      // Sign only, then send the bytes with a plain fetch: aws.fetch() re-wraps
+      // the body in a Request stream, which Node sends chunked with no
+      // Content-Length, and R2 rejects that with 411.
+      const signed = await aws.sign(urlFor(key), {
         method: "PUT",
-        body: new Blob([new Uint8Array(bytes)]),
         headers: { "Content-Type": contentType, "Cache-Control": R2_CACHE_CONTROL },
+      });
+      const res = await fetch(signed.url, {
+        method: "PUT",
+        headers: signed.headers,
+        body: new Blob([new Uint8Array(bytes)]),
       });
       if (!res.ok) throw new Error(`R2 PUT ${key} failed (${res.status})`);
     },
