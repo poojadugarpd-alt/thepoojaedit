@@ -166,6 +166,14 @@ Inngest function firing (no late double-buy has happened yet; the Inngest
 dashboard isn't signed in on the Pooja Chrome profile). `PE-261007-ZCXN45` is a
 real customer's unpaid order whose shorts are now sold: contact her or cancel it.
 
+**Shipping outside Shadowfax (D-152, 2026-10-08):** order page → "Link
+existing AWB" attaches a shipment booked on the Shadowfax360 dashboard or with
+another courier. Non-Shadowfax shipments are `provider = "manual"`: set their
+status with Mark shipped / Mark delivered. `PE-261007-9W2XQ5` (Mumbai 400097,
+not served by Shadowfax) is waiting to be sent with another courier and linked.
+The `TPJ-683BAADFB40D` "callback for an unknown shipment" task (16 Sept) is a
+setup-era test callback; close it with a reason.
+
 **Older, still true**
 - Admin "Cancel order" works for `PROCESSING` orders with a booked but
   uncollected Shadowfax pickup (D-133). The real Shadowfax cancel API has
@@ -230,6 +238,7 @@ Full detail in `docs/decisions.md`.
 | 10-07 | D-150 | Payment window = stock hold; late double-buy auto-refund; "On hold" label |
 | 10-07 | (`2e280fc`) | Admin and order-page times shown in India time (were UTC, 5h30m early) |
 | 10-07 | D-151 | Maintenance: vitest 4, Next 15.5.27, audit gate on prod deps, Prettier on all code |
+| 10-08 | D-152 | Link existing AWB (Shadowfax360 or another courier, manual status); unconfirmed-PIN task |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The

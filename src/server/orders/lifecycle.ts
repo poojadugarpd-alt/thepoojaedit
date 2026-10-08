@@ -1,6 +1,10 @@
 import "server-only";
 
 import type { Order, PrismaClient } from "@/generated/prisma";
+import {
+  openOperationalTask,
+  resolveOperationalTask,
+} from "@/server/events/operational-tasks";
 import { cancelCodAllocation } from "@/server/inventory/cod";
 import { InsufficientStockError } from "@/server/inventory/errors";
 import {
@@ -20,6 +24,36 @@ function timeline(
   actor?: string,
 ) {
   return appendOrderTimeline(tx, { orderId, type, payload, actor });
+}
+
+/** Timeline type written at placement when Shadowfax's PIN check errored. */
+export const SERVICEABILITY_UNCONFIRMED = "checkout.serviceability_unconfirmed";
+
+export const serviceabilityTaskKey = (orderId: string) =>
+  `serviceability-unconfirmed:${orderId}`;
+
+/**
+ * Once an order is confirmed, turn a placement-time "PIN not confirmed" note
+ * into a Needs Attention task, so it is checked before packing. Cleared when a
+ * shipment is booked or linked, or the order is cancelled.
+ */
+async function raiseUnconfirmedServiceability(
+  tx: Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0],
+  orderId: string,
+): Promise<void> {
+  const note = await tx.orderEvent.findFirst({
+    where: { orderId, type: SERVICEABILITY_UNCONFIRMED },
+  });
+  if (!note) return;
+  const postcode = (note.payload as { postcode?: string } | null)?.postcode ?? "?";
+  await openOperationalTask(tx, {
+    dedupeKey: serviceabilityTaskKey(orderId),
+    type: "SHIPMENT_FAILURE",
+    entityType: "Order",
+    entityId: orderId,
+    priority: 1,
+    reason: `Shadowfax couldn't confirm delivery to PIN ${postcode} at checkout. Check it before packing; if they don't serve it, ship with another courier and use "Link existing AWB".`,
+  });
 }
 
 /** COD acceptance → confirmed. Idempotent. Fulfillment becomes possible. */
@@ -55,6 +89,7 @@ export async function confirmCodOrder(
       { orderNumber: order.orderNumber },
       input.actor,
     );
+    await raiseUnconfirmedServiceability(tx, order.id);
     return updated;
   });
 }
@@ -123,6 +158,7 @@ export async function cancelOrder(
       { reason: input.reason },
       input.actor,
     );
+    await resolveOperationalTask(tx, serviceabilityTaskKey(order.id));
     return updated;
   });
 }
@@ -189,6 +225,7 @@ export async function settleCapturedPayment(
       outcome,
       capturedAmountPaise: input.capturedAmountPaise,
     });
+    await raiseUnconfirmedServiceability(tx, order.id);
     return { order: updated, outcome };
   });
 }

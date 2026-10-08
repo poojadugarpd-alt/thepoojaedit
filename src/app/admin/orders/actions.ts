@@ -14,7 +14,9 @@ import {
   checkPincodeServiceabilityNow,
   createShipmentForOrderNow,
   isShippingConfigured,
+  linkExistingShipmentNow,
   reconcileShipmentNow,
+  setManualShipmentStatusNow,
   syncCodRemittanceNow,
 } from "@/server/shipping";
 
@@ -94,6 +96,55 @@ export async function createShipmentAction(
       ok: true,
       message: r.created ? "Shipment created." : "Shipment already exists.",
     };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Attach a shipment booked outside the app (Shadowfax360, or another courier). */
+export async function linkShipmentAction(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const orderNumber = str(form.get("orderNumber"));
+  try {
+    const order = await prisma.order.findUniqueOrThrow({ where: { orderNumber } });
+    const s = await linkExistingShipmentNow({
+      orderId: order.id,
+      courier: str(form.get("courier")),
+      awb: str(form.get("awb")),
+      trackingUrl: str(form.get("trackingUrl")) || null,
+      actor: admin.email,
+    });
+    revalidate(orderNumber);
+    return { ok: true, message: `Linked ${s.courier} AWB ${s.awb}.` };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Mark a manually linked shipment shipped or delivered. */
+export async function setManualShipmentStatusAction(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const orderNumber = str(form.get("orderNumber"));
+  const status = str(form.get("status"));
+  if (status !== "SHIPPED" && status !== "DELIVERED") {
+    return { ok: false, message: "Unknown status." };
+  }
+  try {
+    const r = await setManualShipmentStatusNow({
+      shipmentId: str(form.get("shipmentId")),
+      status,
+      actor: admin.email,
+    });
+    revalidate(orderNumber);
+    return r.statusChanged
+      ? { ok: true, message: `Marked ${status.toLowerCase()}.` }
+      : { ok: false, message: `Already ${status.toLowerCase()} or past it.` };
   } catch (e) {
     return fail(e);
   }

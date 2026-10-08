@@ -106,6 +106,8 @@ export interface Quote {
   reservationTtlSeconds: number;
   expiresAt: Date;
   hash: string;
+  /** Shadowfax couldn't confirm delivery to this PIN (its check errored). */
+  serviceabilityUnconfirmed: boolean;
 }
 
 function hashQuote(parts: {
@@ -365,6 +367,7 @@ export async function computeQuote(
     placeOfSupplyStateCode,
     paymentMethod: input.paymentMethod,
     reservationTtlSeconds: rules.reservationTtlSeconds,
+    serviceabilityUnconfirmed: shipQuote.serviceabilityUnconfirmed === true,
     expiresAt: new Date(now.getTime() + rules.reservationTtlSeconds * 1000),
     hash,
   };

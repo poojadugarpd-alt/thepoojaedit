@@ -53,6 +53,8 @@ export class FakeShadowfax implements ShippingProvider {
   /** Fail the next createShipment once, BEFORE recording anything (timeout-before-creation). */
   failNextCreateBeforeRecord = false;
   webhookToken: string | null = null;
+  /** PINs whose serviceability lookup "errors" (served, but unconfirmed). */
+  readonly unconfirmedPostcodes = new Set<string>();
   flatShippingPaise = 8_000;
   codFeePaise = 3_000;
 
@@ -79,6 +81,9 @@ export class FakeShadowfax implements ShippingProvider {
       codAllowed,
       codFeePaise: req.paymentMethod === "COD" && codAllowed ? this.codFeePaise : 0,
       etaDays: 3,
+      ...(this.unconfirmedPostcodes.has(req.destinationPostcode)
+        ? { serviceabilityUnconfirmed: true as const }
+        : {}),
     } as ShippingQuote;
   }
 

@@ -11,6 +11,7 @@ import {
   FULFILLMENT_TRANSITIONS,
   type FulfillmentStatus,
 } from "@/server/orders/state";
+import { serviceabilityTaskKey } from "@/server/orders/lifecycle";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import { getShippingRules } from "@/server/settings";
 import {
@@ -38,6 +39,9 @@ import {
  */
 
 const SHIPMENT_PROVIDER = "shadowfax";
+/** A shipment booked outside the app (another courier) and linked by AWB.
+ *  Never polled or cancelled through Shadowfax; status is set by hand. */
+export const MANUAL_PROVIDER = "manual";
 
 function merchantRef(orderNumber: string): string {
   return `SHP-${orderNumber}`;
@@ -188,13 +192,16 @@ export async function createShipmentForOrder(
       input.actor,
     );
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
     await openOperationalTask(db, {
       dedupeKey: `shipment-failure:${order.id}`,
       type: "SHIPMENT_FAILURE",
       entityType: "Order",
       entityId: order.id,
       priority: 1,
-      reason: e instanceof Error ? e.message : String(e),
+      reason: /servic/i.test(message)
+        ? `${message} — Shadowfax doesn't deliver to PIN ${drop.postcode}. Ship with another courier, then use "Link existing AWB" on the order.`
+        : message,
     });
     throw e instanceof ShippingError
       ? e
@@ -206,7 +213,7 @@ export async function createShipmentForOrder(
 
 async function finishCreate(
   db: PrismaClient,
-  provider: ShippingProvider,
+  provider: ShippingProvider | null,
   orderId: string,
   shipmentId: string,
   created: {
@@ -277,8 +284,11 @@ async function finishCreate(
   });
 
   await resolveOperationalTask(db, `shipment-failure:${orderId}`);
+  await resolveOperationalTask(db, serviceabilityTaskKey(orderId));
   // Fold in whatever scans the provider already has.
-  await reconcileShipment(db, provider, { shipmentId: shipment.id }).catch(() => {});
+  if (provider) {
+    await reconcileShipment(db, provider, { shipmentId: shipment.id }).catch(() => {});
+  }
   return {
     shipment: await db.shipment.findUniqueOrThrow({ where: { id: shipment.id } }),
     created: true,
@@ -451,6 +461,11 @@ export async function reconcileShipment(
   const shipment = await db.shipment.findUniqueOrThrow({
     where: { id: input.shipmentId },
   });
+  if (shipment.provider === MANUAL_PROVIDER) {
+    throw new ShippingError(
+      `${shipment.courier ?? "This courier"} isn't tracked automatically — set the status by hand.`,
+    );
+  }
   const snapshot = await provider.fetchTracking({
     awb: shipment.awb,
     merchantReference: shipment.merchantReference,
@@ -760,6 +775,11 @@ export async function getShipmentLabel(
     where: { id: input.shipmentId },
   });
   if (!shipment.awb) throw new ShippingError("Shipment has no AWB yet.");
+  if (shipment.provider === MANUAL_PROVIDER) {
+    throw new ShippingError(
+      `Print the label from ${shipment.courier ?? "the courier"}.`,
+    );
+  }
   const label = await provider.fetchLabel({ awb: shipment.awb });
   return { contentType: label.contentType, bytes: label.bytes };
 }
@@ -802,7 +822,9 @@ export async function cancelShipmentsForOrder(
   let cancelled = 0;
   for (const s of order.shipments) {
     if (s.statusNormalized === "CANCELLED") continue;
-    if (s.providerShipmentId) {
+    // A manually linked shipment is cancelled with its courier by the owner;
+    // here it is only marked cancelled.
+    if (s.providerShipmentId && s.provider !== MANUAL_PROVIDER) {
       const r = await provider.cancelShipment({
         awb: s.awb,
         merchantReference: s.merchantReference,
@@ -828,6 +850,136 @@ export async function cancelShipmentsForOrder(
     cancelled++;
   }
   return { cancelled };
+}
+
+// ─────────────────────── shipments booked outside the app ───────────────────
+
+const AWB_RE = /^[A-Za-z0-9-]{4,40}$/;
+
+/**
+ * Attach a shipment that was booked outside the app — on the Shadowfax360
+ * dashboard, or with another courier when Shadowfax doesn't serve the PIN.
+ * Shadowfax AWBs are checked against the tracking API and then tracked like any
+ * other; other couriers become a `manual` shipment whose status is set by hand.
+ * Either way the order moves to PROCESSING, the failure task clears and the
+ * customer gets the AWB email (via `shipment.created`).
+ */
+export async function linkExistingShipment(
+  db: PrismaClient,
+  provider: ShippingProvider | null,
+  input: {
+    orderId: string;
+    courier: string;
+    awb: string;
+    trackingUrl?: string | null;
+    actor?: string;
+  },
+): Promise<Shipment> {
+  const awb = input.awb.trim();
+  const courierIn = input.courier.trim();
+  const trackingUrl = input.trackingUrl?.trim() || null;
+  if (!AWB_RE.test(awb)) {
+    throw new ShippingError("AWB must be 4–40 letters, numbers or dashes.");
+  }
+  if (!courierIn || courierIn.length > 40) {
+    throw new ShippingError("Enter the courier's name.");
+  }
+  if (trackingUrl && !/^https:\/\//i.test(trackingUrl)) {
+    throw new ShippingError("Tracking link must start with https://");
+  }
+  const isShadowfax = courierIn.toLowerCase() === "shadowfax";
+  const courier = isShadowfax ? "Shadowfax" : courierIn;
+
+  const order = await db.order.findUniqueOrThrow({
+    where: { id: input.orderId },
+    include: { items: true },
+  });
+  if (order.orderStatus !== "CONFIRMED") {
+    throw new ShippingError(
+      `Order ${order.orderNumber} is ${order.orderStatus}; only a confirmed order can ship.`,
+    );
+  }
+  if (order.fulfillmentStatus === "CANCELLED") {
+    throw new ShippingError("Order fulfilment is cancelled.");
+  }
+
+  const ref = merchantRef(order.orderNumber);
+  let shipment = await db.shipment.findUnique({ where: { merchantReference: ref } });
+  if (shipment?.providerShipmentId && shipment.statusNormalized !== "CANCELLED") {
+    throw new ShippingError(
+      `This order already has a shipment (AWB ${shipment.awb ?? shipment.providerShipmentId}).`,
+    );
+  }
+
+  let statusRaw = "linked";
+  if (isShadowfax) {
+    if (!provider) throw new ShippingError("Shadowfax is not configured here.");
+    // Proves the AWB exists on this Shadowfax account before we trust it.
+    const snapshot = await provider.fetchTracking({ awb });
+    statusRaw = snapshot.statusRaw;
+  }
+
+  const providerName = isShadowfax ? SHIPMENT_PROVIDER : MANUAL_PROVIDER;
+  if (!shipment) {
+    shipment = await db.shipment.create({
+      data: {
+        orderId: order.id,
+        provider: providerName,
+        merchantReference: ref,
+        statusNormalized: "PENDING",
+        items: {
+          create: order.items.map((i) => ({ orderItemId: i.id, quantity: i.quantity })),
+        },
+      },
+    });
+  } else {
+    shipment = await db.shipment.update({
+      where: { id: shipment.id },
+      data: { provider: providerName, statusNormalized: "PENDING" },
+    });
+  }
+
+  const r = await finishCreate(
+    db,
+    isShadowfax ? provider : null,
+    order.id,
+    shipment.id,
+    {
+      providerShipmentId: awb,
+      awb,
+      courier,
+      trackingUrl,
+      labelUrl: null,
+      statusRaw,
+      raw: { linkedBy: input.actor ?? null },
+    },
+    order.paymentMethod,
+    order.totalPaise,
+    input.actor,
+  );
+  return r.shipment;
+}
+
+/** Hand-set status for a manually linked shipment (no courier API to poll). */
+export async function setManualShipmentStatus(
+  db: PrismaClient,
+  input: { shipmentId: string; status: "SHIPPED" | "DELIVERED"; actor?: string },
+): Promise<ApplyEventResult> {
+  const shipment = await db.shipment.findUniqueOrThrow({
+    where: { id: input.shipmentId },
+  });
+  if (shipment.provider !== MANUAL_PROVIDER) {
+    throw new ShippingError("Only a manually linked shipment's status is set by hand.");
+  }
+  return applyTrackingEvent(db, {
+    shipmentId: shipment.id,
+    // Raw values the status map already understands.
+    statusRaw: input.status === "SHIPPED" ? "IN_TRANSIT" : "DELIVERED",
+    occurredAt: new Date(),
+    externalEventId: `manual:${input.status}`,
+    note: input.actor ? `set by ${input.actor}` : "set by admin",
+    source: "admin",
+  });
 }
 
 export async function ensureShipmentForConfirmedOrder(

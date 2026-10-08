@@ -13,7 +13,9 @@ import {
   getShipmentLabel,
   handleShadowfaxWebhook,
   inspectRtoReturn,
+  linkExistingShipment,
   reconcileShipment,
+  setManualShipmentStatus,
   syncCodRemittance,
   type RtoOutcome,
 } from "./service";
@@ -44,6 +46,9 @@ export interface ShippingQuote {
   etaDays?: number;
   /** Present only for the test adapter, so it can never be mistaken for real. */
   testAdapter?: true;
+  /** The carrier's serviceability check errored, so delivery to this PIN is
+   *  assumed rather than confirmed. Checkout still sells; the order is flagged. */
+  serviceabilityUnconfirmed?: true;
   reason?: string;
 }
 
@@ -115,8 +120,11 @@ export {
   getShipmentLabel,
   handleShadowfaxWebhook,
   inspectRtoReturn,
+  linkExistingShipment,
   makeShipmentReconcilePort,
+  MANUAL_PROVIDER,
   reconcileShipment,
+  setManualShipmentStatus,
   syncCodRemittance,
 } from "./service";
 export type { RtoOutcome } from "./service";
@@ -177,6 +185,24 @@ export function inspectRtoNow(input: {
 }
 export function syncCodRemittanceNow(shipmentId: string) {
   return syncCodRemittance(prisma, getFulfilmentProvider(), { shipmentId });
+}
+export function linkExistingShipmentNow(input: {
+  orderId: string;
+  courier: string;
+  awb: string;
+  trackingUrl?: string | null;
+  actor?: string;
+}) {
+  // Another courier needs no Shadowfax credentials; a Shadowfax AWB does.
+  const provider = isShippingConfigured() ? getFulfilmentProvider() : null;
+  return linkExistingShipment(prisma, provider, input);
+}
+export function setManualShipmentStatusNow(input: {
+  shipmentId: string;
+  status: "SHIPPED" | "DELIVERED";
+  actor?: string;
+}) {
+  return setManualShipmentStatus(prisma, input);
 }
 export function getShipmentLabelNow(shipmentId: string) {
   return getShipmentLabel(prisma, getFulfilmentProvider(), { shipmentId });

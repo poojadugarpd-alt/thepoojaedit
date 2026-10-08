@@ -3,11 +3,11 @@ import Link from "next/link";
 
 import { prisma } from "@/lib/db";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
-import { ActionForm } from "@/features/admin/action-form";
+import { ActionForm, Field } from "@/features/admin/action-form";
 import { money, Pill, Thumb, ts } from "@/features/admin/format";
 import { timed } from "@/lib/perf";
 import { getAdminOrder, getOrderItemImages, listActivity } from "@/server/admin";
-import { isShippingConfigured } from "@/server/shipping";
+import { isShippingConfigured, MANUAL_PROVIDER } from "@/server/shipping";
 
 import {
   addOrderNoteAction,
@@ -16,8 +16,10 @@ import {
   confirmCodAction,
   createShipmentAction,
   generateInvoiceAction,
+  linkShipmentAction,
   reconcileShipmentAction,
   refundOrderAction,
+  setManualShipmentStatusAction,
   syncCodRemittanceAction,
 } from "../actions";
 
@@ -142,6 +144,42 @@ export default async function AdminOrderDetail({
                   </ActionForm>
                 )}
 
+              {["CONFIRMED"].includes(order.orderStatus) &&
+                order.fulfillmentStatus === "UNFULFILLED" && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-xs text-ink-soft">
+                      Link existing AWB
+                    </summary>
+                    <ActionForm
+                      action={linkShipmentAction}
+                      submitLabel="Link AWB"
+                      className="mt-2"
+                    >
+                      {hidden}
+                      <p className="text-xs text-ink-soft">
+                        Already booked on the Shadowfax dashboard, or sent with another
+                        courier (e.g. when Shadowfax doesn&apos;t serve the PIN)? Enter
+                        it here. The customer gets the AWB email.
+                      </p>
+                      <Field
+                        label="Courier"
+                        name="courier"
+                        defaultValue="Shadowfax"
+                        required
+                        maxLength={40}
+                        hint="Shadowfax AWBs are checked and tracked automatically; other couriers are updated by hand."
+                      />
+                      <Field label="AWB" name="awb" required maxLength={40} />
+                      <Field
+                        label="Tracking link (optional)"
+                        name="trackingUrl"
+                        type="url"
+                        placeholder="https://"
+                      />
+                    </ActionForm>
+                  </details>
+                )}
+
               {!order.invoices.length &&
                 ["CONFIRMED", "COMPLETED"].includes(order.orderStatus) && (
                   <ActionForm
@@ -196,12 +234,18 @@ export default async function AdminOrderDetail({
                   order.fulfillmentStatus === "PROCESSING") && (
                   <ActionForm action={cancelOrderAction} submitLabel="Cancel order">
                     {hidden}
-                    {order.fulfillmentStatus === "PROCESSING" && (
-                      <p className="text-xs text-ink-soft">
-                        A Shadowfax pickup is booked — cancelling also cancels the
-                        pickup.
-                      </p>
-                    )}
+                    {order.fulfillmentStatus === "PROCESSING" &&
+                      (shipment?.provider === MANUAL_PROVIDER ? (
+                        <p className="text-xs text-ink-soft">
+                          Booked with {shipment.courier} outside the app — cancel it
+                          with them too.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-ink-soft">
+                          A Shadowfax pickup is booked — cancelling also cancels the
+                          pickup.
+                        </p>
+                      ))}
                     <input
                       name="reason"
                       placeholder="cancellation reason"
@@ -376,14 +420,39 @@ export default async function AdminOrderDetail({
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-3">
-                <ActionForm
-                  action={reconcileShipmentAction}
-                  submitLabel="Reconcile tracking"
-                  compact
-                >
-                  {hidden}
-                  <input type="hidden" name="shipmentId" value={shipment.id} />
-                </ActionForm>
+                {shipment.provider === MANUAL_PROVIDER ? (
+                  (["SHIPPED", "DELIVERED"] as const)
+                    .filter((st) =>
+                      st === "SHIPPED"
+                        ? shipment.statusNormalized === "PROCESSING"
+                        : ["PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY"].includes(
+                            shipment.statusNormalized,
+                          ),
+                    )
+                    .map((st) => (
+                      <ActionForm
+                        key={st}
+                        action={setManualShipmentStatusAction}
+                        submitLabel={
+                          st === "SHIPPED" ? "Mark shipped" : "Mark delivered"
+                        }
+                        compact
+                      >
+                        {hidden}
+                        <input type="hidden" name="shipmentId" value={shipment.id} />
+                        <input type="hidden" name="status" value={st} />
+                      </ActionForm>
+                    ))
+                ) : (
+                  <ActionForm
+                    action={reconcileShipmentAction}
+                    submitLabel="Reconcile tracking"
+                    compact
+                  >
+                    {hidden}
+                    <input type="hidden" name="shipmentId" value={shipment.id} />
+                  </ActionForm>
+                )}
                 {order.paymentMethod === "COD" && (
                   <ActionForm
                     action={syncCodRemittanceAction}
@@ -394,15 +463,17 @@ export default async function AdminOrderDetail({
                     <input type="hidden" name="shipmentId" value={shipment.id} />
                   </ActionForm>
                 )}
-                <a
-                  href={`/admin/shipments/${shipment.id}/label`}
-                  className="flex min-h-11 items-center text-xs text-ink-soft underline"
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Shadowfax has no self-serve label download API"
-                >
-                  label PDF (not available from Shadowfax)
-                </a>
+                {shipment.provider !== MANUAL_PROVIDER && (
+                  <a
+                    href={`/admin/shipments/${shipment.id}/label`}
+                    className="flex min-h-11 items-center text-xs text-ink-soft underline"
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Shadowfax has no self-serve label download API"
+                  >
+                    label PDF (not available from Shadowfax)
+                  </a>
+                )}
               </div>
             </Section>
           )}

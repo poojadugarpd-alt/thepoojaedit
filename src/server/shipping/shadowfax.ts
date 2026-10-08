@@ -119,6 +119,7 @@ export class ShadowfaxProvider implements ShippingProvider {
     // split and no price, so those stay config-driven (flatShippingPaise /
     // codFeePaise) rather than invented from a field the API doesn't return.
     let serviceable = true;
+    let unconfirmed = false;
     try {
       const rows = await this.call<{ code: number; services: string[] }[]>(
         "GET",
@@ -130,6 +131,7 @@ export class ShadowfaxProvider implements ShippingProvider {
       // fall back to "serviceable, no COD" and let reconciliation/ops catch it.
       if (e instanceof ShippingApiError && e.httpStatus >= 500) {
         serviceable = true;
+        unconfirmed = true;
       } else {
         throw e;
       }
@@ -153,6 +155,7 @@ export class ShadowfaxProvider implements ShippingProvider {
       shippingPaise: this.flatShippingPaise,
       codAllowed,
       codFeePaise: req.paymentMethod === "COD" ? this.codFeePaise : 0,
+      ...(unconfirmed ? { serviceabilityUnconfirmed: true as const } : {}),
     };
   }
 

@@ -15,7 +15,10 @@ import {
   getShipmentLabel,
   handleShadowfaxWebhook,
   inspectRtoReturn,
+  linkExistingShipment,
+  makeShipmentReconcilePort,
   reconcileShipment,
+  setManualShipmentStatus,
   syncCodRemittance,
 } from "../../src/server/shipping/service";
 import { FAKE_WEBHOOK_TOKEN, FakeShadowfax } from "../../src/server/shipping/testing";
@@ -637,5 +640,262 @@ describe("cancelling a booked-but-not-picked-up order (D-133)", () => {
       cancelShipmentsForOrder(db, fx, { orderId: order.id }),
     ).rejects.toThrow(ShippingError);
     expect([...fx.shipments.values()][0]!.cancelled).toBeFalsy();
+  });
+});
+
+// ─────────────── shipments booked outside the app (link by AWB) ─────────────
+
+describe("link an existing AWB", () => {
+  const openTasks = (key: string) =>
+    db.operationalTask.count({ where: { dedupeKey: key, status: "OPEN" } });
+
+  it("another courier: manual shipment, PROCESSING, failure task cleared, AWB email queued, never sent to Shadowfax", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    fx.failNextCreateBeforeRecord = true;
+    await expect(
+      createShipmentForOrder(db, fx, { orderId: order.id }),
+    ).rejects.toThrow();
+    expect(await openTasks(`shipment-failure:${order.id}`)).toBe(1);
+
+    const s = await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "India Post",
+      awb: "EK123456789IN",
+      trackingUrl: "https://www.indiapost.gov.in/track",
+      actor: "owner@example.invalid",
+    });
+    expect(s).toMatchObject({
+      provider: "manual",
+      courier: "India Post",
+      awb: "EK123456789IN",
+      statusNormalized: "PROCESSING",
+      trackingUrl: "https://www.indiapost.gov.in/track",
+    });
+    expect(await db.shipment.count({ where: { orderId: order.id } })).toBe(1);
+    expect(fx.shipments.size).toBe(0);
+    const o = await db.order.findUniqueOrThrow({ where: { id: order.id } });
+    expect(o.fulfillmentStatus).toBe("PROCESSING");
+    expect(await openTasks(`shipment-failure:${order.id}`)).toBe(0);
+    const ev = await db.orderEvent.findFirst({
+      where: { orderId: order.id, type: "shipment.created" },
+    });
+    expect(ev?.payload).toMatchObject({ awb: "EK123456789IN" });
+
+    // Not polled by the Shadowfax cron, and can't be reconciled through it.
+    await expect(
+      reconcileShipment(db, fx, { shipmentId: s.id }),
+    ).rejects.toBeInstanceOf(ShippingError);
+    const sweep = await makeShipmentReconcilePort(db, fx).reconcilePending(new Date());
+    expect(sweep.checked).toBe(0);
+  });
+
+  it("manual status: shipped then delivered move the order; Shadowfax shipments refuse it", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    const s = await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "Delhivery",
+      awb: "1234567890",
+    });
+
+    const shipped = await setManualShipmentStatus(db, {
+      shipmentId: s.id,
+      status: "SHIPPED",
+    });
+    expect(shipped.statusChanged).toBe(true);
+    expect(
+      (await db.order.findUniqueOrThrow({ where: { id: order.id } })).fulfillmentStatus,
+    ).toBe("SHIPPED");
+    const again = await setManualShipmentStatus(db, {
+      shipmentId: s.id,
+      status: "SHIPPED",
+    });
+    expect(again.statusChanged).toBe(false);
+
+    await setManualShipmentStatus(db, { shipmentId: s.id, status: "DELIVERED" });
+    expect(
+      (await db.order.findUniqueOrThrow({ where: { id: order.id } })).fulfillmentStatus,
+    ).toBe("DELIVERED");
+
+    const order2 = await placeConfirmedCod(fx, v);
+    const { shipment: sfx } = await createShipmentForOrder(db, fx, {
+      orderId: order2.id,
+    });
+    await expect(
+      setManualShipmentStatus(db, { shipmentId: sfx.id, status: "SHIPPED" }),
+    ).rejects.toBeInstanceOf(ShippingError);
+  });
+
+  it("a Shadowfax AWB is checked against Shadowfax; unknown AWBs and a second link are refused", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+
+    await expect(
+      linkExistingShipment(db, fx, {
+        orderId: order.id,
+        courier: "Shadowfax",
+        awb: "SF000NOPE",
+      }),
+    ).rejects.toThrow();
+    expect(await db.shipment.count({ where: { orderId: order.id } })).toBe(0);
+
+    // Booked by hand on the Shadowfax dashboard under some other reference.
+    const booked = await fx.createShipment({
+      merchantReference: "DASHBOARD-1",
+      pickup: {} as never,
+      drop: {} as never,
+      paymentMethod: "COD",
+      codAmountPaise: 0,
+      items: [],
+      weightGrams: 300,
+      invoiceValuePaise: 0,
+    });
+    const s = await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "shadowfax",
+      awb: booked.awb!,
+    });
+    expect(s).toMatchObject({
+      provider: "shadowfax",
+      courier: "Shadowfax",
+      awb: booked.awb,
+    });
+
+    await expect(
+      linkExistingShipment(db, fx, {
+        orderId: order.id,
+        courier: "India Post",
+        awb: "EK1IN",
+      }),
+    ).rejects.toThrow(/already has a shipment/);
+  });
+
+  it("rejects a bad AWB and an order that isn't confirmed", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    await expect(
+      linkExistingShipment(db, fx, {
+        orderId: order.id,
+        courier: "X",
+        awb: "no spaces",
+      }),
+    ).rejects.toBeInstanceOf(ShippingError);
+
+    const { order: pending } = await placeOrder(db, {
+      idempotencyKey: randomUUID(),
+      scope: `guest:${randomUUID().slice(0, 12)}`,
+      contact: { phone: "+919999900000" },
+      lines: [{ variantId: v, quantity: 1 }],
+      paymentMethod: "COD",
+      billing: addr(),
+      shipping: addr(),
+      shippingPort: fx,
+    });
+    await expect(
+      linkExistingShipment(db, fx, {
+        orderId: pending.id,
+        courier: "X",
+        awb: "ABCD1234",
+      }),
+    ).rejects.toThrow(/only a confirmed order/);
+  });
+
+  it("cancelling an order with a manual shipment doesn't call Shadowfax", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "DTDC",
+      awb: "D12345678",
+    });
+
+    const r = await cancelShipmentsForOrder(db, fx, { orderId: order.id });
+    expect(r.cancelled).toBe(1);
+    await cancelOrder(db, { orderId: order.id, reason: "test" });
+    expect(
+      (await db.order.findUniqueOrThrow({ where: { id: order.id } })).orderStatus,
+    ).toBe("CANCELLED");
+  });
+});
+
+describe("checkout PIN check that errored (serviceability unconfirmed)", () => {
+  const key = (id: string) => `serviceability-unconfirmed:${id}`;
+
+  it("still sells, notes it on the order, raises a task on confirmation, clears it when a shipment is linked", async () => {
+    const fx = new FakeShadowfax();
+    fx.unconfirmedPostcodes.add("400097");
+    const v = await makeVariant(5);
+    const { order } = await placeOrder(db, {
+      idempotencyKey: randomUUID(),
+      scope: `guest:${randomUUID().slice(0, 12)}`,
+      contact: { phone: "+919999900000" },
+      lines: [{ variantId: v, quantity: 1 }],
+      paymentMethod: "COD",
+      billing: addr("400097"),
+      shipping: addr("400097"),
+      shippingPort: fx,
+    });
+    expect(
+      await db.orderEvent.count({
+        where: { orderId: order.id, type: "checkout.serviceability_unconfirmed" },
+      }),
+    ).toBe(1);
+    // Unpaid/unconfirmed orders don't clutter Needs Attention.
+    expect(
+      await db.operationalTask.count({ where: { dedupeKey: key(order.id) } }),
+    ).toBe(0);
+
+    await confirmCodOrder(db, { orderId: order.id });
+    const task = await db.operationalTask.findUniqueOrThrow({
+      where: { dedupeKey: key(order.id) },
+    });
+    expect(task.status).toBe("OPEN");
+    expect(task.reason).toContain("400097");
+
+    await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "India Post",
+      awb: "EK999999999IN",
+    });
+    expect(
+      (
+        await db.operationalTask.findUniqueOrThrow({
+          where: { dedupeKey: key(order.id) },
+        })
+      ).status,
+    ).toBe("RESOLVED");
+  });
+
+  it("a cancelled order clears the task; a confirmed PIN raises none", async () => {
+    const fx = new FakeShadowfax();
+    fx.unconfirmedPostcodes.add("400097");
+    const v = await makeVariant(5);
+    const flagged = await placeConfirmedCod(fx, v, 1, "400097");
+    expect(
+      (
+        await db.operationalTask.findUniqueOrThrow({
+          where: { dedupeKey: key(flagged.id) },
+        })
+      ).status,
+    ).toBe("OPEN");
+    await cancelOrder(db, { orderId: flagged.id, reason: "test" });
+    expect(
+      (
+        await db.operationalTask.findUniqueOrThrow({
+          where: { dedupeKey: key(flagged.id) },
+        })
+      ).status,
+    ).toBe("RESOLVED");
+
+    const normal = await placeConfirmedCod(fx, v);
+    expect(
+      await db.operationalTask.count({ where: { dedupeKey: key(normal.id) } }),
+    ).toBe(0);
   });
 });

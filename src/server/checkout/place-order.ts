@@ -7,6 +7,7 @@ import { allocateCodStock } from "@/server/inventory/cod";
 import { reserveAll } from "@/server/inventory/reservations";
 import { issueOrderAccessToken } from "@/server/orders/access-tokens";
 import { generateOrderNumber } from "@/server/orders/order-number";
+import { SERVICEABILITY_UNCONFIRMED } from "@/server/orders/lifecycle";
 import { appendOrderTimeline } from "@/server/orders/timeline";
 import type { ShippingPort } from "@/server/shipping";
 
@@ -321,6 +322,16 @@ export async function placeOrder(
           totalPaise: order.totalPaise,
         },
       });
+      // Shadowfax's serviceability check errored, so this PIN was assumed served.
+      // Becomes a Needs Attention task once the order is paid/confirmed
+      // (`raiseUnconfirmedServiceability` in orders/lifecycle).
+      if (quote.serviceabilityUnconfirmed) {
+        await appendOrderTimeline(tx, {
+          orderId: order.id,
+          type: SERVICEABILITY_UNCONFIRMED,
+          payload: { postcode: input.shipping.postcode },
+        });
+      }
 
       let guestAccessToken: string | undefined;
       if (!input.customerId) {
