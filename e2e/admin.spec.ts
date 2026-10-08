@@ -278,7 +278,9 @@ test("create a discount code in admin", async ({ page }) => {
 /** D-153: the Other courier tab loads and offers Delhivery by default. */
 test("Other courier tab", async ({ page }) => {
   await page.goto("/admin/other-courier");
-  await expect(page.getByRole("heading", { name: "Other courier", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Other courier", exact: true }),
+  ).toBeVisible();
   await expect(page.getByText(/Waiting for an AWB/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Other courier" }).first()).toBeVisible();
 });
