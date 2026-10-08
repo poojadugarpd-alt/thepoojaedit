@@ -250,6 +250,7 @@ Full detail in `docs/decisions.md`.
 | 10-08 | D-154 | Unpaid checkouts auto-cancelled after 30 min (no email); late payment on a cancelled order refunded |
 | 10-08 | D-155 | Flaky discount e2e fixed (Next router bug; reload after create) |
 | 10-08 | D-156 | Shadowfax360-dashboard orders (TPJ-…) no longer raise "unknown shipment" alerts |
+| 10-08 | D-157 | Low stock list removed from the admin Overview |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The

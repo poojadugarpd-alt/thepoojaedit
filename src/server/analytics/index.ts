@@ -231,7 +231,6 @@ export async function getAttentionSummary(db: PrismaClient): Promise<AttentionSu
 export interface Overview {
   financial: FinancialSummary;
   attention: AttentionSummary;
-  lowStock: LowStockRow[];
   openOrders: {
     pendingPayment: number;
     pendingCodConfirmation: number;
@@ -244,10 +243,9 @@ export async function getOverview(
   db: PrismaClient,
   range: DateRange = defaultRange(),
 ): Promise<Overview> {
-  const [financial, attention, lowStock, statuses, fulfil] = await Promise.all([
+  const [financial, attention, statuses, fulfil] = await Promise.all([
     getFinancialSummary(db, range),
     getAttentionSummary(db),
-    getLowStock(db, { limit: 20 }),
     db.order.groupBy({ by: ["orderStatus"], where: { isTest: false }, _count: true }),
     db.order.count({
       where: {
@@ -261,7 +259,6 @@ export async function getOverview(
   return {
     financial,
     attention,
-    lowStock,
     openOrders: {
       pendingPayment: count("PENDING_PAYMENT"),
       pendingCodConfirmation: count("PENDING_CONFIRMATION"),

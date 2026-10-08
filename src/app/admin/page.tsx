@@ -131,28 +131,6 @@ export default async function AdminOverview() {
           {money(f.netRevenuePaise)}.
         </p>
       </section>
-
-      {/* Low stock */}
-      {o.lowStock.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">
-            Low stock
-          </h2>
-          <ul className="mt-2 space-y-1 text-sm">
-            {o.lowStock.slice(0, 8).map((v) => (
-              <li key={v.variantId}>
-                <Link
-                  href="/admin/inventory"
-                  className="flex min-h-11 items-center hover:underline"
-                >
-                  {v.productTitle} · {v.sku} — available {v.availableQty} (≤{" "}
-                  {v.lowStockThreshold})
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
