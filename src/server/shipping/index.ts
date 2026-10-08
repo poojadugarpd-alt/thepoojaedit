@@ -107,6 +107,7 @@ export class TestShippingAdapter implements ShippingPort {
 // ─────────────────────── Phase 8: provider + wrappers ─────────────────────
 
 export * from "./port";
+export { courierTrackingUrl, DEFAULT_OTHER_COURIER } from "./couriers";
 export {
   normalizeShadowfaxStatus,
   isShipmentOpen,
@@ -121,6 +122,7 @@ export {
   handleShadowfaxWebhook,
   inspectRtoReturn,
   linkExistingShipment,
+  listOtherCourierWork,
   makeShipmentReconcilePort,
   MANUAL_PROVIDER,
   reconcileShipment,

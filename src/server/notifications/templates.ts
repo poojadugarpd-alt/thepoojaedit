@@ -131,19 +131,21 @@ export const TEMPLATES = {
   }),
 
   shipment_awb_assigned: defineTemplate({
-    version: 1,
+    version: 2,
     channels: ["EMAIL"],
     schema: orderRef.extend({
       awb: z.string(),
       courier: z.string().default("Shadowfax"),
+      trackingUrl: z.string().url().nullable().optional(),
     }),
     email: (v) => ({
       subject: `Order ${v.orderNumber} is packed — AWB ${v.awb}`,
-      text: `Your order ${v.orderNumber} is packed and booked with ${v.courier}. AWB: ${v.awb}. We'll email you again when it ships.${v.orderUrl ? ` View your order: ${v.orderUrl}` : ""}`,
+      text: `Your order ${v.orderNumber} is packed and booked with ${v.courier}. AWB: ${v.awb}.${v.trackingUrl ? ` Track it on ${v.courier}: ${v.trackingUrl}` : ""} We'll email you again when it ships.${v.orderUrl ? ` View your order: ${v.orderUrl}` : ""}`,
       html: emailShell(
         `Order ${v.orderNumber} is packed`,
         `<p>Your order is packed and booked with <strong>${v.courier}</strong>.</p>
          <p>AWB number: <strong>${v.awb}</strong></p>
+         ${v.trackingUrl ? `<p><a href="${v.trackingUrl}">Track it on ${v.courier}</a> (enter the AWB above if the page asks for it).</p>` : ""}
          <p>We'll email you again when the courier picks it up.</p>
          ${v.orderUrl ? `<p><a href="${v.orderUrl}">View your order</a></p>` : ""}`,
       ),

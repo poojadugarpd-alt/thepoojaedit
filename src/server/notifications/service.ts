@@ -356,6 +356,7 @@ export async function notifyForDomainEvent(
             orderUrl,
             awb,
             courier: booked?.courier ?? "Shadowfax",
+            trackingUrl: booked?.trackingUrl ?? null,
           },
         });
       }

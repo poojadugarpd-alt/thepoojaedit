@@ -34,6 +34,7 @@ function revalidate(orderNumber: string) {
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   revalidatePath("/admin/needs-attention");
+  revalidatePath("/admin/other-courier");
 }
 
 export async function confirmCodAction(

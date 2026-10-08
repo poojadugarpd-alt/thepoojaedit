@@ -7,7 +7,11 @@ import { ActionForm, Field } from "@/features/admin/action-form";
 import { money, Pill, Thumb, ts } from "@/features/admin/format";
 import { timed } from "@/lib/perf";
 import { getAdminOrder, getOrderItemImages, listActivity } from "@/server/admin";
-import { isShippingConfigured, MANUAL_PROVIDER } from "@/server/shipping";
+import {
+  DEFAULT_OTHER_COURIER,
+  isShippingConfigured,
+  MANUAL_PROVIDER,
+} from "@/server/shipping";
 
 import {
   addOrderNoteAction,
@@ -164,10 +168,14 @@ export default async function AdminOrderDetail({
                       <Field
                         label="Courier"
                         name="courier"
-                        defaultValue="Shadowfax"
+                        defaultValue={
+                          shipment && !shipment.awb
+                            ? DEFAULT_OTHER_COURIER
+                            : "Shadowfax"
+                        }
                         required
                         maxLength={40}
-                        hint="Shadowfax AWBs are checked and tracked automatically; other couriers are updated by hand."
+                        hint="Shadowfax AWBs are checked and tracked automatically; other couriers are updated by hand. Delhivery gets its tracking link added for you."
                       />
                       <Field label="AWB" name="awb" required maxLength={40} />
                       <Field

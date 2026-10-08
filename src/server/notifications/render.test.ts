@@ -35,6 +35,27 @@ describe("template rendering", () => {
     }
   });
 
+  it("AWB email carries the courier's tracking link when there is one", () => {
+    const withLink = renderTemplate("shipment_awb_assigned", "EMAIL", {
+      ...orderVars,
+      awb: "1234567890123",
+      courier: "Delhivery",
+      trackingUrl: "https://www.delhivery.com/track-v2/package/1234567890123",
+    }) as { html: string; text: string };
+    expect(withLink.html).toContain(
+      'href="https://www.delhivery.com/track-v2/package/1234567890123"',
+    );
+    expect(withLink.text).toContain("Track it on Delhivery");
+
+    const without = renderTemplate("shipment_awb_assigned", "EMAIL", {
+      ...orderVars,
+      awb: "SF1",
+      courier: "Shadowfax",
+    }) as { html: string };
+    expect(without.html).not.toContain("Track it on");
+    expect(templateVersion("shipment_awb_assigned")).toBe(2);
+  });
+
   it("distinct copy per lifecycle event", () => {
     const shipped = renderTemplate("shipment_dispatched", "EMAIL", {
       orderNumber: "X",

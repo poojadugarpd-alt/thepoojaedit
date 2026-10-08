@@ -10,6 +10,11 @@ export const metadata = { title: "More" };
  */
 const ITEMS = [
   {
+    href: "/admin/other-courier",
+    label: "Other courier",
+    hint: "Orders Shadowfax can't take — enter a Delhivery AWB",
+  },
+  {
     href: "/admin/home",
     label: "Home page",
     hint: "Edit the words shoppers see on the home page",

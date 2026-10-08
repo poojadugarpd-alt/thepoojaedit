@@ -52,7 +52,7 @@ async function raiseUnconfirmedServiceability(
     entityType: "Order",
     entityId: orderId,
     priority: 1,
-    reason: `Shadowfax couldn't confirm delivery to PIN ${postcode} at checkout. Check it before packing; if they don't serve it, ship with another courier and use "Link existing AWB".`,
+    reason: `Shadowfax couldn't confirm delivery to PIN ${postcode} at checkout. Check it before packing; if they don't serve it, book it on Delhivery and enter the AWB in Admin → Other courier.`,
   });
 }
 

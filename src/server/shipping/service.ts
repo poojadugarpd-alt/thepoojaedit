@@ -22,6 +22,7 @@ import {
   type ReconcilePort,
 } from "@/server/webhooks/inbox";
 
+import { courierTrackingUrl } from "./couriers";
 import { ShippingError, type ShippingProvider, type WebhookHint } from "./port";
 import {
   canAdvanceFulfillment,
@@ -200,7 +201,7 @@ export async function createShipmentForOrder(
       entityId: order.id,
       priority: 1,
       reason: /servic/i.test(message)
-        ? `${message} — Shadowfax doesn't deliver to PIN ${drop.postcode}. Ship with another courier, then use "Link existing AWB" on the order.`
+        ? `${message} — Shadowfax doesn't deliver to PIN ${drop.postcode}. Book it on Delhivery and enter the AWB in Admin → Other courier.`
         : message,
     });
     throw e instanceof ShippingError
@@ -889,6 +890,9 @@ export async function linkExistingShipment(
   }
   const isShadowfax = courierIn.toLowerCase() === "shadowfax";
   const courier = isShadowfax ? "Shadowfax" : courierIn;
+  // A known courier's public tracking page goes in the customer's AWB email.
+  const trackingLink =
+    trackingUrl ?? (isShadowfax ? null : courierTrackingUrl(courier, awb));
 
   const order = await db.order.findUniqueOrThrow({
     where: { id: input.orderId },
@@ -948,7 +952,7 @@ export async function linkExistingShipment(
       providerShipmentId: awb,
       awb,
       courier,
-      trackingUrl,
+      trackingUrl: trackingLink,
       labelUrl: null,
       statusRaw,
       raw: { linkedBy: input.actor ?? null },
@@ -1002,3 +1006,70 @@ export async function ensureShipmentForConfirmedOrder(
 }
 
 export { merchantRef };
+
+// ──────────────────── "Other courier" admin tab (D-153) ─────────────────────
+
+/**
+ * Work for the admin "Other courier" tab: confirmed orders Shadowfax couldn't
+ * book (an open `shipment-failure` or `serviceability-unconfirmed` task) that
+ * have no booked shipment yet, and parcels already sent with another courier
+ * that aren't delivered.
+ */
+export async function listOtherCourierWork(db: PrismaClient) {
+  const tasks = await db.operationalTask.findMany({
+    where: {
+      status: "OPEN",
+      entityType: "Order",
+      OR: [
+        { dedupeKey: { startsWith: "shipment-failure:" } },
+        { dedupeKey: { startsWith: "serviceability-unconfirmed:" } },
+      ],
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  const reasonByOrder = new Map<string, string>();
+  for (const t of tasks) {
+    if (t.entityId && !reasonByOrder.has(t.entityId)) {
+      reasonByOrder.set(t.entityId, t.reason ?? "");
+    }
+  }
+
+  const select = {
+    id: true,
+    orderNumber: true,
+    placedAt: true,
+    totalPaise: true,
+    paymentMethod: true,
+    addresses: { where: { type: "SHIPPING" as const } },
+    shipments: { orderBy: { createdAt: "desc" as const }, take: 1 },
+  };
+  const [waiting, sent] = await Promise.all([
+    db.order.findMany({
+      where: {
+        id: { in: [...reasonByOrder.keys()] },
+        orderStatus: "CONFIRMED",
+        fulfillmentStatus: "UNFULFILLED",
+        isTest: false,
+      },
+      select,
+      orderBy: { placedAt: "asc" },
+    }),
+    db.order.findMany({
+      where: {
+        isTest: false,
+        shipments: {
+          some: {
+            provider: MANUAL_PROVIDER,
+            statusNormalized: { notIn: ["DELIVERED", "CANCELLED", "RTO_RECEIVED"] },
+          },
+        },
+      },
+      select,
+      orderBy: { placedAt: "asc" },
+    }),
+  ]);
+  return {
+    waiting: waiting.map((o) => ({ ...o, reason: reasonByOrder.get(o.id) ?? "" })),
+    sent,
+  };
+}

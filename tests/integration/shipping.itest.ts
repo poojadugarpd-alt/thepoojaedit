@@ -16,6 +16,7 @@ import {
   handleShadowfaxWebhook,
   inspectRtoReturn,
   linkExistingShipment,
+  listOtherCourierWork,
   makeShipmentReconcilePort,
   reconcileShipment,
   setManualShipmentStatus,
@@ -897,5 +898,48 @@ describe("checkout PIN check that errored (serviceability unconfirmed)", () => {
     expect(
       await db.operationalTask.count({ where: { dedupeKey: key(normal.id) } }),
     ).toBe(0);
+  });
+});
+
+describe("Other courier tab (Delhivery by default)", () => {
+  it("lists a paid order Shadowfax couldn't book; a Delhivery AWB gets its tracking link and moves it to 'sent'", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    fx.failNextCreateBeforeRecord = true;
+    await expect(
+      createShipmentForOrder(db, fx, { orderId: order.id }),
+    ).rejects.toThrow();
+
+    const before = await listOtherCourierWork(db);
+    expect(before.waiting.map((o) => o.orderNumber)).toEqual([order.orderNumber]);
+    expect(before.waiting[0].addresses[0].postcode).toBe("302001");
+    expect(before.sent).toHaveLength(0);
+
+    const s = await linkExistingShipment(db, fx, {
+      orderId: order.id,
+      courier: "Delhivery",
+      awb: "1234567890123",
+    });
+    expect(s.trackingUrl).toBe(
+      "https://www.delhivery.com/track-v2/package/1234567890123",
+    );
+
+    const after = await listOtherCourierWork(db);
+    expect(after.waiting).toHaveLength(0);
+    expect(after.sent.map((o) => o.orderNumber)).toEqual([order.orderNumber]);
+
+    await setManualShipmentStatus(db, { shipmentId: s.id, status: "DELIVERED" });
+    expect((await listOtherCourierWork(db)).sent).toHaveLength(0);
+  });
+
+  it("orders that booked fine on Shadowfax never appear", async () => {
+    const fx = new FakeShadowfax();
+    const v = await makeVariant(5);
+    const order = await placeConfirmedCod(fx, v);
+    await createShipmentForOrder(db, fx, { orderId: order.id });
+    const work = await listOtherCourierWork(db);
+    expect(work.waiting).toHaveLength(0);
+    expect(work.sent).toHaveLength(0);
   });
 });
