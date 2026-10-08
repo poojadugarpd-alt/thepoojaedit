@@ -59,7 +59,16 @@ export async function moveProductPhotoToR2(
   const bytes = await deps.fetchBytes(url);
   if (!bytes) return { outcome: "skipped", reason: "file not reachable" };
 
-  const key = `${from.bucket}/${from.path}`;
+  // Two rows can share one Supabase file (same photo on two products). The
+  // first takes the plain key; later ones get their own copy, since a row's
+  // (bucket, path) is unique and deleting one product's photo must not remove
+  // the other's.
+  let key = `${from.bucket}/${from.path}`;
+  const taken = await db.productImage.findFirst({
+    where: { bucket: R2_BUCKET, path: key, NOT: { id: row.id } },
+    select: { id: true },
+  });
+  if (taken) key = key.replace(/(\.[A-Za-z0-9]+)?$/, `~${row.id}$1`);
   await deps.putR2(key, bytes, contentTypeFor(from.path));
   await db.productImage.update({
     where: { id: row.id },

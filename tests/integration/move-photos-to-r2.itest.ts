@@ -158,6 +158,38 @@ describe("moveProductPhotoToR2", () => {
   });
 });
 
+describe("moveProductPhotoToR2 with a shared file", () => {
+  it("gives the second row that points at the same Supabase file its own R2 copy", async () => {
+    const url = `${SB}/product-images/images/dm2buy/abc/00-x.jpg`;
+    const first = await makeImage({
+      bucket: "legacy-import",
+      path: "a/0",
+      publicUrl: url,
+    });
+    const second = await makeImage({
+      bucket: "legacy-import",
+      path: "b/0",
+      publicUrl: url,
+    });
+    const { deps, puts } = fakeDeps({ [url]: new Uint8Array(5) });
+
+    const run = (imageId: string) =>
+      moveProductPhotoToR2(db, deps, { imageId, adminUserId: admin.id });
+    expect(await run(first.id)).toMatchObject({
+      outcome: "moved",
+      key: "product-images/images/dm2buy/abc/00-x.jpg",
+    });
+    const dupKey = `product-images/images/dm2buy/abc/00-x~${second.id}.jpg`;
+    expect(await run(second.id)).toMatchObject({ outcome: "moved", key: dupKey });
+    expect(puts.map((p) => p.key)).toEqual([
+      "product-images/images/dm2buy/abc/00-x.jpg",
+      dupKey,
+    ]);
+    expect(puts[1].contentType).toBe("image/jpeg");
+    expect(await r2MoveStatus(db)).toEqual({ total: 2, onR2: 2 });
+  });
+});
+
 describe("moveHomeMediaToR2", () => {
   it("moves uploaded home media and leaves auto slots alone", async () => {
     const url = `${SB}/site-media/home/editorial/m1.jpg`;
