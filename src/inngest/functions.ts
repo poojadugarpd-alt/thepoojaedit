@@ -29,6 +29,11 @@ import {
 import { notifyForDomainEvent } from "@/server/notifications";
 import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
 import { cancelAbandonedCheckouts } from "@/server/orders/lifecycle";
+import {
+  compressProductPhoto,
+  listUncompressedPhotoIds,
+  livePhotoDeps,
+} from "@/server/catalog/compress-photos";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -67,6 +72,42 @@ export const cancelUnpaidCheckouts = inngest.createFunction(
   { id: "cancel-unpaid-checkouts", concurrency: 1 },
   { cron: "*/5 * * * *" },
   async ({ step }) => step.run("cancel", () => cancelAbandonedCheckouts(prisma)),
+);
+
+/** Admin-started: shrink heavy product photos in batches (D-158). */
+export const compressProductPhotos = inngest.createFunction(
+  { id: "compress-product-photos", concurrency: 1, retries: 2 },
+  { event: "poojaedit/photos.compress.requested" },
+  async ({ event, step }) => {
+    const { adminUserId } = event.data as { adminUserId: string };
+    const ids = await step.run("list", () => listUncompressedPhotoIds(prisma));
+    const totals = { compressed: 0, skipped: 0, failed: 0, savedBytes: 0 };
+    for (let i = 0; i < ids.length; i += 8) {
+      const batch = ids.slice(i, i + 8);
+      const r = await step.run(`batch-${i / 8}`, async () => {
+        const deps = await livePhotoDeps();
+        const out = { compressed: 0, skipped: 0, failed: 0, savedBytes: 0 };
+        for (const imageId of batch) {
+          try {
+            const res = await compressProductPhoto(prisma, deps, {
+              imageId,
+              adminUserId,
+            });
+            if (res.outcome === "compressed") {
+              out.compressed += 1;
+              out.savedBytes += res.beforeBytes - res.afterBytes;
+            } else out.skipped += 1;
+          } catch (e) {
+            out.failed += 1;
+            logger.warn({ imageId, err: String(e) }, "photo compression failed");
+          }
+        }
+        return out;
+      });
+      for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r[k];
+    }
+    return totals;
+  },
 );
 
 export const outboxHealth = inngest.createFunction(
@@ -324,6 +365,7 @@ export const functions = [
   dispatchOutbox,
   sweepReservations,
   cancelUnpaidCheckouts,
+  compressProductPhotos,
   outboxHealth,
   reconcilePayments,
   reconcileShipments,

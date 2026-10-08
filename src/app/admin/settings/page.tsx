@@ -10,7 +10,13 @@ import {
   type PushPreferenceField,
 } from "@/server/notifications/push";
 
-import { updateNotificationPreferenceAction, updateSettingAction } from "./actions";
+import { photoCompressionStatus } from "@/server/catalog/compress-photos";
+
+import {
+  compressPhotosAction,
+  updateNotificationPreferenceAction,
+  updateSettingAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +32,11 @@ const PREFERENCE_LABELS: Record<PushPreferenceField, string> = {
 
 export default async function AdminSettingsPage() {
   const admin = await requireAdmin();
-  const [settings, health, preference] = await Promise.all([
+  const [settings, health, preference, photos] = await Promise.all([
     listSettings(prisma),
     Promise.resolve(credentialHealth()),
     getNotificationPreference(prisma, admin.id),
+    photoCompressionStatus(prisma),
   ]);
 
   return (
@@ -61,6 +68,28 @@ export default async function AdminSettingsPage() {
               </label>
             ))}
           </div>
+        </ActionForm>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold text-ink-strong">Product photos</h2>
+        <p className="text-xs text-ink-soft">
+          Shrinks photos over 400 KB to 1600 px (good quality JPEG) so the shop loads
+          fast on phones. Each photo gets a new file; the originals stay in storage
+          until you decide to remove them. Safe to run again — finished photos are
+          skipped.
+        </p>
+        <p className="text-sm">
+          {photos.compressed} of {photos.total} photos compressed
+          {photos.savedBytes > 0 &&
+            ` · ${(photos.savedBytes / 1048576).toFixed(1)} MB smaller in total`}
+        </p>
+        <ActionForm
+          action={compressPhotosAction}
+          submitLabel="Compress large photos"
+          compact
+        >
+          {null}
         </ActionForm>
       </section>
 

@@ -97,3 +97,24 @@ export async function updateSettingAction(
     return { ok: false, message: e instanceof Error ? e.message : "Update failed." };
   }
 }
+
+/** Start the background job that shrinks heavy product photos (D-158). */
+export async function compressPhotosAction(
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  _prev: ActionState,
+  _form: FormData,
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const { inngest } = await import("@/inngest/client");
+  await inngest.send({
+    name: "poojaedit/photos.compress.requested",
+    data: { adminUserId: admin.id },
+  });
+  revalidatePath("/admin/settings");
+  return {
+    ok: true,
+    message:
+      "Started — runs in the background; reload this page in a few minutes to see progress.",
+  };
+}
