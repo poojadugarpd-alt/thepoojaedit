@@ -589,6 +589,16 @@ export async function handleShadowfaxWebhook(
         ],
       },
     });
+    // Booked directly on the Shadowfax360 dashboard (its own TPJ-… order ids),
+    // not by this app: Shadowfax still sends us its updates. Nothing to track.
+    if (
+      !shipment &&
+      parsed.merchantReference &&
+      !parsed.merchantReference.startsWith(merchantRef(""))
+    ) {
+      await markWebhookProcessed(db, ingest.event.id);
+      return { httpStatus: 200, body: { ok: true, notOurs: true } };
+    }
     if (!shipment) {
       await openOperationalTask(db, {
         dedupeKey: `shipment-review:${parsed.merchantReference ?? parsed.awb ?? "unknown"}`,

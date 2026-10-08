@@ -360,6 +360,36 @@ describe("tracking normalization (AC-13)", () => {
   });
 });
 
+describe("callbacks for shipments this app didn't book", () => {
+  const openReviews = () =>
+    db.operationalTask.count({
+      where: { dedupeKey: { startsWith: "shipment-review:" }, status: "OPEN" },
+    });
+
+  it("an order booked on the Shadowfax360 dashboard (TPJ-…) is ignored, no alert", async () => {
+    const fx = new FakeShadowfax();
+    const r = await handleShadowfaxWebhook(
+      db,
+      fx,
+      fx.buildWebhook({ merchantReference: "TPJ-5C489A0AF5C6" }, "PICKED_UP", T(9)),
+    );
+    expect(r).toMatchObject({ httpStatus: 200, body: { notOurs: true } });
+    expect(await openReviews()).toBe(0);
+    expect(await db.webhookEvent.count()).toBe(1); // still logged
+  });
+
+  it("an unknown order with our own SHP- reference still raises an alert", async () => {
+    const fx = new FakeShadowfax();
+    const r = await handleShadowfaxWebhook(
+      db,
+      fx,
+      fx.buildWebhook({ merchantReference: "SHP-PE-000000-NOPE00" }, "PICKED_UP", T(9)),
+    );
+    expect(r.body).toMatchObject({ unknownShipment: true });
+    expect(await openReviews()).toBe(1);
+  });
+});
+
 // ─────────────────────────────── RTO + restock ─────────────────────────────
 
 describe("RTO handling (AC-05/09/13)", () => {
