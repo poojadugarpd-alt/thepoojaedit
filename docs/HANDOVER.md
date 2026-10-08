@@ -260,28 +260,19 @@ backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
 
-**IN PROGRESS 2026-10-08: photos → Cloudflare R2 (D-159).** Code is merged
-and is inert until the `R2_*` vars are set. Owner steps, in order:
-1. Create a Cloudflare account for The Pooja Edit (Pooja Chrome profile),
-   add the `thepoojaedit.in` site (Free plan), and copy the existing DNS records.
-   The apex A record is `216.198.79.1` and `www` is a CNAME to Vercel; keep both
-   **DNS only (grey cloud)** so Vercel still serves the site. Check that the
-   DMARC TXT record and any email records were imported. Then switch the
-   nameservers at GoDaddy.
-2. Enable R2 (needs a card on file; free to 10 GB). Create bucket
-   `thepoojaedit-photos` (location hint APAC) and connect the custom domain
-   `img.thepoojaedit.in`. Add a CORS rule that allows `PUT` from
-   `https://thepoojaedit.in` and `https://www.thepoojaedit.in` with header
-   `Content-Type`.
-3. Create an R2 API token (Object Read & Write, that bucket only). Put
-   `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`,
-   `R2_BUCKET=thepoojaedit-photos` and
-   `NEXT_PUBLIC_R2_PUBLIC_URL=https://img.thepoojaedit.in` in Vercel
-   Production, then redeploy and run `curl -X PUT https://thepoojaedit.vercel.app/api/inngest`.
-4. Admin → Settings → "Move photos to R2", then check the storefront.
-5. Later, with owner approval and after a Mac backup, delete the Supabase
-   copies (paths are in the `*.moved_to_r2` and `product_image.compressed`
-   audit rows).
+**DONE 2026-10-08: photos → Cloudflare R2 (D-159).** Cloudflare account
+Poojadugar.pd@gmail.com (Pooja Chrome profile) now runs `thepoojaedit.in` DNS
+(GoDaddy is still the registrar; every record is DNS only / grey cloud, so
+Vercel serves the site and Resend mail records are unchanged). R2 bucket
+`thepoojaedit-photos` (APAC) is served at `img.thepoojaedit.in`. Its CORS rule
+allows PUT/GET/HEAD from thepoojaedit.in, www and thepoojaedit.vercel.app.
+The five `R2_*` / `NEXT_PUBLIC_R2_PUBLIC_URL` vars are in Vercel Production,
+with the two keys stored as Secret. New admin uploads go to R2. Admin →
+Settings → "Move photos to R2" moved all product photos and both home banners
+(see D-159 for the two fixes the run needed).
+Next, with owner approval and after a Mac backup: delete the Supabase copies.
+Their old paths are in the `*.moved_to_r2` and `product_image.compressed`
+audit rows. The Supabase grace period ends 23 Oct.
 
 0. **From 2026-10-07 evening (Closet drop + image outage):**
    - 24 one-of-one Closet pieces were added as **DRAFT** (owner publishes at
