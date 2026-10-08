@@ -120,3 +120,33 @@ export async function compressPhotosAction(
       "Started — runs in the background; reload this page in a few minutes to see progress.",
   };
 }
+
+/** Start the background job that copies public photos to Cloudflare R2 (D-159). */
+export async function movePhotosToR2Action(
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  _prev: ActionState,
+  _form: FormData,
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const { photosOnR2 } = await import("@/lib/storage");
+  if (!photosOnR2()) {
+    return {
+      ok: false,
+      message: "R2 is not set up yet (missing R2_* settings on Vercel).",
+    };
+  }
+  const { inngest } = await import("@/inngest/client");
+  const { logger } = await import("@/lib/logger");
+  logger.info({ adminUserId: admin.id }, "R2 move: requested");
+  await inngest.send({
+    name: "poojaedit/photos.move-to-r2.requested",
+    data: { adminUserId: admin.id },
+  });
+  revalidatePath("/admin/settings");
+  return {
+    ok: true,
+    message:
+      "Started — runs in the background; reload this page in a few minutes to see progress.",
+  };
+}

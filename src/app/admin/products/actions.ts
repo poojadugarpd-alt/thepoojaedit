@@ -7,7 +7,7 @@ import type { CatalogType, ConditionGrade, ImageType } from "@/generated/prisma"
 import { prisma } from "@/lib/db";
 import { rupeesToPaise } from "@/lib/money";
 import { publicEnv } from "@/lib/public-env";
-import { createSupabaseStoragePort } from "@/lib/storage";
+import { createStoragePort, photosOnR2 } from "@/lib/storage";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {
   ValidationError,
@@ -68,7 +68,7 @@ export async function deleteProductAction(
   /* eslint-enable @typescript-eslint/no-unused-vars */
   const admin = await requireAdmin();
   try {
-    const storage = await createSupabaseStoragePort();
+    const storage = await createStoragePort();
     await deleteProduct(prisma, storage, admin, productId);
   } catch (e) {
     return handle(e);
@@ -183,9 +183,9 @@ export async function requestImageUploadAction(
 ): Promise<UploadTicketResult> {
   const admin = await requireAdmin();
   try {
-    const storage = await createSupabaseStoragePort();
+    const storage = await createStoragePort();
     const ticket = await requestProductImageUpload(
-      { db: prisma, storage, admin },
+      { db: prisma, storage, admin, onR2: photosOnR2() },
       { productId, contentType },
     );
     return { ok: true, ...ticket };
@@ -221,9 +221,15 @@ export async function confirmImageUploadAction(
 ): Promise<ConfirmImageResult> {
   const admin = await requireAdmin();
   try {
-    const storage = await createSupabaseStoragePort();
+    const storage = await createStoragePort();
     const image = await confirmProductImageUpload(
-      { db: prisma, storage, admin, supabaseUrl: publicEnv.NEXT_PUBLIC_SUPABASE_URL },
+      {
+        db: prisma,
+        storage,
+        admin,
+        supabaseUrl: publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+        onR2: photosOnR2(),
+      },
       { productId, ...input },
     );
     await prisma.adminActivityLog.create({

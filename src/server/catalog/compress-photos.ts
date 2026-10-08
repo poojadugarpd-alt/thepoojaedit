@@ -3,7 +3,7 @@ import "server-only";
 import sharp from "sharp";
 
 import type { PrismaClient } from "@/generated/prisma";
-import { productImageUrl } from "@/lib/storage-url";
+import { productImageUrl, R2_BUCKET } from "@/lib/storage-url";
 import { auditLog } from "@/server/admin/audit";
 
 import { PRODUCT_IMAGE_BUCKET } from "./product-images";
@@ -40,7 +40,7 @@ export type CompressOutcome =
 const STORAGE_OBJECT = /\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/;
 
 /** The real (bucket, path) of a row's file — imported rows only have it in the URL. */
-function objectOf(url: string, row: { bucket: string; path: string }) {
+export function objectOf(url: string, row: { bucket: string; path: string }) {
   const m = STORAGE_OBJECT.exec(url);
   if (m) return { bucket: m[1], path: decodeURIComponent(m[2]) };
   return { bucket: row.bucket, path: row.path };
@@ -176,6 +176,10 @@ export async function livePhotoDeps(): Promise<PhotoDeps> {
       return new Uint8Array(await res.arrayBuffer());
     },
     async put(bucket, path, bytes, contentType) {
+      if (bucket === R2_BUCKET) {
+        const { createR2Client } = await import("@/lib/r2");
+        return createR2Client().put(path, bytes, contentType);
+      }
       const { error } = await supabase.storage
         .from(bucket)
         .upload(path, bytes, { contentType, upsert: true, cacheControl: "31536000" });

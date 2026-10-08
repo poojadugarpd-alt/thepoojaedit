@@ -73,3 +73,21 @@ describe("storagePublicUrl (D-135)", () => {
     expect(storagePublicUrl("b", "p.jpg")).toBe("/b/p.jpg");
   });
 });
+
+describe("R2 photos (D-159)", () => {
+  it("serves an r2 row from the R2 public host, whatever Supabase is set to", async () => {
+    const { productImageUrl } = await load({
+      NEXT_PUBLIC_SUPABASE_URL: "https://proj.supabase.co",
+      NEXT_PUBLIC_R2_PUBLIC_URL: "https://img.thepoojaedit.in/",
+    });
+    expect(
+      productImageUrl({
+        bucket: "r2",
+        path: "product-images/images/thepoojaedit/kurti 2/00-a-1600.jpg",
+        publicUrl: null,
+      }),
+    ).toBe(
+      "https://img.thepoojaedit.in/product-images/images/thepoojaedit/kurti%202/00-a-1600.jpg",
+    );
+  });
+});

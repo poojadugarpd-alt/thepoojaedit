@@ -42,6 +42,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       // Product photography — Supabase Storage (public `product-images` bucket).
       { protocol: "https", hostname: "**.supabase.co" },
+      // Public photos moved to Cloudflare R2 (D-159).
+      { protocol: "https", hostname: "img.thepoojaedit.in" },
       // Legacy source CDNs — kept as a fallback; production images are on Storage.
       { protocol: "https", hostname: "cdn.shopify.com" },
       { protocol: "https", hostname: "shop-meta.s3.ap-south-1.amazonaws.com" },

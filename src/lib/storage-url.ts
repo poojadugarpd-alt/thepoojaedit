@@ -23,11 +23,33 @@ import { publicEnv } from "./public-env";
  */
 const STORAGE_PATH = /^https?:\/\/[^/]+(\/storage\/v1\/object\/public\/.+)$/;
 
+/**
+ * Row `bucket` value for a file on Cloudflare R2 (D-159). Every public photo
+ * lives in ONE R2 bucket; `path` is the full object key and keeps the old
+ * Supabase bucket as its first segment (`product-images/…`, `site-media/…`).
+ * Served from `NEXT_PUBLIC_R2_PUBLIC_URL` (img.thepoojaedit.in).
+ */
+export const R2_BUCKET = "r2";
+
+/** Where a new public photo goes: on R2 its key keeps the old bucket as a prefix. */
+export function photoLocation(
+  bucket: string,
+  path: string,
+  onR2: boolean | undefined,
+): { bucket: string; path: string } {
+  return onR2 ? { bucket: R2_BUCKET, path: `${bucket}/${path}` } : { bucket, path };
+}
+
 export function storagePublicUrl(
   bucket: string,
   path: string,
   cachedUrl?: string | null,
 ): string {
+  if (bucket === R2_BUCKET) {
+    const r2 = publicEnv.NEXT_PUBLIC_R2_PUBLIC_URL;
+    const encoded = path.split("/").map(encodeURIComponent).join("/");
+    return r2 ? `${r2.replace(/\/+$/, "")}/${encoded}` : `/${encoded}`;
+  }
   const base =
     publicEnv.NEXT_PUBLIC_STORAGE_PUBLIC_URL ?? publicEnv.NEXT_PUBLIC_SUPABASE_URL;
   if (!base) return cachedUrl ?? `/${bucket}/${path}`;

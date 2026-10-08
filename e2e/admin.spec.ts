@@ -114,7 +114,14 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
   await page.goto("/admin/products/new");
   await expect(page.getByRole("heading", { name: "New product" })).toBeVisible();
 
-  await page.getByRole("textbox", { name: "Title", exact: true }).fill(title);
+  // A fill that lands before hydration is wiped by React (seen on WebKit), so
+  // retry until the editor has taken the title (Save enables on a title).
+  await expect(async () => {
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill(title);
+    await expect(page.getByRole("button", { name: "Save product" })).toBeEnabled({
+      timeout: 1000,
+    });
+  }).toPass();
 
   const sizesInput = page.getByLabel("Sizes", { exact: true });
   await sizesInput.fill("S");
@@ -276,11 +283,15 @@ test("create a discount code in admin", async ({ page }) => {
 });
 
 /** D-153: the Other courier tab loads and offers Delhivery by default. */
-test("Other courier tab", async ({ page }) => {
+test("Other courier tab", async ({ page }, testInfo) => {
   await page.goto("/admin/other-courier");
   await expect(
     page.getByRole("heading", { name: "Other courier", exact: true }),
   ).toBeVisible();
   await expect(page.getByText(/Waiting for an AWB/)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Other courier" }).first()).toBeVisible();
+  // Reachable from the sidebar on desktop, from More on a phone.
+  if (testInfo.project.name !== "chromium") await page.goto("/admin/more");
+  await expect(
+    page.getByRole("link", { name: "Other courier" }).locator("visible=true").first(),
+  ).toBeVisible();
 });

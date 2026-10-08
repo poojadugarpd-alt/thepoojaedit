@@ -37,6 +37,7 @@
     "@prisma/client": "7.10.0",
     "@supabase/ssr": "0.12.6",
     "@supabase/supabase-js": "2.115.0",
+    "aws4fetch": "1.0.20",
     "inngest": "3.54.2",
     "next": "15.5.27",
     "pdf-lib": "1.17.1",

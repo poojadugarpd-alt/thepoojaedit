@@ -11,9 +11,11 @@ import {
 } from "@/server/notifications/push";
 
 import { photoCompressionStatus } from "@/server/catalog/compress-photos";
+import { r2MoveStatus } from "@/server/catalog/move-photos-to-r2";
 
 import {
   compressPhotosAction,
+  movePhotosToR2Action,
   updateNotificationPreferenceAction,
   updateSettingAction,
 } from "./actions";
@@ -32,11 +34,12 @@ const PREFERENCE_LABELS: Record<PushPreferenceField, string> = {
 
 export default async function AdminSettingsPage() {
   const admin = await requireAdmin();
-  const [settings, health, preference, photos] = await Promise.all([
+  const [settings, health, preference, photos, r2] = await Promise.all([
     listSettings(prisma),
     Promise.resolve(credentialHealth()),
     getNotificationPreference(prisma, admin.id),
     photoCompressionStatus(prisma),
+    r2MoveStatus(prisma),
   ]);
 
   return (
@@ -87,6 +90,22 @@ export default async function AdminSettingsPage() {
         <ActionForm
           action={compressPhotosAction}
           submitLabel="Compress large photos"
+          compact
+        >
+          {null}
+        </ActionForm>
+        <p className="pt-2 text-xs text-ink-soft">
+          Photo storage moves from Supabase to Cloudflare R2 (img.thepoojaedit.in).
+          Copies every product photo and home-page image across and switches the shop
+          over; the Supabase copies stay until you decide to remove them. Safe to run
+          again — moved photos are skipped.
+        </p>
+        <p className="text-sm">
+          {r2.onR2} of {r2.total} photos on Cloudflare R2
+        </p>
+        <ActionForm
+          action={movePhotosToR2Action}
+          submitLabel="Move photos to R2"
           compact
         >
           {null}

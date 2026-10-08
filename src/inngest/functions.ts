@@ -34,6 +34,12 @@ import {
   listUncompressedPhotoIds,
   livePhotoDeps,
 } from "@/server/catalog/compress-photos";
+import {
+  listPhotosNotOnR2,
+  liveMoveDeps,
+  moveHomeMediaToR2,
+  moveProductPhotoToR2,
+} from "@/server/catalog/move-photos-to-r2";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -114,6 +120,53 @@ export const compressProductPhotos = inngest.createFunction(
     }
     logger.info(totals, "photo compression: finished");
     return totals;
+  },
+);
+
+/** Admin-started: copy every public photo from Supabase to Cloudflare R2 (D-159). */
+export const movePhotosToR2 = inngest.createFunction(
+  { id: "move-photos-to-r2", concurrency: 1, retries: 2 },
+  { event: "poojaedit/photos.move-to-r2.requested" },
+  async ({ event, step }) => {
+    const { adminUserId } = event.data as { adminUserId: string };
+    const home = await step.run("home-media", async () =>
+      moveHomeMediaToR2(prisma, await liveMoveDeps(), adminUserId),
+    );
+    logger.info(home, "R2 move: home media done");
+    const ids = await step.run("list", () => listPhotosNotOnR2(prisma));
+    logger.info({ photos: ids.length }, "R2 move: started");
+    const totals = { moved: 0, skipped: 0, failed: 0, bytes: 0 };
+    for (let i = 0; i < ids.length; i += 10) {
+      const batch = ids.slice(i, i + 10);
+      const r = await step.run(`batch-${i / 10}`, async () => {
+        const deps = await liveMoveDeps();
+        const out = { moved: 0, skipped: 0, failed: 0, bytes: 0 };
+        const reasons: Record<string, number> = {};
+        for (const imageId of batch) {
+          try {
+            const res = await moveProductPhotoToR2(prisma, deps, {
+              imageId,
+              adminUserId,
+            });
+            if (res.outcome === "moved") {
+              out.moved += 1;
+              out.bytes += res.bytes;
+            } else {
+              out.skipped += 1;
+              reasons[res.reason] = (reasons[res.reason] ?? 0) + 1;
+            }
+          } catch (e) {
+            out.failed += 1;
+            logger.warn({ imageId, err: String(e) }, "R2 move failed");
+          }
+        }
+        logger.info({ batch: i / 10, ...out, reasons }, "R2 move: batch done");
+        return out;
+      });
+      for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r[k];
+    }
+    logger.info(totals, "R2 move: finished");
+    return { home, ...totals };
   },
 );
 
@@ -373,6 +426,7 @@ export const functions = [
   sweepReservations,
   cancelUnpaidCheckouts,
   compressProductPhotos,
+  movePhotosToR2,
   outboxHealth,
   reconcilePayments,
   reconcileShipments,

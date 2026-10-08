@@ -37,6 +37,18 @@ const ServerEnvSchema = z
       "Supabase secret (service) key. Server-only. Only if a flow needs it.",
     ),
 
+    // ── Cloudflare R2 — public photos (D-159) ─────────────────────────────
+    R2_ACCOUNT_ID: optionalNonEmpty.describe(
+      "Cloudflare account id that owns the bucket.",
+    ),
+    R2_ACCESS_KEY_ID: optionalNonEmpty.describe(
+      "R2 API token access key (Object Read & Write, this bucket only).",
+    ),
+    R2_SECRET_ACCESS_KEY: optionalNonEmpty.describe("R2 API token secret."),
+    R2_BUCKET: optionalNonEmpty.describe(
+      "R2 bucket holding product and home-page photos.",
+    ),
+
     // ── Admin owner bootstrap (Phase 3) ───────────────────────────────────
     ADMIN_BOOTSTRAP_TOKEN: optionalNonEmpty.describe(
       "Secret required to create the first OWNER admin. Rotate/remove after use.",

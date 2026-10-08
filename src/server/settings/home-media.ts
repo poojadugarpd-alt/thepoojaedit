@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import type { AdminUser } from "@/generated/prisma";
 import type { StoragePort } from "@/lib/storage";
+import { photoLocation } from "@/lib/storage-url";
 import { assertActiveAdmin } from "@/server/admin/guards";
 
 /**
@@ -66,6 +67,7 @@ export function buildHomeMediaPath(
 
 export interface HomeMediaUploadTicket {
   mediaId: string;
+  bucket: string;
   path: string;
   signedUrl: string;
   token: string;
@@ -75,13 +77,23 @@ export interface HomeMediaUploadTicket {
 export async function requestHomeMediaUpload(
   storage: StoragePort,
   admin: AdminUser | null,
-  input: { slot: string; kind: "image" | "video"; contentType: string },
+  input: {
+    slot: string;
+    kind: "image" | "video";
+    contentType: string;
+    /** Upload to Cloudflare R2 (D-159) instead of Supabase. */
+    onR2?: boolean;
+  },
 ): Promise<HomeMediaUploadTicket> {
   assertActiveAdmin(admin);
   const mediaId = randomUUID();
-  const path = buildHomeMediaPath(input.slot, mediaId, input.kind, input.contentType);
-  const signed = await storage.createSignedUploadUrl(HOME_MEDIA_BUCKET, path);
-  return { mediaId, path, signedUrl: signed.signedUrl, token: signed.token };
+  const { bucket, path } = photoLocation(
+    HOME_MEDIA_BUCKET,
+    buildHomeMediaPath(input.slot, mediaId, input.kind, input.contentType),
+    input.onR2,
+  );
+  const signed = await storage.createSignedUploadUrl(bucket, path);
+  return { mediaId, bucket, path, signedUrl: signed.signedUrl, token: signed.token };
 }
 
 /** Admin confirms the browser finished uploading; only then does the caller
@@ -89,10 +101,10 @@ export async function requestHomeMediaUpload(
 export async function confirmHomeMediaUpload(
   storage: StoragePort,
   admin: AdminUser | null,
-  input: { path: string; kind: "image" | "video" },
+  input: { bucket?: string; path: string; kind: "image" | "video" },
 ): Promise<void> {
   assertActiveAdmin(admin);
-  const info = await storage.statObject(HOME_MEDIA_BUCKET, input.path);
+  const info = await storage.statObject(input.bucket ?? HOME_MEDIA_BUCKET, input.path);
   if (!info.exists) {
     throw new HomeMediaValidationError("Uploaded file was not found in storage");
   }

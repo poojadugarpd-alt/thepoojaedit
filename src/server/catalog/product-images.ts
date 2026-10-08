@@ -10,6 +10,7 @@ import type {
   ProductImage,
 } from "@/generated/prisma";
 import type { StoragePort } from "@/lib/storage";
+import { photoLocation } from "@/lib/storage-url";
 import { assertActiveAdmin } from "@/server/admin/guards";
 import { ResourceNotFoundError } from "@/server/auth/errors";
 
@@ -81,6 +82,8 @@ interface Deps {
    * at write time (see `productImagePublicUrl`) — optional only so existing
    * callers/tests that never read `publicUrl` don't have to supply it. */
   supabaseUrl?: string;
+  /** New uploads go to Cloudflare R2 (D-159) when it is configured. */
+  onR2?: boolean;
 }
 
 /** Public URL for an object in this bucket, matching Supabase Storage's own
@@ -114,17 +117,16 @@ export async function requestProductImageUpload(
   if (!product) throw new ResourceNotFoundError();
 
   const imageId = randomUUID();
-  const path = buildProductImagePath(
-    product.catalog,
-    input.productId,
-    imageId,
-    input.contentType,
+  const { bucket, path } = photoLocation(
+    PRODUCT_IMAGE_BUCKET,
+    buildProductImagePath(product.catalog, input.productId, imageId, input.contentType),
+    deps.onR2,
   );
-  const signed = await deps.storage.createSignedUploadUrl(PRODUCT_IMAGE_BUCKET, path);
+  const signed = await deps.storage.createSignedUploadUrl(bucket, path);
 
   return {
     imageId,
-    bucket: PRODUCT_IMAGE_BUCKET,
+    bucket,
     path,
     signedUrl: signed.signedUrl,
     token: signed.token,
@@ -154,17 +156,21 @@ export async function confirmProductImageUpload(
   });
   if (!product) throw new ResourceNotFoundError();
 
-  const expectedPath = buildProductImagePath(
-    product.catalog,
-    input.productId,
-    input.imageId,
-    input.contentType,
+  const expected = photoLocation(
+    PRODUCT_IMAGE_BUCKET,
+    buildProductImagePath(
+      product.catalog,
+      input.productId,
+      input.imageId,
+      input.contentType,
+    ),
+    deps.onR2,
   );
-  if (input.path !== expectedPath) {
+  if (input.path !== expected.path) {
     throw new ImageValidationError("Upload path does not match the issued path");
   }
 
-  const info = await deps.storage.statObject(PRODUCT_IMAGE_BUCKET, input.path);
+  const info = await deps.storage.statObject(expected.bucket, input.path);
   if (!info.exists) {
     throw new ImageValidationError("Uploaded object was not found in storage");
   }
@@ -190,15 +196,16 @@ export async function confirmProductImageUpload(
 
   const createData = {
     productId: input.productId,
-    bucket: PRODUCT_IMAGE_BUCKET,
+    bucket: expected.bucket,
     path: input.path,
     // Was previously left unset (bug — a real admin upload fell back to
     // `toPublicImage`'s relative `/bucket/path` string, which no route
     // resolves in production, so the image just never rendered). Computed
     // here, at write time, exactly like every other real upload.
-    publicUrl: deps.supabaseUrl
-      ? productImagePublicUrl(deps.supabaseUrl, input.path)
-      : null,
+    publicUrl:
+      deps.supabaseUrl && !deps.onR2
+        ? productImagePublicUrl(deps.supabaseUrl, input.path)
+        : null,
     altText: input.altText,
     type: makePrimary ? ("PRIMARY" as const) : (input.type ?? "GALLERY"),
     isPrimary: makePrimary,

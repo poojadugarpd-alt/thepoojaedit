@@ -32,6 +32,13 @@ const PublicEnvSchema = z.object({
     .describe(
       "Supabase project URL to READ public storage objects from. Defaults to NEXT_PUBLIC_SUPABASE_URL; set it on Preview/Development to show production images read-only (D-135).",
     ),
+  NEXT_PUBLIC_R2_PUBLIC_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe(
+      "Public base URL of the R2 photo bucket, e.g. https://img.thepoojaedit.in (D-159).",
+    ),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(1)
@@ -62,6 +69,7 @@ const parsed = PublicEnvSchema.safeParse({
   NEXT_PUBLIC_STORAGE_PUBLIC_URL: blankToUndefined(
     process.env.NEXT_PUBLIC_STORAGE_PUBLIC_URL,
   ),
+  NEXT_PUBLIC_R2_PUBLIC_URL: blankToUndefined(process.env.NEXT_PUBLIC_R2_PUBLIC_URL),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: blankToUndefined(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   ),

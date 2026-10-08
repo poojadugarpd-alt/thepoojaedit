@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionState } from "@/app/admin/products/actions";
 import { prisma } from "@/lib/db";
-import { createSupabaseStoragePort } from "@/lib/storage";
+import { createStoragePort, photosOnR2 } from "@/lib/storage";
+import { photoLocation, storagePublicUrl } from "@/lib/storage-url";
 import { publicEnv } from "@/lib/public-env";
 import { updateSetting } from "@/server/admin";
 import {
@@ -184,13 +185,14 @@ export async function requestHomeMediaUploadAction(
 ): Promise<HomeMediaUploadTicketResult> {
   const admin = await requireAdmin();
   try {
-    const storage = await createSupabaseStoragePort();
+    const storage = await createStoragePort();
     const ticket = await requestHomeMediaUpload(storage, admin, {
       slot,
       kind,
       contentType,
+      onR2: photosOnR2(),
     });
-    return { ok: true, ...ticket, bucket: HOME_MEDIA_BUCKET };
+    return { ok: true, ...ticket };
   } catch (e) {
     return {
       ok: false,
@@ -207,21 +209,30 @@ export async function confirmHomeMediaUploadAction(
 ): Promise<ConfirmHomeMediaResult> {
   const admin = await requireAdmin();
   try {
-    const storage = await createSupabaseStoragePort();
+    const storage = await createStoragePort();
     const current = await getHomeContent(prisma);
     const previous = current.media[slot];
 
-    const path = buildHomeMediaPath(slot, input.mediaId, input.kind, input.contentType);
-    await confirmHomeMediaUpload(storage, admin, { path, kind: input.kind });
+    const { bucket, path } = photoLocation(
+      HOME_MEDIA_BUCKET,
+      buildHomeMediaPath(slot, input.mediaId, input.kind, input.contentType),
+      photosOnR2(),
+    );
+    await confirmHomeMediaUpload(storage, admin, { bucket, path, kind: input.kind });
 
-    if (!publicEnv.NEXT_PUBLIC_SUPABASE_URL) {
+    let url: string;
+    if (bucket !== HOME_MEDIA_BUCKET) {
+      url = storagePublicUrl(bucket, path);
+    } else if (publicEnv.NEXT_PUBLIC_SUPABASE_URL) {
+      url = homeMediaPublicUrl(publicEnv.NEXT_PUBLIC_SUPABASE_URL, path);
+    } else {
       return { ok: false, message: "Supabase is not configured." };
     }
     const newSlot: HomeMediaSlot = {
       kind: input.kind,
-      bucket: HOME_MEDIA_BUCKET,
+      bucket,
       path,
-      url: homeMediaPublicUrl(publicEnv.NEXT_PUBLIC_SUPABASE_URL, path),
+      url,
       alt: input.alt,
     };
     await saveHomeContent(admin.id, `uploaded ${input.kind} for home "${slot}"`, {
@@ -231,7 +242,9 @@ export async function confirmHomeMediaUploadAction(
     // Only after the new value is safely saved — never leave the slot
     // pointing at a file that no longer exists.
     if (previous.kind !== "auto" && previous.path) {
-      await storage.deleteObjects(HOME_MEDIA_BUCKET, [previous.path]).catch(() => {});
+      await storage
+        .deleteObjects(previous.bucket ?? HOME_MEDIA_BUCKET, [previous.path])
+        .catch(() => {});
     }
   } catch (e) {
     return {
@@ -255,8 +268,10 @@ export async function revertHomeMediaToAutoAction(
       media: { ...current.media, [slot]: { kind: "auto" } },
     });
     if (previous.kind !== "auto" && previous.path) {
-      const storage = await createSupabaseStoragePort();
-      await storage.deleteObjects(HOME_MEDIA_BUCKET, [previous.path]).catch(() => {});
+      const storage = await createStoragePort();
+      await storage
+        .deleteObjects(previous.bucket ?? HOME_MEDIA_BUCKET, [previous.path])
+        .catch(() => {});
     }
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : "Save failed." };

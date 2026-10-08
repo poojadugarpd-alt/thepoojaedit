@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createR2Client, r2Configured } from "@/lib/r2";
+import { R2_BUCKET } from "@/lib/storage-url";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
@@ -11,6 +13,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
  *  - `product-images` — public read, admin-only write.
  *  - `documents` — private; invoices / labels with personal data. Authorized
  *    short-lived downloads only.
+ *  - `r2` (D-159) — Cloudflare R2; public photos once moved/uploaded there.
  */
 export interface StoredObjectInfo {
   exists: boolean;
@@ -83,6 +86,45 @@ export async function createSupabaseStoragePort(): Promise<StoragePort> {
       if (paths.length === 0) return;
       const { error } = await supabase.storage.from(bucket).remove(paths);
       if (error) throw error;
+    },
+  };
+}
+
+/** True when new public photos should be uploaded to R2 instead of Supabase. */
+export function photosOnR2(): boolean {
+  return r2Configured();
+}
+
+/**
+ * The port every caller should use (D-159): objects whose bucket is `r2` go
+ * to Cloudflare R2, everything else (private documents, photos not yet moved)
+ * to Supabase Storage.
+ */
+export async function createStoragePort(): Promise<StoragePort> {
+  const supabase = await createSupabaseStoragePort();
+  if (!r2Configured()) return supabase;
+  const r2 = createR2Client();
+  return {
+    async createSignedUploadUrl(bucket, path) {
+      if (bucket !== R2_BUCKET) return supabase.createSignedUploadUrl(bucket, path);
+      return { signedUrl: await r2.presignPut(path), token: "", path };
+    },
+    async statObject(bucket, path) {
+      if (bucket !== R2_BUCKET) return supabase.statObject(bucket, path);
+      const info = await r2.head(path);
+      return {
+        exists: Boolean(info),
+        size: info?.size ?? null,
+        contentType: info?.contentType ?? null,
+      };
+    },
+    async createSignedDownloadUrl(bucket, path, expiresInSeconds) {
+      if (bucket === R2_BUCKET) throw new Error("R2 holds public photos only.");
+      return supabase.createSignedDownloadUrl(bucket, path, expiresInSeconds);
+    },
+    async deleteObjects(bucket, paths) {
+      if (bucket !== R2_BUCKET) return supabase.deleteObjects(bucket, paths);
+      for (const p of paths) await r2.delete(p);
     },
   };
 }

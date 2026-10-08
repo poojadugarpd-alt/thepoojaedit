@@ -163,11 +163,12 @@ export function ProductEditor({
   // "Product created." is set on /admin/products/new, but the redirect to
   // /admin/products/[id] is a different route, so this component remounts and
   // loses its state. The message is handed across in sessionStorage instead.
+  // It is honoured for 10 s rather than removed on first read: Next 15.5 can
+  // mount the new page twice, and the second mount must still see it.
   useEffect(() => {
     try {
-      const flash = sessionStorage.getItem(CREATED_FLASH_KEY);
-      if (flash && flash === initial?.id) {
-        sessionStorage.removeItem(CREATED_FLASH_KEY);
+      const [id, at] = (sessionStorage.getItem(CREATED_FLASH_KEY) ?? "").split("@");
+      if (id && id === initial?.id && Date.now() - Number(at) < 10_000) {
         setBanner({ ok: true, message: "Product created." });
       }
     } catch {
@@ -226,7 +227,10 @@ export function ProductEditor({
         setProductId(result.productId);
         setBanner({ ok: true, message: "Product created." });
         try {
-          sessionStorage.setItem(CREATED_FLASH_KEY, result.productId);
+          sessionStorage.setItem(
+            CREATED_FLASH_KEY,
+            `${result.productId}@${Date.now()}`,
+          );
         } catch {
           // See the mount effect above: losing the banner is harmless.
         }
