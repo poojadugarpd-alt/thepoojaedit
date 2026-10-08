@@ -82,7 +82,11 @@ export default async function AdminDiscountsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
           New code
         </h2>
-        <ActionForm action={createDiscountAction} submitLabel="Create code">
+        <ActionForm
+          action={createDiscountAction}
+          submitLabel="Create code"
+          reloadOnSuccess
+        >
           <DiscountFields />
         </ActionForm>
       </section>

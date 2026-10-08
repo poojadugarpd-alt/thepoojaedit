@@ -64,8 +64,10 @@ export async function createDiscountAction(
   } catch (e) {
     return handle(e);
   }
-  revalidatePath("/admin/discounts");
-  redirect("/admin/discounts");
+  // No redirect/revalidate here: the page reloads itself on success
+  // (ActionForm reloadOnSuccess). Redirecting to its own page, revalidating,
+  // or router.refresh() all intermittently left the page blank or stale (D-155).
+  return { ok: true, message: "Code created." };
 }
 
 export async function updateDiscountAction(

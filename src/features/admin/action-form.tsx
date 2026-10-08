@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 
 import type { ActionState } from "@/app/admin/products/actions";
@@ -24,14 +24,24 @@ export function ActionForm({
   children,
   className = "",
   compact = false,
+  reloadOnSuccess = false,
 }: {
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   submitLabel?: string;
   children: React.ReactNode;
   className?: string;
   compact?: boolean;
+  /** Full page reload after a successful action, for forms that add to a list
+   *  on the same page. Next 15.5's client router intermittently never renders
+   *  fresh data it has received for the current page — via an action redirect,
+   *  revalidated action data, or router.refresh() alike (no error; blank page
+   *  or stale list). A reload always shows the server's current state (D-155). */
+  reloadOnSuccess?: boolean;
 }) {
   const [state, formAction] = useActionState(action, { ok: false });
+  useEffect(() => {
+    if (reloadOnSuccess && state.ok) window.location.reload();
+  }, [reloadOnSuccess, state]);
   return (
     <form action={formAction} className={`space-y-3 ${className}`}>
       {children}

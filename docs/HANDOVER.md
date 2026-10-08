@@ -248,6 +248,7 @@ Full detail in `docs/decisions.md`.
 | 10-08 | D-152 | Link existing AWB (Shadowfax360 or another courier, manual status); unconfirmed-PIN task |
 | 10-08 | D-153 | Admin "Other courier" tab, Delhivery default, tracking link in AWB email |
 | 10-08 | D-154 | Unpaid checkouts auto-cancelled after 30 min (no email); late payment on a cancelled order refunded |
+| 10-08 | D-155 | Flaky discount e2e fixed (Next router bug; reload after create) |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -292,28 +293,13 @@ backfill was superseded in the 2026-10-07 merge.
    "via source / medium / campaign" in the admin order header. Orders from
    before the release carry no source. Worth confirming once on the live
    site: open a tagged link, place (or start) an order, check the admin header.
-   **Flaky test, investigated 2026-10-07 night, NOT fixed (owner wants to
-   resume 2026-10-08):** `e2e/admin.spec.ts` "create a discount code in admin"
-   fails ~10–40% of runs in isolation (also with `--workers=1`, in streaks;
-   a full chromium suite run usually passes). Findings:
-   - The server always creates the code and re-renders `/admin/discounts`
-     in < 25 ms. The failure is client-side: Next's router never commits the
-     action result. With today's `redirect("/admin/discounts")` (a redirect
-     to the page you're on) the follow-up RSC fetch comes back tiny (~247 B)
-     and the page body renders empty; with `return { ok: true }` instead, the
-     button stays "Working…" forever. No console or page errors.
-   - Ruled out, each by experiment: the admin service worker, `staleTimes`,
-     `NewOrderAlert` polling, middleware, JS chunk loading, DB pool load.
-     Playwright's `net::ERR_ABORTED` on action POSTs is noise (passing runs
-     show it too). Next 15.5.27 didn't change the rate.
-   - Product create (redirect to a new URL) flaked once on a cold server too
-     ("Product created." not shown), so this may affect other admin actions.
-   - Next steps: build a minimal page that reproduces it; try the latest
-     Next 15.x / 16 on a branch; check the live admin by hand for a blank
-     page after creating a code.
-   - Only run e2e via `npm run test:e2e:local`. A plain `npx playwright test`
-     or `npm run build` picks up `.env.local` (remote dev DB, real Supabase
-     keys baked into the build).
+   **Flaky discount-code test: fixed 2026-10-08 (D-155)** — Next 15.5's client
+   router sometimes never renders fresh data it has received for the current
+   page; the discount form now does a full page reload after a successful
+   create. Possible same bug in product create (one flake in three full runs).
+   Only run e2e via `npm run test:e2e:local`: a plain `npx playwright test`,
+   `npm run build` or `npm run check` picks up `.env.local` (remote dev DB, real
+   Supabase keys baked into the build), and admin e2e then fail.
 3. **First real order** (test purchase): proves Razorpay live payment +
    signed webhook (D-134) and a real Shadowfax production shipment (D-131).
    Test order `PE-260911-BWFDHH` (staging AWB) can be cancelled.
