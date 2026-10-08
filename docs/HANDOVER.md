@@ -270,9 +270,10 @@ The five `R2_*` / `NEXT_PUBLIC_R2_PUBLIC_URL` vars are in Vercel Production,
 with the two keys stored as Secret. New admin uploads go to R2. Admin →
 Settings → "Move photos to R2" moved all product photos and both home banners
 (see D-159 for the two fixes the run needed).
-Next, with owner approval and after a Mac backup: delete the Supabase copies.
-Their old paths are in the `*.moved_to_r2` and `product_image.compressed`
-audit rows. The Supabase grace period ends 23 Oct.
+The Supabase copies were backed up to
+`~/Documents/PoojaEdit-backups/supabase-photos-2026-10-08/` (973 files,
+720.6 MB) and deleted from Supabase the same day (D-161). Re-check the
+Supabase usage page before the grace period ends on 23 Oct.
 
 0. **From 2026-10-07 evening (Closet drop + image outage):**
    - 24 one-of-one Closet pieces were added as **DRAFT** (owner publishes at
