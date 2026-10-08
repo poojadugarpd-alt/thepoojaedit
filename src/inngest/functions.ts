@@ -40,6 +40,11 @@ import {
   moveHomeMediaToR2,
   moveProductPhotoToR2,
 } from "@/server/catalog/move-photos-to-r2";
+import {
+  deleteSupabasePhotosFromManifest,
+  liveCleanupDeps,
+  writeSupabasePhotoManifest,
+} from "@/server/catalog/supabase-photo-cleanup";
 
 import { inngest } from "./client";
 import { inngestTransport } from "./transport";
@@ -167,6 +172,42 @@ export const movePhotosToR2 = inngest.createFunction(
     }
     logger.info(totals, "R2 move: finished");
     return { home, ...totals };
+  },
+);
+
+/** Admin-started: save the list of Supabase photo files to R2 for backup (D-161). */
+export const listSupabasePhotos = inngest.createFunction(
+  { id: "list-supabase-photos", concurrency: 1, retries: 2 },
+  { event: "poojaedit/photos.supabase-list.requested" },
+  async ({ event, step }) => {
+    const { adminUserId } = event.data as { adminUserId: string };
+    const r = await step.run("manifest", async () =>
+      writeSupabasePhotoManifest(prisma, await liveCleanupDeps(prisma), {
+        adminUserId,
+      }),
+    );
+    logger.info(r, "Supabase photo list saved");
+    return r;
+  },
+);
+
+/** Admin-started: delete the Supabase photo copies in one backed-up list (D-161). */
+export const deleteSupabasePhotos = inngest.createFunction(
+  { id: "delete-supabase-photos", concurrency: 1, retries: 1 },
+  { event: "poojaedit/photos.supabase-delete.requested" },
+  async ({ event, step }) => {
+    const { adminUserId, manifestKey } = event.data as {
+      adminUserId: string;
+      manifestKey: string;
+    };
+    const r = await step.run("delete", async () =>
+      deleteSupabasePhotosFromManifest(prisma, await liveCleanupDeps(prisma), {
+        manifestKey,
+        adminUserId,
+      }),
+    );
+    logger.info({ manifestKey, ...r }, "Supabase photo delete finished");
+    return r;
   },
 );
 
@@ -427,6 +468,8 @@ export const functions = [
   cancelUnpaidCheckouts,
   compressProductPhotos,
   movePhotosToR2,
+  listSupabasePhotos,
+  deleteSupabasePhotos,
   outboxHealth,
   reconcilePayments,
   reconcileShipments,

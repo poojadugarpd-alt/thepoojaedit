@@ -12,9 +12,12 @@ import {
 
 import { photoCompressionStatus } from "@/server/catalog/compress-photos";
 import { r2MoveStatus } from "@/server/catalog/move-photos-to-r2";
+import { supabasePhotoCleanupStatus } from "@/server/catalog/supabase-photo-cleanup";
 
 import {
   compressPhotosAction,
+  deleteSupabasePhotosAction,
+  listSupabasePhotosAction,
   movePhotosToR2Action,
   updateNotificationPreferenceAction,
   updateSettingAction,
@@ -34,12 +37,13 @@ const PREFERENCE_LABELS: Record<PushPreferenceField, string> = {
 
 export default async function AdminSettingsPage() {
   const admin = await requireAdmin();
-  const [settings, health, preference, photos, r2] = await Promise.all([
+  const [settings, health, preference, photos, r2, cleanup] = await Promise.all([
     listSettings(prisma),
     Promise.resolve(credentialHealth()),
     getNotificationPreference(prisma, admin.id),
     photoCompressionStatus(prisma),
     r2MoveStatus(prisma),
+    supabasePhotoCleanupStatus(prisma),
   ]);
 
   return (
@@ -110,6 +114,42 @@ export default async function AdminSettingsPage() {
         >
           {null}
         </ActionForm>
+        <p className="pt-2 text-xs text-ink-soft">
+          Once every photo is on R2, the old Supabase copies can go. First make the file
+          list (saved on R2) and back the files up to the Mac; then delete exactly the
+          files in that list. Invoices and labels are not touched.
+        </p>
+        {cleanup.manifest && (
+          <p className="text-sm">
+            Latest list: {cleanup.manifest.count} files ·{" "}
+            {(cleanup.manifest.totalBytes / 1048576).toFixed(1)} MB
+            {cleanup.deletedKey === cleanup.manifest.key && " · deleted from Supabase"}
+          </p>
+        )}
+        <ActionForm
+          action={listSupabasePhotosAction}
+          submitLabel="Make Supabase file list"
+          compact
+        >
+          {null}
+        </ActionForm>
+        {cleanup.manifest && cleanup.deletedKey !== cleanup.manifest.key && (
+          <ActionForm
+            action={deleteSupabasePhotosAction}
+            submitLabel="Delete Supabase copies"
+            compact
+          >
+            <input type="hidden" name="manifestKey" value={cleanup.manifest.key} />
+            <label className="flex min-h-11 items-center gap-2 text-sm">
+              Type DELETE to confirm
+              <input
+                name="confirm"
+                autoComplete="off"
+                className="w-28 rounded border border-line bg-transparent px-2 py-1 text-base sm:text-sm"
+              />
+            </label>
+          </ActionForm>
+        )}
       </section>
 
       <section>

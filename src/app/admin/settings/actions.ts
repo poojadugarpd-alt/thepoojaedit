@@ -150,3 +150,53 @@ export async function movePhotosToR2Action(
       "Started — runs in the background; reload this page in a few minutes to see progress.",
   };
 }
+
+/** Save the list of Supabase photo files to R2 so they can be backed up (D-161). */
+export async function listSupabasePhotosAction(
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  _prev: ActionState,
+  _form: FormData,
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  const { inngest } = await import("@/inngest/client");
+  await inngest.send({
+    name: "poojaedit/photos.supabase-list.requested",
+    data: { adminUserId: admin.id },
+  });
+  revalidatePath("/admin/settings");
+  return { ok: true, message: "Making the list — reload this page in a minute." };
+}
+
+/** Delete the Supabase photo copies named in one backup list (D-161). */
+export async function deleteSupabasePhotosAction(
+  _prev: ActionState,
+  form: FormData,
+): Promise<ActionState> {
+  const admin = await requireAdmin();
+  if (str(form.get("confirm")) !== "DELETE") {
+    return { ok: false, message: "Type DELETE to confirm." };
+  }
+  const manifestKey = str(form.get("manifestKey"));
+  if (!manifestKey.startsWith("backups/supabase-photos-")) {
+    return { ok: false, message: "Make the file list first." };
+  }
+  const { supabasePhotoBlockers } =
+    await import("@/server/catalog/supabase-photo-cleanup");
+  const blockers = await supabasePhotoBlockers(prisma);
+  if (blockers.length > 0) {
+    return { ok: false, message: `Not safe yet: ${blockers.join("; ")}.` };
+  }
+  const { inngest } = await import("@/inngest/client");
+  const { logger } = await import("@/lib/logger");
+  logger.info(
+    { adminUserId: admin.id, manifestKey },
+    "Supabase photo delete: requested",
+  );
+  await inngest.send({
+    name: "poojaedit/photos.supabase-delete.requested",
+    data: { adminUserId: admin.id, manifestKey },
+  });
+  revalidatePath("/admin/settings");
+  return { ok: true, message: "Deleting — reload this page in a minute." };
+}
