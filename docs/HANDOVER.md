@@ -176,6 +176,11 @@ AWB box; the customer's AWB email carries Delhivery's tracking link.
 The `TPJ-683BAADFB40D` "callback for an unknown shipment" task (16 Sept) is a
 setup-era test callback; close it with a reason.
 
+**Inngest sync after deploys:** a deploy that adds or changes an Inngest
+function isn't picked up until `curl -X PUT https://thepoojaedit.vercel.app/api/inngest`
+is run (D-97, re-confirmed D-154: it returned `modified: true` and the new cron
+then ran). Do it after every such deploy.
+
 **Older, still true**
 - Admin "Cancel order" works for `PROCESSING` orders with a booked but
   uncollected Shadowfax pickup (D-133). The real Shadowfax cancel API has
