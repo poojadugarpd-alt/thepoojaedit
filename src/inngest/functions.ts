@@ -81,12 +81,14 @@ export const compressProductPhotos = inngest.createFunction(
   async ({ event, step }) => {
     const { adminUserId } = event.data as { adminUserId: string };
     const ids = await step.run("list", () => listUncompressedPhotoIds(prisma));
+    logger.info({ photos: ids.length }, "photo compression: started");
     const totals = { compressed: 0, skipped: 0, failed: 0, savedBytes: 0 };
     for (let i = 0; i < ids.length; i += 8) {
       const batch = ids.slice(i, i + 8);
       const r = await step.run(`batch-${i / 8}`, async () => {
         const deps = await livePhotoDeps();
         const out = { compressed: 0, skipped: 0, failed: 0, savedBytes: 0 };
+        const reasons: Record<string, number> = {};
         for (const imageId of batch) {
           try {
             const res = await compressProductPhoto(prisma, deps, {
@@ -96,16 +98,21 @@ export const compressProductPhotos = inngest.createFunction(
             if (res.outcome === "compressed") {
               out.compressed += 1;
               out.savedBytes += res.beforeBytes - res.afterBytes;
-            } else out.skipped += 1;
+            } else {
+              out.skipped += 1;
+              reasons[res.reason] = (reasons[res.reason] ?? 0) + 1;
+            }
           } catch (e) {
             out.failed += 1;
             logger.warn({ imageId, err: String(e) }, "photo compression failed");
           }
         }
+        logger.info({ batch: i / 8, ...out, reasons }, "photo compression: batch done");
         return out;
       });
       for (const k of Object.keys(totals) as (keyof typeof totals)[]) totals[k] += r[k];
     }
+    logger.info(totals, "photo compression: finished");
     return totals;
   },
 );

@@ -107,6 +107,8 @@ export async function compressPhotosAction(
 ): Promise<ActionState> {
   const admin = await requireAdmin();
   const { inngest } = await import("@/inngest/client");
+  const { logger } = await import("@/lib/logger");
+  logger.info({ adminUserId: admin.id }, "photo compression: requested");
   await inngest.send({
     name: "poojaedit/photos.compress.requested",
     data: { adminUserId: admin.id },
