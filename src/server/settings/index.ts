@@ -123,7 +123,13 @@ export interface HomeContent {
  * to "immediately offer two clear catalog entrances", which lives there.
  */
 export type HomeSectionKey =
-  "editorial" | "newIn" | "editBlocks" | "fromCloset" | "instagram" | "newsletter";
+  | "editorial"
+  | "newIn"
+  | "editBlocks"
+  | "fromCloset"
+  | "instagram"
+  | "styling"
+  | "newsletter";
 
 export interface HomeSection {
   key: HomeSectionKey;
@@ -136,6 +142,9 @@ export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   { key: "editBlocks", enabled: true },
   { key: "fromCloset", enabled: true },
   { key: "instagram", enabled: true },
+  // Off until Pooja turns it on; it also stays empty until /styling is
+  // published (D-162).
+  { key: "styling", enabled: false },
   { key: "newsletter", enabled: true },
 ];
 

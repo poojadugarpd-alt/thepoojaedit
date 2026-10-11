@@ -20,6 +20,11 @@ const ITEMS = [
     hint: "Edit the words shoppers see on the home page",
   },
   {
+    href: "/admin/styling",
+    label: "Styling",
+    hint: "Personal styling enquiries and the /styling page",
+  },
+  {
     href: "/admin/collections",
     label: "Collections",
     hint: "What shows on the home page, and in what order",

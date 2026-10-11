@@ -18,7 +18,7 @@ type Status = "idle" | "uploading" | "saving" | "error";
 
 /** PUT the file to the signed URL with progress — same XHR approach as the
  * product ImageUploader (fetch has no upload-progress event). */
-function uploadWithProgress(
+export function uploadWithProgress(
   signedUrl: string,
   file: File,
   onProgress: (pct: number) => void,

@@ -15,6 +15,7 @@ import {
   type HomeMediaSlot,
   type HomeSectionKey,
 } from "@/server/settings";
+import { getStylingContent, type StylingContent } from "@/server/styling";
 
 export const revalidate = 300;
 
@@ -46,6 +47,16 @@ async function homeContent() {
     return await getHomeContent(prisma);
   } catch {
     return DEFAULT_HOME_CONTENT;
+  }
+}
+
+/** The Personal styling block's words, or null while /styling is a draft. */
+async function stylingBlock(): Promise<StylingContent | null> {
+  try {
+    const c = await getStylingContent(prisma);
+    return c.published ? c : null;
+  } catch {
+    return null;
   }
 }
 
@@ -189,10 +200,11 @@ function RailSection({
 }
 
 export default async function HomePage() {
-  const [editItems, thriftItems, home] = await Promise.all([
+  const [editItems, thriftItems, home, styling] = await Promise.all([
     railItems("THE_POOJA_EDIT"),
     railItems("THRIFT"),
     homeContent(),
+    stylingBlock(),
   ]);
 
   const editAutoPick = pickImage(editItems);
@@ -288,6 +300,17 @@ export default async function HomePage() {
       />
     ),
     instagram: <InstagramStrip key="instagram" fallback={fallbackTiles} />,
+    styling: styling && (
+      <section key="styling" className="u-section u-rule">
+        <div className="u-page max-w-xl">
+          <h2 className="u-h2">{styling.homeBlock.heading}</h2>
+          <p className="mt-4 text-ink">{styling.homeBlock.body}</p>
+          <Link href="/styling" className="u-textlink mt-6 inline-block">
+            {styling.homeBlock.cta}
+          </Link>
+        </div>
+      </section>
+    ),
     newsletter: (
       <section key="newsletter" className="u-section u-rule">
         <div className="u-page max-w-xl">

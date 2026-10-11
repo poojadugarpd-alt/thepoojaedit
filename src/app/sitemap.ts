@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { publicEnv } from "@/lib/public-env";
+import { getStylingContent } from "@/server/styling/content";
 
 export const revalidate = 3600;
 
@@ -80,5 +81,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticEntries, ...productEntries, ...collectionEntries];
+  // Listed only once Pooja publishes it (D-162); otherwise it's a 404.
+  let stylingPublished = false;
+  try {
+    stylingPublished = (await getStylingContent(prisma)).published;
+  } catch {
+    // a cold database just leaves it out
+  }
+  const stylingEntries: MetadataRoute.Sitemap = stylingPublished
+    ? [{ url: u("/styling"), changeFrequency: "monthly", priority: 0.6 }]
+    : [];
+
+  return [...staticEntries, ...stylingEntries, ...productEntries, ...collectionEntries];
 }

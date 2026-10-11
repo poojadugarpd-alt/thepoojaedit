@@ -260,6 +260,13 @@ enum CreditNoteReason {
   CORRECTION
 }
 
+enum StylingEnquiryStatus {
+  NEW
+  REPLIED
+  BOOKED
+  CLOSED
+}
+
 // ─────────────────────────── Identity ───────────────────────────
 
 model Customer {
@@ -361,6 +368,7 @@ model AdminNotificationPreference {
   ndrRto          Boolean  @default(true)
   jobExhausted    Boolean  @default(true)
   lowStock        Boolean  @default(true)
+  stylingEnquiry  Boolean  @default(true)
   updatedAt       DateTime @updatedAt @db.Timestamptz(6)
 }
 
@@ -1204,4 +1212,31 @@ model StoreSettings {
   updatedById String?  @db.Uuid
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
+}
+
+/// A Personal Styling enquiry from /styling (D-162). Private: shown only in
+/// admin, never on any public page.
+model StylingEnquiry {
+  id          String               @id @default(uuid(7)) @db.Uuid
+  name        String
+  email       String
+  /// WhatsApp number as typed; optional.
+  phone       String?
+  /// City / country, free text.
+  location    String
+  /// Title of the offer picked, copied at submit time.
+  service     String
+  budget      String?
+  message     String
+  status      StylingEnquiryStatus @default(NEW)
+  /// Owner's private note.
+  note        String?
+  /// Last-touch UTM from the tpe_utm cookie, if any.
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  createdAt   DateTime             @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime             @updatedAt @db.Timestamptz(6)
+
+  @@index([status, createdAt])
 }

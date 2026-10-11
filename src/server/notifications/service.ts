@@ -142,7 +142,12 @@ export async function sendNotification(
   try {
     let providerMessageId: string | null = null;
     if (input.channel === "EMAIL") {
-      const r = rendered as { subject: string; html: string; text: string };
+      const r = rendered as {
+        subject: string;
+        html: string;
+        text: string;
+        replyTo?: string;
+      };
       const msg: EmailMessage = { to: input.recipient, ...r };
       ({ providerMessageId } = await transports.email.send(msg));
     } else if (input.channel === "WHATSAPP") {

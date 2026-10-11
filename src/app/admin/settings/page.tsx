@@ -33,6 +33,7 @@ const PREFERENCE_LABELS: Record<PushPreferenceField, string> = {
   ndrRto: "A delivery fails or a return is inbound",
   jobExhausted: "A background job is failing",
   lowStock: "Something drops to low stock",
+  stylingEnquiry: "A styling enquiry comes in",
 };
 
 export default async function AdminSettingsPage() {
@@ -185,10 +186,11 @@ export default async function AdminSettingsPage() {
           and is audited. Real GSTIN, rates and invoice policy are confirmed with the
           owner before live checkout.
         </p>
-        {/* "home.content" has its own screen (/admin/home) — a plain form,
-            not a JSON box — so it's deliberately left out of this list. */}
+        {/* "home.content" and "styling.content" have their own screens
+            (/admin/home, /admin/styling/edit) — plain forms, not a JSON box —
+            so they're deliberately left out of this list. */}
         {settings
-          .filter((s) => s.key !== "home.content")
+          .filter((s) => s.key !== "home.content" && s.key !== "styling.content")
           .map((s) => (
             <div key={s.key} className="rounded border border-line p-3">
               <p className="text-xs font-medium text-ink-strong">

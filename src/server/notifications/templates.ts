@@ -33,6 +33,8 @@ interface EmailRender {
   subject: string;
   html: string;
   text: string;
+  /** Where the recipient's "Reply" goes, e.g. the customer who wrote in. */
+  replyTo?: string;
 }
 interface WhatsAppRender {
   /** Approved template name registered with Meta. */
@@ -79,6 +81,16 @@ ${bodyHtml}
 <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
 <p style="font-size:12px;color:#888">The Pooja Edit — by Pooja Dugar</p>
 </body></html>`;
+}
+
+/** For text a customer typed — it must never become markup in an email. */
+function escapeHtml(v: string): string {
+  return v
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export const TEMPLATES = {
@@ -302,6 +314,56 @@ export const TEMPLATES = {
       title: `COD to confirm: ${v.orderNumber}`,
       message: `${formatPaiseINR(v.totalPaise)} — confirm with the customer`,
       priority: 2,
+    }),
+  }),
+  // A Personal Styling enquiry from /styling (D-162): emailed to Pooja with
+  // Reply going to the customer, plus an in-app row that pushes to her phone.
+  admin_styling_enquiry: defineTemplate({
+    version: 1,
+    channels: ["EMAIL", "IN_APP"],
+    schema: z.object({
+      name: z.string(),
+      email: z.string().email(),
+      phone: z.string().nullable(),
+      location: z.string(),
+      service: z.string(),
+      budget: z.string().nullable(),
+      message: z.string(),
+      adminUrl: z.string().url(),
+    }),
+    email: (v) => {
+      const rows: [string, string | null][] = [
+        ["Name", v.name],
+        ["Email", v.email],
+        ["WhatsApp", v.phone],
+        ["Based in", v.location],
+        ["Service", v.service],
+        ["Budget", v.budget],
+      ];
+      const shown = rows.filter((r): r is [string, string] => Boolean(r[1]));
+      return {
+        subject: `Styling enquiry from ${v.name}`,
+        replyTo: v.email,
+        text: `${shown.map(([k, val]) => `${k}: ${val}`).join("\n")}\n\n${v.message}\n\nReply to this email to answer ${v.name}. In admin: ${v.adminUrl}`,
+        html: emailShell(
+          "New styling enquiry",
+          `<table style="font-size:14px;border-collapse:collapse">${shown
+            .map(
+              ([k, val]) =>
+                `<tr><td style="padding:2px 12px 2px 0;color:#888">${k}</td><td style="padding:2px 0">${escapeHtml(val)}</td></tr>`,
+            )
+            .join("")}</table>
+         <p style="white-space:pre-wrap">${escapeHtml(v.message)}</p>
+         <p>Reply to this email to answer ${escapeHtml(v.name)}.</p>
+         <p><a href="${v.adminUrl}">Open in admin</a></p>`,
+        ),
+      };
+    },
+    inApp: (v) => ({
+      type: "STYLING_ENQUIRY",
+      title: `Styling enquiry: ${v.name}`,
+      message: `${v.service} · ${v.location}`,
+      priority: 1,
     }),
   }),
   admin_delivery_failed: defineTemplate({

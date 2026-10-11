@@ -18,6 +18,7 @@ export interface EmailMessage {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string;
 }
 export interface WhatsAppMessage {
   to: string;
@@ -76,6 +77,7 @@ export function resendEmailTransport(): EmailTransport {
           subject: msg.subject,
           html: msg.html,
           text: msg.text,
+          ...(msg.replyTo ? { reply_to: msg.replyTo } : {}),
         }),
       });
       if (!res.ok) {
@@ -139,7 +141,15 @@ export function metaWhatsAppTransport(): WhatsAppTransport {
 const IN_APP_PUSH_PREFERENCE: Partial<Record<string, PushPreferenceField>> = {
   NEW_ORDER: "newPaidOrder",
   PENDING_COD: "codConfirmation",
+  STYLING_ENQUIRY: "stylingEnquiry",
 };
+
+/** Where tapping the phone push for an in-app row should land. */
+function pushPath(entityType: string, entityId: string): string {
+  if (entityType === "Order") return `/admin/orders?q=${entityId}`;
+  if (entityType === "StylingEnquiry") return `/admin/styling/${entityId}`;
+  return "/admin";
+}
 
 // ── always-on: in-app admin notifications ─────────────────────────────────
 export function dbInAppTransport(db: PrismaClient): InAppTransport {
@@ -166,8 +176,7 @@ export function dbInAppTransport(db: PrismaClient): InAppTransport {
           preferenceField,
           title: msg.title,
           body: msg.message,
-          path:
-            msg.entityType === "Order" ? `/admin/orders?q=${msg.entityId}` : "/admin",
+          path: pushPath(msg.entityType, msg.entityId),
         }).catch(() => {});
       }
 

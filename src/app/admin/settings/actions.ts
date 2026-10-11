@@ -24,6 +24,7 @@ const PREFERENCE_FIELDS: PushPreferenceField[] = [
   "ndrRto",
   "jobExhausted",
   "lowStock",
+  "stylingEnquiry",
 ];
 
 // ── Push (called directly from client JS — see the request/confirm image-

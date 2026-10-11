@@ -43,6 +43,7 @@ const STATUS_TONE: Record<string, keyof typeof TONE_CLASS> = {
   COD_COLLECTED: "ok",
   PUBLISHED: "ok",
   RESTOCK: "ok",
+  BOOKED: "ok", // styling enquiry (D-162)
   PENDING_PAYMENT: "warn",
   PENDING_CONFIRMATION: "warn",
   COD_PENDING: "warn",
@@ -52,6 +53,7 @@ const STATUS_TONE: Record<string, keyof typeof TONE_CLASS> = {
   AUTHORIZED: "warn",
   QUEUED: "warn",
   SENT: "warn",
+  NEW: "warn", // styling enquiry not answered yet (D-162)
   NEEDS_REVIEW: "bad",
   FAILED: "bad",
   CANCELLED: "bad",

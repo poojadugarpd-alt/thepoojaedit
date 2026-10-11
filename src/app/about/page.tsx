@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalPage } from "@/features/site-content/legal-page";
+import { isStylingPublished } from "@/server/styling/published";
 
 export const metadata: Metadata = {
   title: "About",
@@ -9,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const styling = await isStylingPublished();
   return (
     <LegalPage eyebrow="About" title="One brand, two ways to shop." draft>
       <p>
@@ -24,6 +27,12 @@ export default function AboutPage() {
       <p>
         One cart holds both. Each item keeps its own return policy, shown at checkout.
       </p>
+      {styling && (
+        <p>
+          Pooja also works one to one with clients on wardrobe edits and personal
+          shopping. See <Link href="/styling">Personal styling</Link>.
+        </p>
+      )}
       <p>
         Most of what we make and find is shared first on Instagram at{" "}
         <a

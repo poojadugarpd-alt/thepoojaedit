@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { FullLogo } from "@/components/brand/logo";
 import { CATALOG_LABEL, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
+import { isStylingPublished } from "@/server/styling/published";
 
 const SHOP_LINKS = [
   {
@@ -25,13 +26,17 @@ const STUDIO_LINKS = [
   { href: "/policies/terms", label: "Terms" },
 ];
 
-const COLUMNS = [
-  { heading: "Shop", links: SHOP_LINKS },
-  { heading: "Help", links: HELP_LINKS },
-  { heading: "Studio", links: STUDIO_LINKS },
-];
+export async function SiteFooter() {
+  // "Personal styling" appears only once Pooja publishes /styling (D-162).
+  const studioLinks = (await isStylingPublished())
+    ? [{ href: "/styling", label: "Personal styling" }, ...STUDIO_LINKS]
+    : STUDIO_LINKS;
+  const columns = [
+    { heading: "Shop", links: SHOP_LINKS },
+    { heading: "Help", links: HELP_LINKS },
+    { heading: "Studio", links: studioLinks },
+  ];
 
-export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-line bg-fill">
       <div className="u-page py-16 sm:py-20">
@@ -48,7 +53,7 @@ export function SiteFooter() {
           aria-label="Footer"
           className="mt-12 grid gap-10 sm:grid-cols-3 sm:max-w-2xl"
         >
-          {COLUMNS.map((col) => (
+          {columns.map((col) => (
             <div key={col.heading}>
               <h2 className="u-label">{col.heading}</h2>
               <ul className="mt-4 flex flex-col gap-3">

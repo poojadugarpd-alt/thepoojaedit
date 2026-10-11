@@ -130,16 +130,19 @@ describe("getHomeContent — section layout", () => {
     // Saved order wins for the keys present...
     expect(content.sections[0]).toEqual({ key: "newsletter", enabled: true });
     expect(content.sections[1]).toEqual({ key: "newIn", enabled: false });
-    // ...and every other known section is appended, enabled, so a section
-    // never silently disappears just because an old save predates it.
+    // ...and every other known section is appended with its default state, so
+    // a section never silently disappears just because an old save predates
+    // it. "styling" (D-162) defaults to off; the rest default to on.
     const remaining = content.sections
       .slice(2)
       .map((s) => s.key)
       .sort();
     expect(remaining).toEqual(
-      ["editBlocks", "editorial", "fromCloset", "instagram"].sort(),
+      ["editBlocks", "editorial", "fromCloset", "instagram", "styling"].sort(),
     );
-    expect(content.sections.slice(2).every((s) => s.enabled)).toBe(true);
+    expect(
+      content.sections.slice(2).every((s) => s.enabled === (s.key !== "styling")),
+    ).toBe(true);
     expect(content.sections).toHaveLength(DEFAULT_HOME_SECTIONS.length);
   });
 

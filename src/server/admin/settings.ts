@@ -24,6 +24,8 @@ const EDITABLE_KEYS = [
   // Edited from its own screen (/admin/home), not the generic JSON editor
   // below — see the exclusion in src/app/admin/settings/page.tsx.
   "home.content",
+  // Edited from /admin/styling/edit (D-162), also excluded from the JSON editor.
+  "styling.content",
 ] as const;
 export type SettingKey = (typeof EDITABLE_KEYS)[number];
 

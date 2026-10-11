@@ -22,6 +22,7 @@ const SECTION_LABEL: Record<HomeSectionKey, string> = {
   editBlocks: "The Label / Closet blocks",
   fromCloset: "From the Closet (the Closet rail)",
   instagram: "Instagram",
+  styling: "Personal styling (only once the Styling page is published)",
   newsletter: "Newsletter",
 };
 
