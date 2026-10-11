@@ -57,3 +57,13 @@ export async function requireOwner(): Promise<AdminUser> {
   assertRole(admin, "OWNER");
   return admin;
 }
+
+/** For public pages that show drafts to admins only: never throws. */
+export async function isSignedInAdmin(): Promise<boolean> {
+  try {
+    await requireAdmin();
+    return true;
+  } catch {
+    return false;
+  }
+}

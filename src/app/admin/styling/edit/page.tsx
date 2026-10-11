@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ActionForm, Field, TextArea } from "@/features/admin/action-form";
+import { SingleImageUploader } from "@/features/admin/single-image-uploader";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {
@@ -11,8 +12,13 @@ import {
   publishProblems,
 } from "@/server/styling";
 
-import { saveStylingPageAction, setStylingPublishedAction } from "../actions";
-import { PortraitUploader } from "./portrait-uploader";
+import {
+  confirmPortraitUploadAction,
+  removePortraitAction,
+  requestPortraitUploadAction,
+  saveStylingPageAction,
+  setStylingPublishedAction,
+} from "../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Styling page" };
@@ -92,7 +98,13 @@ export default async function AdminStylingEditPage() {
             />
           </div>
         )}
-        <PortraitUploader hasPortrait={Boolean(c.portrait)} />
+        <SingleImageUploader
+          hasImage={Boolean(c.portrait)}
+          requestUpload={requestPortraitUploadAction}
+          confirmUpload={confirmPortraitUploadAction}
+          remove={removePortraitAction}
+          hint="JPEG, PNG or WebP up to 8MB. A tall photo (portrait shape) looks best."
+        />
       </section>
 
       <ActionForm

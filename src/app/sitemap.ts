@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { publicEnv } from "@/lib/public-env";
+import { listPublishedLooks } from "@/server/looks";
 import { getStylingContent } from "@/server/styling/content";
 
 export const revalidate = 3600;
@@ -92,5 +93,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ? [{ url: u("/styling"), changeFrequency: "monthly", priority: 0.6 }]
     : [];
 
-  return [...staticEntries, ...stylingEntries, ...productEntries, ...collectionEntries];
+  // Published Looks (D-163); drafts are 404s and never listed.
+  let looks: { slug: string; updatedAt: Date }[] = [];
+  try {
+    looks = await listPublishedLooks(prisma);
+  } catch {
+    // a cold database just leaves them out
+  }
+  const lookEntries: MetadataRoute.Sitemap = looks.length
+    ? [
+        { url: u("/looks"), changeFrequency: "weekly", priority: 0.6 },
+        ...looks.map((l) => ({
+          url: u(`/looks/${l.slug}`),
+          lastModified: l.updatedAt,
+          changeFrequency: "weekly" as const,
+          priority: 0.6,
+        })),
+      ]
+    : [];
+
+  return [
+    ...staticEntries,
+    ...stylingEntries,
+    ...lookEntries,
+    ...productEntries,
+    ...collectionEntries,
+  ];
 }

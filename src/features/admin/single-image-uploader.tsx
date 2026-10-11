@@ -3,20 +3,42 @@
 import { useRef, useState } from "react";
 
 import { uploadWithProgress } from "@/app/admin/home/home-media-uploader";
-import { compressImage } from "@/features/admin/compress-image";
 
-import {
-  confirmPortraitUploadAction,
-  removePortraitAction,
-  requestPortraitUploadAction,
-} from "../actions";
+import { compressImage } from "./compress-image";
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type Status = "idle" | "uploading" | "saving" | "error";
 
-/** Upload / replace / remove the portrait on /styling. */
-export function PortraitUploader({ hasPortrait }: { hasPortrait: boolean }) {
+export type UploadTicket =
+  { ok: true; mediaId: string; signedUrl: string } | { ok: false; message: string };
+export type UploadResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * One photo slot (the /styling portrait, a Look's cover): upload, replace or
+ * remove. Same signed upload → confirm flow as the home page media; the
+ * server actions are passed in already bound to their slot.
+ */
+export function SingleImageUploader({
+  hasImage,
+  requestUpload,
+  confirmUpload,
+  remove,
+  uploadLabel = "Upload a photo",
+  removeLabel = "Remove photo",
+  hint = "JPEG, PNG or WebP up to 8MB.",
+}: {
+  hasImage: boolean;
+  requestUpload: (contentType: string) => Promise<UploadTicket>;
+  confirmUpload: (input: {
+    mediaId: string;
+    contentType: string;
+  }) => Promise<UploadResult>;
+  remove: () => Promise<UploadResult>;
+  uploadLabel?: string;
+  removeLabel?: string;
+  hint?: string;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [progress, setProgress] = useState(0);
@@ -33,7 +55,7 @@ export function PortraitUploader({ hasPortrait }: { hasPortrait: boolean }) {
     try {
       // Same shrink-before-upload as product photos (D-158).
       const file = await compressImage(original);
-      const ticket = await requestPortraitUploadAction(file.type);
+      const ticket = await requestUpload(file.type);
       if (!ticket.ok) {
         setStatus("error");
         setError(ticket.message);
@@ -41,7 +63,7 @@ export function PortraitUploader({ hasPortrait }: { hasPortrait: boolean }) {
       }
       await uploadWithProgress(ticket.signedUrl, file, setProgress);
       setStatus("saving");
-      const saved = await confirmPortraitUploadAction({
+      const saved = await confirmUpload({
         mediaId: ticket.mediaId,
         contentType: file.type,
       });
@@ -61,7 +83,7 @@ export function PortraitUploader({ hasPortrait }: { hasPortrait: boolean }) {
   async function handleRemove() {
     setStatus("saving");
     setError(null);
-    const result = await removePortraitAction();
+    const result = await remove();
     if (!result.ok) {
       setStatus("error");
       setError(result.message);
@@ -96,25 +118,23 @@ export function PortraitUploader({ hasPortrait }: { hasPortrait: boolean }) {
             ? `Uploading… ${progress}%`
             : status === "saving"
               ? "Saving…"
-              : hasPortrait
+              : hasImage
                 ? "Replace photo"
-                : "Upload a photo"}
+                : uploadLabel}
         </button>
-        {hasPortrait && (
+        {hasImage && (
           <button
             type="button"
             onClick={handleRemove}
             disabled={busy}
             className="min-h-11 text-sm text-ink-soft underline disabled:opacity-50"
           >
-            Remove photo
+            {removeLabel}
           </button>
         )}
       </div>
       {error && <p className="text-sm text-stop">{error}</p>}
-      <p className="text-[11px] text-ink-soft">
-        JPEG, PNG or WebP up to 8MB. A tall photo (portrait shape) looks best.
-      </p>
+      <p className="text-[11px] text-ink-soft">{hint}</p>
     </div>
   );
 }

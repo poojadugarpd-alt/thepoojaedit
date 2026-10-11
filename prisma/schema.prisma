@@ -260,6 +260,11 @@ enum CreditNoteReason {
   CORRECTION
 }
 
+enum LookStatus {
+  DRAFT
+  PUBLISHED
+}
+
 enum StylingEnquiryStatus {
   NEW
   REPLIED
@@ -445,6 +450,7 @@ model Product {
   variants       ProductVariant[]
   images         ProductImage[]
   collections    ProductCollection[]
+  lookItems      LookItem[]
 
   @@unique([catalog, slug])
   @@index([catalog, status, publishedAt])
@@ -1239,4 +1245,42 @@ model StylingEnquiry {
   updatedAt   DateTime             @updatedAt @db.Timestamptz(6)
 
   @@index([status, createdAt])
+}
+
+/// A "Shop this Reel" page at /looks/<slug> (D-163): a cover, a caption, an
+/// optional Instagram link and an ordered list of Pooja's own pieces.
+model Look {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  slug        String     @unique
+  title       String
+  caption     String?
+  /// Instagram Reel / post link, shown as "Watch on Instagram".
+  reelUrl     String?
+  /// Uploaded cover; when empty the first piece's photo is used.
+  coverBucket String?
+  coverPath   String?
+  coverUrl    String?
+  coverAlt    String     @default("")
+  status      LookStatus @default(DRAFT)
+  publishedAt DateTime?  @db.Timestamptz(6)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(6)
+
+  items LookItem[]
+
+  @@index([status, publishedAt])
+}
+
+model LookItem {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  lookId    String   @db.Uuid
+  look      Look     @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  productId String   @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  position  Int
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([lookId, productId])
+  @@index([lookId, position])
+  @@index([productId])
 }

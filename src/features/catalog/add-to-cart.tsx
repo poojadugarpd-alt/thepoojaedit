@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { useCart } from "@/features/cart/store";
 import { SEGMENT_BY_CATALOG, type CatalogType } from "@/lib/catalog-routes";
@@ -28,6 +28,8 @@ export function AddToCart({
   returnPolicyNote: string;
 }) {
   const addLine = useCart((s) => s.addLine);
+  // Unique per instance: a Look page (D-163) renders one of these per piece.
+  const uid = useId();
   const buyable = variants.filter((v) => v.available);
   const [variantId, setVariantId] = useState(buyable[0]?.id ?? variants[0]?.id ?? "");
   const [qty, setQty] = useState(1);
@@ -65,11 +67,11 @@ export function AddToCart({
     <div className="space-y-4">
       {variants.length > 1 && (
         <div>
-          <label htmlFor="variant" className="u-label block">
+          <label htmlFor={`${uid}-variant`} className="u-label block">
             {catalog === "THRIFT" ? "Size" : "Choose a size"}
           </label>
           <select
-            id="variant"
+            id={`${uid}-variant`}
             value={variantId}
             onChange={(e) => {
               setVariantId(e.target.value);
@@ -92,11 +94,11 @@ export function AddToCart({
 
       {!isOneOfOne && (
         <div>
-          <label htmlFor="qty" className="u-label block">
+          <label htmlFor={`${uid}-qty`} className="u-label block">
             Quantity
           </label>
           <input
-            id="qty"
+            id={`${uid}-qty`}
             type="number"
             min={1}
             max={maxQty}

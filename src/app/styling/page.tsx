@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 
 import { EnquiryForm } from "@/features/styling/enquiry-form";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/server/auth/require-admin";
+import { isSignedInAdmin } from "@/server/auth/require-admin";
 import { getStylingContent, serviceOptions } from "@/server/styling";
 
 // Content is edited live from admin, and a draft is shown to signed-in admins
@@ -22,19 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function isAdmin(): Promise<boolean> {
-  try {
-    await requireAdmin();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export default async function StylingPage() {
   const c = await getStylingContent(prisma);
   // Not published: a 404 for shoppers; Pooja sees the draft to check it.
-  if (!c.published && !(await isAdmin())) notFound();
+  if (!c.published && !(await isSignedInAdmin())) notFound();
 
   return (
     <div>
