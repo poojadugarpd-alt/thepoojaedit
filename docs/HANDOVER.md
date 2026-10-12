@@ -1,6 +1,6 @@
 # PoojaEdit — Handover Summary
 
-Written 2026-09-16, refreshed 2026-10-07 late night (through D-151, `9fb1840`), for moving work to a different environment/tool (another
+Written 2026-09-16, refreshed 2026-10-12 (through D-163, `6b836a8`), for moving work to a different environment/tool (another
 Claude Code session, Cursor, ChatGPT, a human dev, etc.). Everything here is
 verifiable in this repo — treat it as a map, not a source of truth; re-check
 against the actual files/`git log`/`docs/decisions.md` before relying on a
@@ -10,7 +10,7 @@ specific detail.
 
 1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub, including
    the UTM attribution work (D-136, merged the same evening).
-2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-140).
+2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-163).
 3. Local setup: `npm install`, `npm run db:dev` in one terminal, then
    `npm run check`, `npm run test:integration` and
    `npm run test:e2e:local -- --project=chromium` to confirm a clean baseline.
@@ -114,7 +114,7 @@ outside the `npm run db:*` scripts; a format+typecheck-on-edit hook; skills
 `log-decision`, `db-migration`, `structured-data-audit`, `llms-txt`; subagents
 `money-safety-reviewer`, `e2e-unblocker`, `seo-aeo-reviewer`.
 
-## 5. Current live state (as of `9fb1840`, 2026-10-07 late night)
+## 5. Current live state (as of `6b836a8`, 2026-10-12)
 
 `main` == `origin/main` == what's deployed. Vercel auto-deploys `main` to
 Production and runs `prisma migrate deploy` first (`scripts/vercel-migrate.mjs`,
@@ -137,6 +137,29 @@ Production only).
   Shopify import: their `bucket` is the placeholder `legacy-import`. Building
   from it broke every imported image for about 15 minutes on 2026-10-07; fixed
   in `1190569` (logged under D-135).
+
+**Deployed hidden 2026-10-11/12: `/styling` (D-162) and Looks (D-163)**
+- Both are live in code but **unpublished**: `/styling`, `/looks` and every
+  `/looks/<slug>` return 404 to shoppers; nothing shows in the home page,
+  footer, About or sitemap until published. Signed-in admins see drafts with
+  a banner. Both migrations (`20261011153151_styling_enquiries`,
+  `20261011164408_looks`) were applied by the production build.
+- **The owner is filling in the content herself and will press Publish.
+  Do not publish `/styling` or any Look on her behalf.**
+- Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
+  steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
+  valid email). Enquiries land in Admin → Styling (email to the enquiry
+  address with reply-to = the client, plus a phone push; the push can be
+  switched off in Settings → "A styling enquiry comes in"). Optional home
+  block: Admin → Home → Layout → "Personal styling" (off by default).
+- Looks: Admin → Looks → type a title → add up to 12 own Label/Closet pieces
+  (no affiliate items for now), cover (falls back to the first piece's
+  photo), caption, Instagram link → Preview → Publish. "Copy link" gives the
+  Instagram URL with `utm_medium=look&utm_campaign=<slug>`.
+- Untested on production: a real enquiry email/push and a real cover upload
+  (both covered by local e2e only).
+- Screenshot preview shown to the owner:
+  https://claude.ai/artifact/1XqoAbF24hXrDgcmBrtimd
 
 **Shipped 2026-10-07 (owner requests A–D; plan in `docs/plan-owner-requests-2026-10.md`)**
 - **D-137 Shipping:** Label-only orders ship free; any Closet item makes the
@@ -221,7 +244,7 @@ then ran). Do it after every such deploy.
 7. **Phase 13 operational drills**: backup/restore, rollback and budget
    alerts are not done.
 
-## 7. What we worked on most recently (2026-09-15 → 2026-10-07)
+## 7. What we worked on most recently (2026-09-15 → 2026-10-12)
 
 Full detail in `docs/decisions.md`.
 
@@ -252,6 +275,11 @@ Full detail in `docs/decisions.md`.
 | 10-08 | D-156 | Shadowfax360-dashboard orders (TPJ-…) no longer raise "unknown shipment" alerts |
 | 10-08 | D-157 | Low stock list removed from the admin Overview |
 | 10-08 | D-158 | Product photos shrunk to 1600 px via Settings → Compress large photos (originals kept) |
+| 10-08 | D-159 | Public photos moved to Cloudflare R2 (`img.thepoojaedit.in`) |
+| 10-08 | D-160 | Two admin e2e flakes fixed ("Product created." banner, …) |
+| 10-08 | D-161 | Supabase photo copies backed up to the Mac and deleted |
+| 10-11 | D-162 | Personal Styling page `/styling` + enquiry inbox (deployed hidden) |
+| 10-11 | D-163 | Looks: "Shop this Reel" pages at `/looks/<slug>` (deployed hidden) |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -325,13 +353,13 @@ Supabase usage page before the grace period ends on 23 Oct.
 5. **Supabase Storage quota** before 2026-10-23 (§6.2), and run the 3 new
    migrations on the dev project (§6.3).
 6. **Fix `npm audit`** (§6.4).
-7. **Website agent brief: parked.** `docs/briefs/pooja-website-agent-brief.md`
-   (proposed `/picks` affiliate reviews + `/styling` service) was assessed on
-   2026-10-07; the owner chose to keep the analysis and build nothing yet. Read
-   `docs/briefs/pooja-website-agent-brief-ANALYSIS.md` first. If revived, the
-   recommended order is UTM → `/styling` + private enquiry inbox → "Looks"
-   (Shop this Reel, own products first) after the 3 Nov Instagram review →
-   Picks reviews only once real reviews exist.
+7. **Website agent brief: `/styling` and Looks built and deployed hidden
+   (D-162, D-163, 2026-10-11).** Waiting on the owner's content and her own
+   Publish click (§5). Once live, worth checking one real enquiry arrives by
+   email + push and a tagged Look link shows "via instagram / look / <slug>"
+   on an order. Still not built: Picks/affiliate reviews (only once real
+   reviews exist) and outside/LehLah items inside Looks (owner: own pieces
+   only for now). Background: `docs/briefs/pooja-website-agent-brief-ANALYSIS.md`.
 8. Optional tidy-up: move the Razorpay/Shadowfax webhooks and Inngest app URL
    from `thepoojaedit.vercel.app` to `thepoojaedit.in`.
 9. **Remaining live verifications**: a real Shadowfax pickup cancel (D-133),
