@@ -87,26 +87,34 @@ export function NewOrderAlert() {
   const lastSeen = useRef<string | null | undefined>(undefined);
   const baseTitle = useRef<string>("");
 
-  // Unlock audio on the first tap/click/key — browsers block sound before that.
+  // Unlock audio on a tap/click/key — browsers block sound before that. Kept
+  // listening, not removed after the first tap: iOS suspends ("interrupts")
+  // the audio context whenever the installed app goes to the background, and
+  // only another tap brings it back. A silent one-sample buffer is played
+  // inside the gesture because older iOS ignores a bare resume().
   useEffect(() => {
     const unlock = () => {
       const ac = audio();
-      void ac?.resume();
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
+      if (!ac || ac.state === "running") return;
+      void ac.resume();
+      const src = ac.createBufferSource();
+      src.buffer = ac.createBuffer(1, 1, ac.sampleRate);
+      src.connect(ac.destination);
+      src.start(0);
     };
-    window.addEventListener("pointerdown", unlock);
-    window.addEventListener("keydown", unlock);
+    const events = ["pointerdown", "touchend", "keydown"] as const;
+    for (const e of events) window.addEventListener(e, unlock);
     return () => {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
+      for (const e of events) window.removeEventListener(e, unlock);
     };
   }, []);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     let stopped = false;
+    let running = false;
     const check = async () => {
+      running = true;
       try {
         const latest = await latestNewOrderAction();
         if (lastSeen.current === undefined) {
@@ -121,6 +129,7 @@ export function NewOrderAlert() {
       } catch {
         // Offline or signed out — try again next tick.
       }
+      running = false;
       if (!stopped) {
         timer = setTimeout(
           check,
@@ -128,10 +137,19 @@ export function NewOrderAlert() {
         );
       }
     };
+    // Coming back to the app: check straight away rather than waiting out a
+    // timer that iOS froze while the app was in the background.
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || stopped || running) return;
+      clearTimeout(timer);
+      void check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     void check();
     return () => {
       stopped = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
