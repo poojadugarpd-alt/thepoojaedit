@@ -1,4 +1,6 @@
 import "server-only";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import type { InstagramItem } from "./types";
 import { categorize, carouselLabel, detectBrand } from "./categorize";
 import manual from "@/content/instagram.json";
@@ -86,10 +88,17 @@ async function fetchGraph(token: string): Promise<{ items: InstagramItem[]; foll
   return { items, followers };
 }
 
+// Drop public/reels/<shortcode>.mp4 next to the cover and it becomes the hover preview.
+function localVideo(permalink: string) {
+  const code = shortcode(permalink);
+  return existsSync(path.join(process.cwd(), "public", "reels", `${code}.mp4`)) ? `/reels/${code}.mp4` : undefined;
+}
+
 function fromManual(): InstagramItem[] {
   return (manual as Omit<InstagramItem, "id">[]).map((m, i) => ({
     id: `manual-${i}`,
     ...m,
+    videoUrl: m.videoUrl ?? (m.sample ? undefined : localVideo(m.permalink)),
     category: m.category ?? categorize(m.caption ?? "", m.kind === "carousel"),
     carouselLabel: m.kind === "carousel" ? m.carouselLabel ?? carouselLabel(m.caption ?? "") : undefined,
     brand: m.brand ?? detectBrand(m.caption ?? ""),

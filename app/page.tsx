@@ -43,16 +43,18 @@ export default async function Home() {
         title: r.caption,
         thumb: r.thumbnailUrl!,
         permalink: r.permalink,
+        video: r.videoUrl,
       }))
     : s.map((v) => ({ kind: "youtube", id: v.id, title: v.title, thumb: hq(v.id) }));
 
   const productImages = {
     reels: igReels[0] ? [igReels[0].thumbnailUrl!] : s[0] ? [hq(s[0].id)] : [],
     youtube: lf[0] ? [maxres(lf[0].id)] : [],
-    carousels: s.slice(3, 6).map((v) => hq(v.id)),
+    // Instagram-only imagery for Instagram products; YouTube thumbnails stay on YouTube/graphics.
+    carousels: (igReels.length >= 3 ? igReels.slice(3, 6).map((r) => r.thumbnailUrl!) : []),
     graphics: lf[1] ? [maxres(lf[1].id)] : [],
   };
-  const heroShorts = s.slice(1, 4);
+  const heroShots = igReels.slice(1, 4).map((r) => ({ id: r.id, src: r.thumbnailUrl! }));
   const ytFeature = lf.find((v) => /story|tour/i.test(v.title)) ?? lf[0];
 
   return (
@@ -81,11 +83,11 @@ export default async function Home() {
               </div>
             </div>
             <div className="hero-art" aria-hidden="true">
-              {heroShorts.map((v, i) => (
+              {heroShots.map((v, i) => (
                 <img
                   key={v.id}
                   className={`hero-shot hs-${i}`}
-                  src={hq(v.id)}
+                  src={v.src}
                   alt=""
                   fetchPriority={i === 1 ? "high" : "auto"}
                   decoding="async"

@@ -62,28 +62,110 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ───────────────────────── Autoplay preview ───────────────────────── */
+/* ───────────────────────── Hover-to-play previews ───────────────────────── */
 
-/** Muted looping preview that only plays while on screen (saves data + battery). */
-function AutoplayVideo({ src, poster }: { src: string; poster?: string }) {
+export type PreviewSource = { kind: "mp4"; src: string } | { kind: "youtube"; id: string };
+
+const canHover = () =>
+  typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Hover (or keyboard focus) state for a card. A short delay avoids spinning up
+ * players while the mouse just sweeps across the grid.
+ */
+export function useHoverPlay() {
+  const [active, setActive] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const start = () => {
+    if (reducedMotion()) return;
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setActive(true), 140);
+  };
+  const stop = () => {
+    clearTimeout(timer.current);
+    setActive(false);
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return {
+    active,
+    handlers: {
+      onPointerEnter: (e: React.PointerEvent) => e.pointerType === "mouse" && start(),
+      onPointerLeave: stop,
+      onFocus: start,
+      onBlur: stop,
+    },
+  };
+}
+
+/** Muted preview layered over the poster. Mounted only while active, so it stops and frees memory on leave. */
+export function VideoPreview({ source, active }: { source?: PreviewSource; active: boolean }) {
+  const [ready, setReady] = useState(false);
+  const [touch, setTouch] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => setTouch(!canHover()), []);
+  useEffect(() => {
+    if (!active) setReady(false);
+  }, [active]);
+
+  // Touch screens can't hover: self-hosted clips play while on screen instead.
   useEffect(() => {
     const v = ref.current;
-    if (!v) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!touch || source?.kind !== "mp4" || !v || reducedMotion()) return;
     const io = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
-          if (!v.src) v.src = src;
+          if (!v.src) v.src = source.src;
           v.play().catch(() => {});
         } else v.pause();
       },
-      { threshold: 0.35 },
+      { threshold: 0.6 },
     );
     io.observe(v);
     return () => io.disconnect();
-  }, [src]);
-  return <video ref={ref} className="media-fill" poster={poster} muted loop playsInline preload="none" aria-hidden="true" />;
+  }, [touch, source]);
+
+  if (!source) return null;
+  if (touch) {
+    return source.kind === "mp4" ? (
+      <video
+        ref={ref}
+        className="media-fill preview is-ready"
+        muted
+        loop
+        playsInline
+        preload="none"
+        aria-hidden="true"
+      />
+    ) : null;
+  }
+  if (!active) return null;
+  const cls = `media-fill preview ${ready ? "is-ready" : ""}`;
+  return source.kind === "mp4" ? (
+    <video
+      className={cls}
+      src={source.src}
+      autoPlay
+      muted
+      loop
+      playsInline
+      onPlaying={() => setReady(true)}
+      aria-hidden="true"
+    />
+  ) : (
+    <iframe
+      className={cls}
+      src={`https://www.youtube-nocookie.com/embed/${source.id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${source.id}&playsinline=1&modestbranding=1&rel=0&disablekb=1&iv_load_policy=3&fs=0`}
+      allow="autoplay; encrypted-media"
+      tabIndex={-1}
+      aria-hidden="true"
+      title=""
+      // The embed shows its own spinner/title for ~1s; keep the poster up until it's playing.
+      onLoad={() => setTimeout(() => setReady(true), 700)}
+    />
+  );
 }
 
 /* ───────────────────────── Placeholder cover ───────────────────────── */
@@ -118,26 +200,26 @@ const CATEGORY_LABEL: Record<InstagramItem["category"], string> = {
 
 export function InstagramCard({ item, index }: { item: InstagramItem; index: number }) {
   const open = useModal();
+  const { active, handlers } = useHoverPlay();
   const isCarousel = item.kind === "carousel";
   const badge = isCarousel ? item.carouselLabel ?? "Carousel" : CATEGORY_LABEL[item.category];
   const title = item.caption.split("\n")[0].slice(0, 80) || "Instagram post";
 
   const visual = (
     <span className={`media ${isCarousel ? "r-4x5" : "r-9x16"}`}>
-      {item.videoUrl ? (
-        <AutoplayVideo src={item.videoUrl} poster={item.thumbnailUrl} />
-      ) : item.thumbnailUrl ? (
+      {item.thumbnailUrl ? (
         <img className="media-fill" src={item.thumbnailUrl} alt="" loading="lazy" decoding="async" />
       ) : (
         <PlaceholderCover seed={index} label={item.sample ? "Sample" : undefined} title={item.brand} />
       )}
+      <VideoPreview source={item.videoUrl ? { kind: "mp4", src: item.videoUrl } : undefined} active={active} />
       <span className="badge badge-on-media">{badge}</span>
       {isCarousel && item.slideCount ? (
         <span className="slides" aria-label={`${item.slideCount} slides`}>
           <LayersIcon /> {item.slideCount}
         </span>
       ) : null}
-      <span className="play" aria-hidden="true">
+      <span className={`play ${active && item.videoUrl ? "is-hidden" : ""}`} aria-hidden="true">
         {isCarousel ? <LayersIcon size={22} /> : <PlayIcon size={22} />}
       </span>
     </span>
@@ -160,15 +242,16 @@ export function InstagramCard({ item, index }: { item: InstagramItem; index: num
     );
   }
   return (
-    <button
-      type="button"
-      className="card"
-      onClick={() => open({ type: "instagram", permalink: item.permalink, title })}
-      aria-label={`Play ${badge}: ${title}`}
-    >
+    <div className="card" {...handlers}>
       {visual}
       {body}
-    </button>
+      <button
+        type="button"
+        className="card-hit"
+        onClick={() => open({ type: "instagram", permalink: item.permalink, title })}
+        aria-label={`Play ${badge}: ${title}`}
+      />
+    </div>
   );
 }
 
@@ -182,26 +265,29 @@ export function formatDuration(sec?: number) {
 
 export function YouTubeCard({ video }: { video: YouTubeVideo }) {
   const open = useModal();
+  const { active, handlers } = useHoverPlay();
   const dur = formatDuration(video.durationSec);
   return (
-    <button
-      type="button"
-      className="card"
-      onClick={() => open({ type: "youtube", id: video.id, title: video.title, vertical: video.isShort })}
-      aria-label={`Play: ${video.title}`}
-    >
-      <span className={`media ${video.isShort ? "r-9x16" : "r-16x9"} kenburns`}>
+    <div className="card" {...handlers}>
+      <span className={`media ${video.isShort ? "r-9x16" : "r-16x9"}`}>
         <img className="media-fill" src={video.thumbnailUrl} alt="" loading="lazy" decoding="async" />
+        <VideoPreview source={{ kind: "youtube", id: video.id }} active={active} />
         {dur && <span className="duration">{dur}</span>}
         {video.isShort && <span className="badge badge-on-media">Short</span>}
-        <span className="play" aria-hidden="true">
+        <span className={`play ${active ? "is-hidden" : ""}`} aria-hidden="true">
           <PlayIcon size={22} />
         </span>
       </span>
       <span className="card-body">
         <span className={video.isShort ? "card-caption" : "card-title"}>{video.title}</span>
       </span>
-    </button>
+      <button
+        type="button"
+        className="card-hit"
+        onClick={() => open({ type: "youtube", id: video.id, title: video.title, vertical: video.isShort })}
+        aria-label={`Play: ${video.title}`}
+      />
+    </div>
   );
 }
 
