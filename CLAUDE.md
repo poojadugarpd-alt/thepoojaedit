@@ -5,10 +5,11 @@ Update it whenever state changes.
 
 ## Ground rules
 - **Two Macs / two sessions:** run `git pull` before starting.
-- **Not PoojaEdit.** This deploys to the Vercel team `thepoojaedit` as its own project
-  `pooja-dugar-studio`. Never touch the `thepoojaedit` project (the live fashion store).
-- **Deploy:** `npx vercel deploy --prod --yes` from this folder. GitHub isn't connected to Vercel.
-  Preview URLs are behind Vercel login, so verify on prod.
+- **Not PoojaEdit.** Hosting is **Cloudflare Workers** (account vinayakch17@gmail.com, Worker
+  `pooja-dugar-studio`). An old copy may still exist on Vercel team `thepoojaedit`. Never touch the
+  `thepoojaedit` Vercel project (the live fashion store).
+- **Deploy:** `npm run cf:deploy`. Test locally in the Workers runtime with `npm run cf:preview`.
+- **No `fs` at runtime** (Workers). Build-time data goes into `content/*.json` via `scripts/`.
 - **Design is owner-directed:** a Kylie Cosmetics-style storefront (white, rose condensed caps, blush).
   Keep changes consistent with the tokens in `app/globals.css`.
 - **WhatsApp is the primary CTA everywhere.** Prices live only in `lib/site.ts`.
@@ -20,7 +21,8 @@ Update it whenever state changes.
 ```bash
 npm run dev          # local dev
 npm run typecheck    # tsc --noEmit
-npm run build        # production build (run before every deploy)
+npm run build        # Next build (prebuild generates content/reel-videos.json)
+npm run cf:deploy    # build for Cloudflare + deploy
 ```
 
 ## Map

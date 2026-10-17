@@ -21,7 +21,7 @@ npm run build && npm start   # production
 | Testimonials | `content/testimonials.json` (placeholders, labelled as such) | n/a |
 | Prices, contact, WhatsApp | `lib/site.ts` | `NEXT_PUBLIC_WHATSAPP_NUMBER` |
 
-Pages are statically generated and refreshed at most hourly (ISR, `revalidate = 3600`).
+Pages are statically generated and refreshed at most hourly (ISR, `revalidate = 3600`, cached in Cloudflare KV).
 If an API fails, the site falls back to RSS or manual content rather than breaking.
 
 ### Adding work manually
@@ -59,4 +59,5 @@ uses a honeypot field to catch bots, and then delivers to every configured chann
 If none is configured, the form says so and offers a pre-filled WhatsApp message, so an enquiry is never silently lost.
 
 ## Deploy
-Vercel works with zero config: import the repo and add the env vars. Any Node host can also run it with `npm run build && npm start`.
+It's hosted on Cloudflare Workers via OpenNext: `npm run cf:deploy`. Secrets are set with
+`npx wrangler secret put NAME`. Details are in docs/HANDOFF.md.

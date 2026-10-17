@@ -8,15 +8,16 @@ long-form + Shorts, carousels, graphics). Services are sold like products: visit
 and check out over **WhatsApp** (pre-filled order message) or the **enquiry form**. There is no online
 payment; that's deliberate, because the brief and timeline are agreed first.
 
-Not to be confused with **PoojaEdit / thepoojaedit.in** (the fashion store). That is a different project,
-although both deploy under the same Vercel team.
+Not to be confused with **PoojaEdit / thepoojaedit.in** (the fashion store), which is a different project.
+This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare on 2026-10-17.
 
 | | |
 |---|---|
-| Live site | https://pooja-dugar-studio.vercel.app |
+| Live site | **https://pooja-dugar-studio.vinayakch17.workers.dev** (Cloudflare Workers) |
+| Old site | https://pooja-dugar-studio.vercel.app: Vercel project still running until it's deleted (see Open items) |
 | Repo | https://github.com/vinayakch17/pooja-dugar-studio (private) |
 | Local path | `~/Documents/pooja-dugar-studio` |
-| Hosting | Vercel, team **thepoojaedit**, project **pooja-dugar-studio** (CLI login: `poojadugarpd-alt`) |
+| Hosting | **Cloudflare Workers**, account *Vinayakch17@gmail.com's Account* (`4950ef49…`), Worker **pooja-dugar-studio**, via OpenNext (`@opennextjs/cloudflare`) |
 | Stack | Next.js 15 (App Router), React 19, TypeScript, plain CSS. No UI or animation libraries. |
 | Contact data | WhatsApp +91 99715 72036 · poojadugar.pd@gmail.com · IG @poojadugar_ · YT @poojadugar |
 
@@ -64,23 +65,31 @@ The old Basic Display API is dead (Dec 2024).
   webhook. If none is configured it returns 503 and the UI falls back to WhatsApp.
 - Deep links: `#reels`, `#youtube`, `#carousels`, `#graphics`, `#chat` switch tabs and scroll.
 
-## Environment (Vercel → Production)
-| Var | Status |
-|---|---|
-| `FORMSPREE_ENDPOINT` | ✅ set (`https://formspree.io/f/xzedobav`) |
-| `NEXT_PUBLIC_SITE_URL` | ✅ `https://pooja-dugar-studio.vercel.app` |
-| `INSTAGRAM_ACCESS_TOKEN`, `YOUTUBE_API_KEY`, `RESEND_*`, `GOOGLE_SHEETS_WEBHOOK_URL` | not set (optional) |
+## Environment (Cloudflare Worker `pooja-dugar-studio`)
+| Var | Where | Status |
+|---|---|---|
+| `FORMSPREE_ENDPOINT` | Worker **secret** (`npx wrangler secret put FORMSPREE_ENDPOINT`) | ✅ `https://formspree.io/f/xzedobav`, live-tested on Cloudflare 2026-10-17 |
+| `NEXT_PUBLIC_SITE_URL` | `.env.production` (committed; inlined at build) | ✅ workers.dev URL. **Change it here when a custom domain is added** |
+| `INSTAGRAM_ACCESS_TOKEN`, `YOUTUBE_API_KEY`, `RESEND_API_KEY` | would be Worker secrets | not set (optional) |
 
-See `.env.example` for the full list.
+Bindings (`wrangler.jsonc`):
+- `NEXT_INC_CACHE_KV`: KV namespace `pooja-dugar-studio-cache` (`410a3ae7…`), the ISR/fetch cache.
+- `WORKER_SELF_REFERENCE`: the Worker itself, used by the memory queue for background revalidation.
+- `ASSETS`: static files.
+
+Cache config: `open-next.config.ts` uses the KV incremental cache and the memory queue. The home page is ISR (1 h):
+it is served from KV (`x-nextjs-cache: HIT`) and refreshes YouTube data in the background.
 
 ## Deploy
-Vercel is **not** connected to the GitHub repo. Deploy from the folder:
 ```bash
-npm run build                      # sanity check
-npx vercel deploy --prod --yes     # → pooja-dugar-studio.vercel.app
+git pull
+npm run cf:deploy          # opennextjs-cloudflare build && deploy → pooja-dugar-studio.vinayakch17.workers.dev
+npm run cf:preview         # build + run locally in the Workers runtime (wrangler dev)
 ```
-Preview deployments sit behind Vercel login (Deployment Protection), so verify on prod or locally.
-To auto-deploy on push, connect the repo in Vercel → Project → Settings → Git.
+- `npm run build` runs `scripts/reel-videos.mjs` first (prebuild). It lists `public/reels/*.mp4` into
+  `content/reel-videos.json`, because Workers have no filesystem at runtime.
+- Wrangler is logged in as vinayakch17@gmail.com (single account). Check with `npx wrangler whoami`.
+- GitHub isn't connected to Cloudflare; deploys are manual. Optionally connect the repo with Workers Builds.
 
 ## Testing tips
 - `npm run dev`, or `npm run build && npm start`.
@@ -93,7 +102,10 @@ To auto-deploy on push, connect the repo in Vercel → Project → Settings → 
 2. **Real carousels** (post links) and **graphics** (image files).
 3. **Real testimonials**, or remove the Reviews section. Its fake 5-star quotes shouldn't stay live.
 4. Confirm the "best seller" / "new" badges in `lib/products.ts` are true.
-5. Optional: custom domain; connect the GitHub repo to Vercel; Instagram token; YouTube API key.
+5. **Delete the old Vercel project** `pooja-dugar-studio` (team thepoojaedit) once the Cloudflare site is confirmed.
+   Never touch the `thepoojaedit` project.
+6. Optional: custom domain (add in Cloudflare → Worker → Domains & Routes, then update `.env.production` and redeploy);
+   Workers Builds for auto-deploy; Instagram token; YouTube API key.
 
 ## History
 | Commit | Change |
@@ -102,3 +114,4 @@ To auto-deploy on push, connect the repo in Vercel → Project → Settings → 
 | `5eb7440` | Restyled as a Kylie-style storefront with bag + WhatsApp checkout |
 | `9f7a4b6` | 12 real IG Reels with self-hosted covers |
 | `bfaae08` | Hover-to-play; Instagram areas use Instagram imagery only |
+| (this) | Moved from Vercel to Cloudflare Workers (OpenNext, KV cache) |

@@ -1,10 +1,9 @@
 import "server-only";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import type { InstagramItem } from "./types";
 import { categorize, carouselLabel, detectBrand } from "./categorize";
 import manual from "@/content/instagram.json";
 import overrides from "@/content/instagram-overrides.json";
+import reelVideos from "@/content/reel-videos.json";
 
 // Official route: Instagram API with Instagram Login (graph.instagram.com).
 // The old Basic Display API was shut down by Meta on 4 Dec 2024, so don't use it.
@@ -89,9 +88,11 @@ async function fetchGraph(token: string): Promise<{ items: InstagramItem[]; foll
 }
 
 // Drop public/reels/<shortcode>.mp4 next to the cover and it becomes the hover preview.
+// The list is generated at build time by scripts/reel-videos.mjs.
+const videoCodes = new Set<string>(reelVideos);
 function localVideo(permalink: string) {
   const code = shortcode(permalink);
-  return existsSync(path.join(process.cwd(), "public", "reels", `${code}.mp4`)) ? `/reels/${code}.mp4` : undefined;
+  return videoCodes.has(code) ? `/reels/${code}.mp4` : undefined;
 }
 
 function fromManual(): InstagramItem[] {
