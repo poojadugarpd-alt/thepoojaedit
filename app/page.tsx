@@ -5,7 +5,7 @@ import { Reveal } from "@/components/Reveal";
 import { Header } from "@/components/Header";
 import { BagProvider } from "@/components/Bag";
 import { ModalProvider } from "@/components/Media";
-import { ProductGrid, ReelsLove, ShopNow } from "@/components/Shop";
+import { ProductGrid, ReelsLove, ShopNow, type LoveItem } from "@/components/Shop";
 import { InstagramIcon, MailIcon, WhatsAppIcon, YouTubeIcon } from "@/components/icons";
 
 // Re-fetch Instagram + YouTube at most once an hour (ISR).
@@ -34,8 +34,20 @@ export default async function Home() {
   const lf = data.longForm;
   const year = new Date().getFullYear();
 
+  // Real Instagram Reels (with covers) take priority; YouTube Shorts fill in otherwise.
+  const igReels = data.reels.filter((r) => !r.sample && r.thumbnailUrl);
+  const loveItems: LoveItem[] = igReels.length
+    ? igReels.map((r) => ({
+        kind: "instagram",
+        id: r.id,
+        title: r.caption,
+        thumb: r.thumbnailUrl!,
+        permalink: r.permalink,
+      }))
+    : s.map((v) => ({ kind: "youtube", id: v.id, title: v.title, thumb: hq(v.id) }));
+
   const productImages = {
-    reels: s[0] ? [hq(s[0].id)] : [],
+    reels: igReels[0] ? [igReels[0].thumbnailUrl!] : s[0] ? [hq(s[0].id)] : [],
     youtube: lf[0] ? [maxres(lf[0].id)] : [],
     carousels: s.slice(3, 6).map((v) => hq(v.id)),
     graphics: lf[1] ? [maxres(lf[1].id)] : [],
@@ -95,12 +107,12 @@ export default async function Home() {
           </section>
 
           {/* ── Reels love ── */}
-          {s.length > 0 && (
+          {loveItems.length > 0 && (
             <section className="block blush" aria-labelledby="love-title">
               <h2 id="love-title" className="section-title">
-                shorts love
+                {igReels.length ? "reels love" : "shorts love"}
               </h2>
-              <ReelsLove shorts={s} />
+              <ReelsLove items={loveItems} />
             </section>
           )}
 

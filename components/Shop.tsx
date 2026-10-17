@@ -1,7 +1,6 @@
 "use client";
 
 import type { PriceKey } from "@/lib/site";
-import type { YouTubeVideo } from "@/lib/types";
 import { inr, products } from "@/lib/products";
 import { AddToBag, useBag } from "./Bag";
 import { useModal } from "./Media";
@@ -44,21 +43,29 @@ export function ProductGrid({ images }: { images: Partial<Record<PriceKey, strin
   );
 }
 
+export type LoveItem =
+  | { kind: "youtube"; id: string; title: string; thumb: string }
+  | { kind: "instagram"; id: string; title: string; thumb: string; permalink: string };
+
 /** "reels love" — horizontal scroller of vertical videos with a quick-add bag icon. */
-export function ReelsLove({ shorts }: { shorts: YouTubeVideo[] }) {
+export function ReelsLove({ items }: { items: LoveItem[] }) {
   const open = useModal();
   const bag = useBag();
   return (
     <div className="love-row" role="list">
-      {shorts.map((v) => (
+      {items.map((v) => (
         <div key={v.id} className="love-card" role="listitem">
           <button
             type="button"
             className="love-play"
-            onClick={() => open({ type: "youtube", id: v.id, title: v.title, vertical: true })}
+            onClick={() =>
+              v.kind === "youtube"
+                ? open({ type: "youtube", id: v.id, title: v.title, vertical: true })
+                : open({ type: "instagram", permalink: v.permalink, title: v.title })
+            }
             aria-label={`Play: ${v.title}`}
           >
-            <img src={v.thumbnailUrl} alt="" loading="lazy" decoding="async" />
+            <img src={v.thumb} alt="" loading="lazy" decoding="async" />
             <span className="love-play-icon" aria-hidden="true">
               <PlayIcon size={20} />
             </span>

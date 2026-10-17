@@ -223,7 +223,7 @@ function ReelsPanel({ reels, carousels }: { reels: InstagramItem[]; carousels: I
         priceKey="reels"
       />
       <Filters label="Filter Reels" options={options} value={filter} onChange={setFilter} />
-      <SourceNote sample={all.some((i) => i.sample)} />
+      <SourceNote sample={items.some((i) => i.sample)} />
       {items.length ? (
         <div key={filter} className={`grid ${filter === "carousel" ? "grid-carousel" : "grid-reels"} fade-in`}>
           {items.map((r, i) => (
