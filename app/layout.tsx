@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Barlow_Condensed, Figtree } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-const display = Fraunces({
+const display = Barlow_Condensed({
   subsets: ["latin"],
-  axes: ["opsz", "SOFT"],
+  weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
-const body = Manrope({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const body = Figtree({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 
 const description =
   "Instagram Reels, YouTube long-form, Shorts, carousels, and graphics — edited by Pooja Dugar. Reels from ₹200, YouTube from ₹1,000. Chat on WhatsApp.";
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0a09",
-  colorScheme: "dark",
+  themeColor: "#ffffff",
+  colorScheme: "light",
 };
 
 const jsonLd = {
@@ -60,8 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN" className={`${display.variable} ${body.variable}`}>
       <body>
-        <a className="skip" href="#work">
-          Skip to work
+        <a className="skip" href="#shop">
+          Skip to shop
         </a>
         {children}
         <script

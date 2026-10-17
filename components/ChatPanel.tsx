@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useBag } from "./Bag";
+import { productById } from "@/lib/products";
+import type { PriceKey } from "@/lib/site";
 import { serviceOptions, site, waLink } from "@/lib/site";
 import { type Enquiry, type EnquiryErrors, validateEnquiry } from "@/lib/enquiry";
 import { CheckIcon, InstagramIcon, MailIcon, WhatsAppIcon, YouTubeIcon } from "./icons";
@@ -15,6 +18,17 @@ export function ChatPanel() {
   const [touched, setTouched] = useState<Partial<Record<keyof Enquiry, boolean>>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [serverMsg, setServerMsg] = useState("");
+  const bag = useBag();
+
+  // Coming from the bag: prefill the brief with the order summary.
+  useEffect(() => {
+    const ids = Object.keys(bag.lines) as PriceKey[];
+    if (!ids.length) return;
+    const service = ids.length === 1 ? productById[ids[0]].workTab : "";
+    const svcLabel = { reels: "Instagram Reels", youtube: "YouTube Long Form", carousels: "Instagram Carousels", graphics: "Graphics" }[service] ?? "Other";
+    setForm((f) => (f.message ? f : { ...f, service: f.service || svcLabel, message: `My order:\n${bag.summary()}\n\n` }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const set = (k: keyof Enquiry) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const next = { ...form, [k]: e.target.value };

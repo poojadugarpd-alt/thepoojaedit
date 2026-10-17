@@ -3,7 +3,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { InstagramItem, ShowcaseData } from "@/lib/types";
 import { pricing, site, waLink, type PriceKey } from "@/lib/site";
-import { EmptyState, GraphicCard, InstagramCard, ModalProvider, YouTubeCard } from "./Media";
+import { EmptyState, GraphicCard, InstagramCard, YouTubeCard } from "./Media";
+import { AddToBag } from "./Bag";
 import { ChatPanel } from "./ChatPanel";
 import { ArrowIcon, WhatsAppIcon } from "./icons";
 
@@ -30,9 +31,11 @@ export function Showcase({ data }: { data: ShowcaseData }) {
   useEffect(() => {
     const sync = () => {
       const h = location.hash.slice(1);
-      if (isTab(h)) setActive(h);
+      if (!isTab(h)) return;
+      setActive(h);
+      document.getElementById("work")?.scrollIntoView({ behavior: "smooth" });
     };
-    sync();
+    if (isTab(location.hash.slice(1))) setActive(location.hash.slice(1) as TabId);
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
@@ -75,7 +78,6 @@ export function Showcase({ data }: { data: ShowcaseData }) {
   };
 
   return (
-    <ModalProvider>
       <section id="work" className="showcase" aria-label="Portfolio">
         <div className="tabs-wrap">
           <div className="tabs" role="tablist" aria-label="Services" ref={listRef} onKeyDown={onKey}>
@@ -121,7 +123,6 @@ export function Showcase({ data }: { data: ShowcaseData }) {
           {active === "chat" && <ChatPanel />}
         </div>
       </section>
-    </ModalProvider>
   );
 }
 
@@ -141,14 +142,17 @@ function PanelHead({ title, sub, priceKey }: { title: string; sub: string; price
           <span>{p.unit}</span>
         </p>
         <p className="price-includes">{p.includes}</p>
-        <a
-          className="btn btn-wa btn-sm"
-          href={waLink(`Hi Pooja! I'd like to book ${p.service} (${p.amount} ${p.unit}).`)}
-          target="_blank"
-          rel="noopener"
-        >
-          <WhatsAppIcon size={16} /> Book on WhatsApp
-        </a>
+        <div className="price-actions">
+          <AddToBag id={priceKey} />
+          <a
+            className="btn btn-wa"
+            href={waLink(`Hi Pooja! I'd like to book ${p.service} (${p.amount} ${p.unit}).`)}
+            target="_blank"
+            rel="noopener"
+          >
+            <WhatsAppIcon size={16} /> book on whatsapp
+          </a>
+        </div>
       </div>
     </header>
   );
