@@ -9,12 +9,11 @@ and check out over **WhatsApp** (pre-filled order message) or the **enquiry form
 payment; that's deliberate, because the brief and timeline are agreed first.
 
 Not to be confused with **PoojaEdit / thepoojaedit.in** (the fashion store), which is a different project.
-This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare on 2026-10-17.
+This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare on 2026-10-17, and the Vercel project was deleted the same day.
 
 | | |
 |---|---|
 | Live site | **https://pooja-dugar-studio.vinayakch17.workers.dev** (Cloudflare Workers) |
-| Old site | https://pooja-dugar-studio.vercel.app: Vercel project still running until it's deleted (see Open items) |
 | Repo | https://github.com/vinayakch17/pooja-dugar-studio (private) |
 | Local path | `~/Documents/pooja-dugar-studio` |
 | Hosting | **Cloudflare Workers**, account *Vinayakch17@gmail.com's Account* (`4950ef49…`), Worker **pooja-dugar-studio**, via OpenNext (`@opennextjs/cloudflare`) |
@@ -102,9 +101,7 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 2. **Real carousels** (post links) and **graphics** (image files).
 3. **Real testimonials**, or remove the Reviews section. Its fake 5-star quotes shouldn't stay live.
 4. Confirm the "best seller" / "new" badges in `lib/products.ts` are true.
-5. **Delete the old Vercel project** `pooja-dugar-studio` (team thepoojaedit) once the Cloudflare site is confirmed.
-   Never touch the `thepoojaedit` project.
-6. Optional: custom domain (add in Cloudflare → Worker → Domains & Routes, then update `.env.production` and redeploy);
+5. Optional: custom domain (add in Cloudflare → Worker → Domains & Routes, then update `.env.production` and redeploy);
    Workers Builds for auto-deploy; Instagram token; YouTube API key.
 
 ## History

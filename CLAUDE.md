@@ -6,7 +6,7 @@ Update it whenever state changes.
 ## Ground rules
 - **Two Macs / two sessions:** run `git pull` before starting.
 - **Not PoojaEdit.** Hosting is **Cloudflare Workers** (account vinayakch17@gmail.com, Worker
-  `pooja-dugar-studio`). An old copy may still exist on Vercel team `thepoojaedit`. Never touch the
+  `pooja-dugar-studio`). The old Vercel copy was deleted on 2026-10-17. Never touch the
   `thepoojaedit` Vercel project (the live fashion store).
 - **Deploy:** `npm run cf:deploy`. Test locally in the Workers runtime with `npm run cf:preview`.
 - **No `fs` at runtime** (Workers). Build-time data goes into `content/*.json` via `scripts/`.
