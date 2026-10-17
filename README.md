@@ -1,6 +1,8 @@
 # Pooja Dugar Studio
 
-A single-page portfolio and enquiry site for Pooja Dugar's video editing service, built with Next.js 15 (App Router). It has no CSS framework, no animation library, and no image CDN dependency.
+A single-page storefront-style portfolio and enquiry site for Pooja Dugar's video editing service, built with Next.js 15 (App Router). It has no CSS framework, no animation library, and no image CDN dependency.
+
+> Current state, open items and deploy steps: see [docs/HANDOFF.md](docs/HANDOFF.md).
 
 ```bash
 npm install
