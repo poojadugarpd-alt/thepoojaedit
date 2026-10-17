@@ -130,8 +130,11 @@ function BagDrawer({ open }: { open: boolean }) {
 
   const toEnquiry = () => {
     bag.close();
-    location.hash = "chat";
-    document.getElementById("work")?.scrollIntoView({ behavior: "smooth" });
+    // Wait for the drawer's scroll lock to lift, otherwise the scroll is swallowed.
+    setTimeout(() => {
+      if (location.hash === "#chat") window.dispatchEvent(new HashChangeEvent("hashchange"));
+      else location.hash = "chat";
+    }, 80);
   };
 
   return (
