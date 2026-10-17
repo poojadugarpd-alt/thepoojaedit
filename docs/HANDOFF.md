@@ -1,6 +1,6 @@
 # Pooja Dugar Edit Studio — Handoff
 
-_Last updated: 2026-10-17_
+_Last updated: 2026-10-17 (end of day)_
 
 ## What this is
 A one-page storefront for **Pooja Dugar's video editing & content service** (Instagram Reels, YouTube
@@ -131,4 +131,5 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 | `9f7a4b6` | 12 real IG Reels with self-hosted covers |
 | `bfaae08` | Hover-to-play; Instagram areas use Instagram imagery only |
 | `8c3b718` | Moved from Vercel to Cloudflare Workers (OpenNext, KV cache) |
-| (this) | Live at studio.thepoojaedit.in via forwarder Worker in Pooja's CF account |
+| `1eaf20f` | Live at studio.thepoojaedit.in via forwarder Worker in Pooja's CF account |
+| `e832c4c` | Favicon = The Pooja Edit's 'P' monogram (copied from PoojaEdit `src/app/` icon files) |
