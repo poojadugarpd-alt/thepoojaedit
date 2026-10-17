@@ -13,7 +13,8 @@ This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare o
 
 | | |
 |---|---|
-| Live site | **https://pooja-dugar-studio.vinayakch17.workers.dev** (Cloudflare Workers) |
+| Live site | **https://studio.thepoojaedit.in** (public address) |
+| Origin | https://pooja-dugar-studio.vinayakch17.workers.dev (the real Worker; also reachable directly) |
 | Repo | https://github.com/vinayakch17/pooja-dugar-studio (private) |
 | Local path | `~/Documents/pooja-dugar-studio` |
 | Hosting | **Cloudflare Workers**, account *Vinayakch17@gmail.com's Account* (`4950ef49…`), Worker **pooja-dugar-studio**, via OpenNext (`@opennextjs/cloudflare`) |
@@ -64,11 +65,29 @@ The old Basic Display API is dead (Dec 2024).
   webhook. If none is configured it returns 503 and the UI falls back to WhatsApp.
 - Deep links: `#reels`, `#youtube`, `#carousels`, `#graphics`, `#chat` switch tabs and scroll.
 
+## How studio.thepoojaedit.in works (two Cloudflare accounts)
+```
+visitor → studio.thepoojaedit.in
+        → Worker "studio-thepoojaedit"   (Pooja's CF account: poojadugar.pd@gmail.com, owns the thepoojaedit.in zone)
+        → fetch https://pooja-dugar-studio.vinayakch17.workers.dev   (vinayakch17 CF account: the actual site)
+```
+- Cloudflare can only attach a custom domain to a Worker **in the same account as the zone**. The site lives in
+  the vinayakch17 account and the zone is in Pooja's, so a 10-line forwarder Worker in Pooja's account serves the
+  subdomain. It also rewrites any `Location` redirect back to studio.thepoojaedit.in.
+- Forwarder code: edit it in Pooja's dashboard → Workers & Pages → `studio-thepoojaedit` → Edit code. Its only
+  setting is `ORIGIN`. Custom domain: same Worker → Domains → `studio.thepoojaedit.in` (Production).
+  Cloudflare created the DNS record and certificate automatically.
+- **Normal deploys don't touch Pooja's account.** `npm run cf:deploy` updates the origin and the subdomain serves it
+  immediately.
+- The **store** (thepoojaedit.in, `www`, `img`, mail records) is untouched. It's still served by Vercel, with
+  DNS in the same zone.
+- If the site is ever moved into Pooja's account, delete the forwarder and attach the domain to that Worker directly.
+
 ## Environment (Cloudflare Worker `pooja-dugar-studio`)
 | Var | Where | Status |
 |---|---|---|
 | `FORMSPREE_ENDPOINT` | Worker **secret** (`npx wrangler secret put FORMSPREE_ENDPOINT`) | ✅ `https://formspree.io/f/xzedobav`, live-tested on Cloudflare 2026-10-17 |
-| `NEXT_PUBLIC_SITE_URL` | `.env.production` (committed; inlined at build) | ✅ workers.dev URL. **Change it here when a custom domain is added** |
+| `NEXT_PUBLIC_SITE_URL` | `.env.production` (committed; inlined at build) | ✅ `https://studio.thepoojaedit.in` (canonical + OG URLs) |
 | `INSTAGRAM_ACCESS_TOKEN`, `YOUTUBE_API_KEY`, `RESEND_API_KEY` | would be Worker secrets | not set (optional) |
 
 Bindings (`wrangler.jsonc`):
@@ -82,7 +101,7 @@ it is served from KV (`x-nextjs-cache: HIT`) and refreshes YouTube data in the b
 ## Deploy
 ```bash
 git pull
-npm run cf:deploy          # opennextjs-cloudflare build && deploy → pooja-dugar-studio.vinayakch17.workers.dev
+npm run cf:deploy          # opennextjs-cloudflare build && deploy → origin Worker; live at studio.thepoojaedit.in
 npm run cf:preview         # build + run locally in the Workers runtime (wrangler dev)
 ```
 - `npm run build` runs `scripts/reel-videos.mjs` first (prebuild). It lists `public/reels/*.mp4` into
@@ -101,7 +120,7 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 2. **Real carousels** (post links) and **graphics** (image files).
 3. **Real testimonials**, or remove the Reviews section. Its fake 5-star quotes shouldn't stay live.
 4. Confirm the "best seller" / "new" badges in `lib/products.ts` are true.
-5. Optional: custom domain (add in Cloudflare → Worker → Domains & Routes, then update `.env.production` and redeploy);
+5. Optional: link the two sites (a "content editing services" link in the store footer and a link back);
    Workers Builds for auto-deploy; Instagram token; YouTube API key.
 
 ## History
@@ -111,4 +130,5 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 | `5eb7440` | Restyled as a Kylie-style storefront with bag + WhatsApp checkout |
 | `9f7a4b6` | 12 real IG Reels with self-hosted covers |
 | `bfaae08` | Hover-to-play; Instagram areas use Instagram imagery only |
-| (this) | Moved from Vercel to Cloudflare Workers (OpenNext, KV cache) |
+| `8c3b718` | Moved from Vercel to Cloudflare Workers (OpenNext, KV cache) |
+| (this) | Live at studio.thepoojaedit.in via forwarder Worker in Pooja's CF account |

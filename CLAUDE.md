@@ -8,6 +8,9 @@ Update it whenever state changes.
 - **Not PoojaEdit.** Hosting is **Cloudflare Workers** (account vinayakch17@gmail.com, Worker
   `pooja-dugar-studio`). The old Vercel copy was deleted on 2026-10-17. Never touch the
   `thepoojaedit` Vercel project (the live fashion store).
+- **Public URL is https://studio.thepoojaedit.in.** It's served by a forwarder Worker (`studio-thepoojaedit`) in
+  *Pooja's* Cloudflare account (poojadugar.pd@gmail.com, which owns the thepoojaedit.in zone) that proxies to this
+  Worker. Never edit the zone's other records (the store runs on Vercel). See HANDOFF "How studio.thepoojaedit.in works".
 - **Deploy:** `npm run cf:deploy`. Test locally in the Workers runtime with `npm run cf:preview`.
 - **No `fs` at runtime** (Workers). Build-time data goes into `content/*.json` via `scripts/`.
 - **Design is owner-directed:** a Kylie Cosmetics-style storefront (white, rose condensed caps, blush).
