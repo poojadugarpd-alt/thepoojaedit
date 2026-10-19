@@ -30,6 +30,7 @@ const maxres = (id: string) => `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
 
 export default async function Home() {
   const data = await getShowcase();
+  const reviews = data.testimonials.filter((t) => !t.sample);
   const s = data.shorts;
   const lf = data.longForm;
   const year = new Date().getFullYear();
@@ -173,14 +174,15 @@ export default async function Home() {
             </ol>
           </section>
 
-          {/* ── Reviews ── */}
-          <section className="block" aria-labelledby="reviews-title">
+          {/* ── Reviews: hidden until there are real (non-placeholder) testimonials ── */}
+          {reviews.length > 0 && (
+            <section className="block" aria-labelledby="reviews-title">
             <h2 id="reviews-title" className="section-title">
               reviews
             </h2>
             <p className="center-sub">edited for creators, brands, and lifestyle content</p>
             <div className="reviews">
-              {data.testimonials.map((t, i) => (
+              {reviews.map((t, i) => (
                 <Reveal as="figure" key={i} className="review" delay={i * 80}>
                   <p className="stars" aria-label="5 out of 5 stars">
                     ★★★★★
@@ -193,7 +195,8 @@ export default async function Home() {
                 </Reveal>
               ))}
             </div>
-          </section>
+            </section>
+          )}
         </main>
 
         <footer className="footer">

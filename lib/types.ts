@@ -14,6 +14,8 @@ export type InstagramItem = {
   /** Carousel-specific label: Educational, Brand, Lifestyle, UGC, Promotional */
   carouselLabel?: string;
   brand?: string;
+  /** Opens this URL in a new tab instead of the Instagram player (e.g. a Canva view link). */
+  externalUrl?: string;
   timestamp?: string;
   /** True for seed/placeholder entries that ship with the template. */
   sample?: boolean;
@@ -45,7 +47,25 @@ export type GraphicItem = {
   alt: string;
   /** Aspect ratio, e.g. "16/9", "4/5", "1/1". */
   ratio?: string;
+  /** Opens this URL in a new tab instead of the image lightbox (e.g. a Canva view link). */
+  href?: string;
+  client?: string;
   sample?: boolean;
+};
+
+/** A design shared from Canva as a public view link (content/canva.json). */
+export type CanvaItem = {
+  id: string;
+  kind: "carousel" | "graphic";
+  title: string;
+  client: string;
+  /** Carousel label (Educational, Brand…) or graphic category (Poster…). */
+  label: string;
+  pages: number;
+  url: string;
+  cover: string;
+  width: number;
+  height: number;
 };
 
 export type Testimonial = {

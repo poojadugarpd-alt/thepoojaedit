@@ -232,10 +232,16 @@ export function InstagramCard({ item, index }: { item: InstagramItem; index: num
     </span>
   );
 
-  // Sample entries have no real post to embed; send people to the profile instead.
-  if (item.sample) {
+  // Canva designs open on Canva; sample entries have no real post, so send people to the profile.
+  if (item.externalUrl || item.sample) {
     return (
-      <a className="card" href={item.permalink} target="_blank" rel="noopener" aria-label={`${badge}: ${title} (opens Instagram)`}>
+      <a
+        className="card"
+        href={item.externalUrl ?? item.permalink}
+        target="_blank"
+        rel="noopener"
+        aria-label={`${badge}: ${title} (opens ${item.externalUrl ? "Canva" : "Instagram"})`}
+      >
         {visual}
         {body}
       </a>
@@ -305,6 +311,13 @@ export function GraphicCard({ item, index }: { item: GraphicItem; index: number 
     </span>
   );
   if (!item.image) return <div className="card card-static">{inner}</div>;
+  if (item.href) {
+    return (
+      <a className="card" href={item.href} target="_blank" rel="noopener" aria-label={`${item.category}: ${item.title} (opens Canva)`}>
+        {inner}
+      </a>
+    );
+  }
   return (
     <button
       type="button"
