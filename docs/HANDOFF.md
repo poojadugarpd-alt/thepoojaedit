@@ -25,6 +25,22 @@ This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare o
 From 2026-10-19, the studio site, The Pooja Edit store and PR outreach are handled in **one Claude chat**.
 Each project keeps its own repo, handoff doc and deploy path. **Don't mix them.**
 
+**Brand structure (owner's view, 2026-10-19).** The master brand is **Pooja Dugar**, the person. Five things sit under her:
+
+```
+Pooja Dugar (master brand)
+├─ 1. Instagram @poojadugar_       PR outreach supports this
+├─ 2. YouTube                      nothing built for it yet
+├─ 3. thepoojaedit.in              store, Vercel, real customers
+│    ├─ Label          new apparel                      live
+│    ├─ Closet         one-of-one thrift, /closet       live
+│    └─ Shop my Looks  /looks (store D-163)             built, hidden, no content
+├─ 4. Styling Service  /styling on the store (D-162)    built, hidden, no content
+└─ 5. Editing service  studio.thepoojaedit.in (this repo)  live
+```
+
+Shop my Looks and the Styling Service are built in the store's code but serve 404. The owner counts them as "not built" because they have no content yet; a page without content isn't worth launching. They are content work now, not dev work. Fill them in Admin → Looks and Admin → Styling, and only the owner presses Publish.
+
 | | Studio (this repo) | The Pooja Edit store | PR outreach |
 |---|---|---|---|
 | What | Editing-service storefront | Fashion e-commerce (new + thrift), **real customers** | Brand PR forms and emails for @poojadugar_ |
