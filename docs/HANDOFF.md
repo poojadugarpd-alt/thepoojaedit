@@ -21,6 +21,28 @@ This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare o
 | Stack | Next.js 15 (App Router), React 19, TypeScript, plain CSS. No UI or animation libraries. |
 | Contact data | WhatsApp +91 99715 72036 · poojadugar.pd@gmail.com · IG @poojadugar_ · YT @poojadugar |
 
+## One roof: all Pooja work (added 2026-10-19)
+From 2026-10-19, the studio site, The Pooja Edit store and PR outreach are handled in **one Claude chat**.
+Each project keeps its own repo, handoff doc and deploy path. **Don't mix them.**
+
+| | Studio (this repo) | The Pooja Edit store | PR outreach |
+|---|---|---|---|
+| What | Editing-service storefront | Fashion e-commerce (new + thrift), **real customers** | Brand PR forms and emails for @poojadugar_ |
+| Live | studio.thepoojaedit.in | thepoojaedit.in | n/a |
+| Local | `~/Documents/pooja-dugar-studio` | `~/Documents/PoojaEdit` | `~/.claude/skills/pr/SKILL.md` |
+| GitHub | vinayakch17/pooja-dugar-studio | poojadugarpd-alt/thepoojaedit | n/a |
+| Hosting | Cloudflare Workers (vinayakch17 account) | **Vercel** team `thepoojaedit` | Google Sheet "Pooja PR Forms" (poojadugar.pd@gmail.com) |
+| Deploy | `npm run cf:deploy` | per its docs/HANDOVER.md | never submit or send; prefill only |
+| Source of truth | `docs/HANDOFF.md` (this file) | `docs/HANDOVER.md` §8 on origin/main | the sheet |
+
+Shared pieces and the rules for them:
+- **Domain**: the `thepoojaedit.in` zone sits in Pooja's Cloudflare account. The store's records (apex, `www`, `img`, mail)
+  point to Vercel. `studio.` is the only record that belongs to this site, through the forwarder Worker. Never edit the store's DNS records from studio work.
+- **Brand**: the favicon "P" monogram is copied from the store's `src/app/` icons. WhatsApp +91 99715 72036 and IG @poojadugar_ are the same on both sites.
+- **Two Macs**: the store is also worked on from the `poojadugar` Mac. Run `git fetch` (or pull) in **both** repos before any work.
+- **Cross-linking**: a store footer link to the studio, and one back, are not wanted yet (owner, 2026-10-19). Ask before adding them.
+- **Risk**: the store is in production with real orders. Treat any change there as production work and follow its decision log (D-numbers).
+
 ## Prices (single source: `lib/site.ts`)
 Reels ₹200 · YouTube long-form ₹1,000 (thumbnail + Shorts included) · Carousel ₹200 · Graphic ₹500.
 Turnaround: 24–48h (reels/carousels/graphics), 2–3 days (YouTube). 1–2 revisions included. ₹200 Reels are
