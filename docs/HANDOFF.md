@@ -44,7 +44,7 @@ Barlow Condensed (caps headlines) and Figtree (body).
 | Instagram Reels (12 real) | `content/instagram.json` (manual) | Add entry: `permalink`, `caption`, `category` (brand/affiliate/ugc), `brand`, `thumbnailUrl` |
 | Reel covers | `public/reels/<shortcode>.jpg` (self-hosted, ~120 KB each) | Download: `curl -sL "https://www.instagram.com/p/<code>/media/?size=l" -o public/reels/<code>.jpg`, then `sips -Z 960 -s formatOptions 78` |
 | Reel hover videos | `public/reels/<shortcode>.mp4`, **auto-detected** (`lib/instagram.ts → localVideo`) | **None added yet.** Drop compressed mp4s named by shortcode |
-| Carousels | **`content/canva.json`** (`kind: "carousel"`, 16 designs) → tiles open the design's **Canva public view link** in a new tab | Add a row + cover jpg in `public/canva/<id>.jpg`. Real IG carousels (non-sample) in `instagram.json` still show after them |
+| Carousels | **`content/canva.json`** (`kind: "carousel"`, 15 designs; "DAY @ IKEA" 4-page dropped as mixed content) → tiles open the design's **Canva public view link** in a new tab | Add a row + cover jpg in `public/canva/<id>.jpg`. Real IG carousels (non-sample) in `instagram.json` still show after them |
 | Graphics | **`content/canva.json`** (`kind: "graphic"`, 5 designs) → open Canva view link | `content/graphics.json` samples only show if canva.json has no graphics |
 | Testimonials | `content/testimonials.json` | Reviews section is **hidden** until at least one entry has no `sample: true` (owner choice 2026-10-19) |
 | Category fixes | `content/instagram-overrides.json` keyed by shortcode | `{ "CODE": { "category": "ugc", "hidden": false } }` |
@@ -121,7 +121,7 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - Each design got a **view-only public link** (Share → Public view link → canva.link/…). Revoke from the same panel to unpublish.
 - Covers: screenshots of `<view-url>?embed` in local headless Chrome, cropped to the design, ~900px JPG. Video designs (c11, c13, c14) sit behind a Cloudflare check for headless, so their covers were captured from the real Chrome instead.
 - Not included: "June Lookbook bestsellers" (owned by House Of Chikankari, view-only for this account).
-- Note: many of these designs' normal Canva share link is "Anyone with the link: **can edit**" — owner was advised to switch to can view.
+- 2026-10-19: owned designs with an "Anyone with the link: can edit" link were switched to **can view** (Malvin carousel, Frames). Two designs owned by OTHER accounts (THE CURSED JUNGLE, NO SMALL TALK) were left on can edit, because switching would remove this account's own edit access.
 
 ## Open items / next steps
 1. **Reel mp4s** for hover-play (export from IG or originals; compress; ffmpeg isn't installed on this Mac).
