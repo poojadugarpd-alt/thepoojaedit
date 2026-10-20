@@ -216,12 +216,16 @@ export async function getPublishedProduct(
   catalog: CatalogType,
   slug: string,
 ): Promise<PublicProductDetail | null> {
-  const p = await db.product.findUnique({
-    where: { catalog_slug: { catalog, slug } },
-    include: DETAIL_INCLUDE,
-  });
+  // Side by side, not one after the other: each read is a database round trip.
+  const [p, sale] = await Promise.all([
+    db.product.findUnique({
+      where: { catalog_slug: { catalog, slug } },
+      include: DETAIL_INCLUDE,
+    }),
+    getLiveSale(db),
+  ]);
   if (!p || p.status !== "PUBLISHED" || p.publishedAt == null) return null;
-  return toPublicDetail(p, await getLiveSale(db));
+  return toPublicDetail(p, sale);
 }
 
 export async function searchPublishedProducts(
