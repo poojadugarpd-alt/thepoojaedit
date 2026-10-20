@@ -648,7 +648,7 @@ export async function createFullProductAction(
 }
 
 /** "Hide sold Closet pieces now" on the products list (D-143): archive every
- *  sold Closet piece immediately instead of waiting out the 3 days. */
+ *  sold Closet piece now instead of at the next hourly run. */
 export async function archiveSoldClosetNowAction(): Promise<ActionState> {
   const admin = await requireAdmin();
   try {

@@ -192,6 +192,10 @@ function jsonLd(product: PublicProductDetail, url: string) {
     image: product.images.map((i) => i.url),
     offers: {
       "@type": "Offer",
+      // Closet pieces are pre-loved; Label pieces are new.
+      itemCondition: product.isThrift
+        ? "https://schema.org/UsedCondition"
+        : "https://schema.org/NewCondition",
       priceCurrency: "INR",
       price:
         product.fromPricePaise != null

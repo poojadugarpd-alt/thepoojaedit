@@ -1,43 +1,71 @@
 # The Pooja Edit — by Pooja Dugar
 
-> Realistic, wearable Indian fashion from a solo Instagram-led brand
-> (@poojadugar_). Two catalogs: The Label (Pooja's own designs) and The
-> Closet (one-of-one pre-loved pieces from her own wardrobe). Ships across
-> India.
+> Pooja Dugar is an Indian fashion creator (@poojadugar_ on Instagram,
+> @poojadugar on YouTube) who makes realistic, wearable clothes. thepoojaedit.in
+> is her shop: The Label (her own designs) and The Closet (one-of-one
+> pre-loved pieces from her own wardrobe). She also offers personal styling
+> and shopping in Gurugram and Delhi NCR, and online, and video editing for
+> creators and brands at studio.thepoojaedit.in. Ships across India.
 
-## Catalogs
+## Shop
 
 - The Label (`/label`): Pooja's own designs — kurtis, co-ord sets and linen,
-  made in real sizes and small runs.
+  made in real sizes and small runs. New, made to order; ships in about 5-10
+  business days.
 - The Closet (`/closet`): Pooja's own wardrobe, passed on. Every piece is
-  one-of-one; once it's sold, it's gone. Sold as-is, final sale.
+  one-of-one and listed with its condition, measurements and any flaws. Once
+  it sells it leaves the shop. Final sale; dispatches within about 2 working
+  days.
+- Shop my Looks: the products Pooja wears in her videos, on her LehLah page
+  (https://lehlah.club/poojadugar). These are other brands' products sold by
+  other retailers, not by this shop.
+
+## Personal styling and shopping
+
+- Page: `/styling`. In person in Gurugram and Delhi NCR; online over video
+  call for clients elsewhere in India and abroad. Pooja can also shop in
+  India and ship to clients abroad.
+- Services and fees are listed on the page as Pooja sets them (some are a
+  price range, some are quoted on request). Enquiries go through the form on
+  the page or WhatsApp.
+
+## Video editing (Pooja Dugar Edit Studio)
+
+- Site: https://studio.thepoojaedit.in
+- Instagram Reels and Shorts, YouTube long-form, Instagram carousels and
+  graphics, for lifestyle and fashion creators and brands, including UGC and
+  raw footage to finished edit. Prices and turnaround are on that site.
 
 ## Ordering
 
 - Payment: online only (UPI / card / netbanking) via Razorpay. Cash on
   delivery is not offered.
-- Shipping: ships across India via Shadowfax. The Label ships in about
-  5-10 business days (made to order/slow-made); The Closet dispatches within
-  about 2 working days.
-- Returns: differ by catalog — see `/policies/returns-exchanges` for current
-  terms (this page is still being finalized by the owner; treat it as
-  provisional, not final, as of this file's last update).
+- Shipping: across India. See `/policies/shipping`.
+- Returns differ by catalog, and each item shows its own policy on the product
+  page and in the cart. In short: Label items can be returned for damage or a
+  wrong item, or exchanged for size, if raised within 48 hours of delivery
+  with an unboxing video; Closet pieces are final sale. The full, current
+  terms are at `/policies/returns-exchanges`.
 
 ## Links
 
-- Homepage: /
+- Home: /
 - The Label: /label
 - The Closet: /closet
+- Personal styling: /styling
 - About: /about
+- Size guide: /size-guide
 - Contact: /contact
 - Shipping policy: /policies/shipping
 - Returns & exchanges: /policies/returns-exchanges
 
-## Contact
+## Elsewhere
 
 - Instagram: https://www.instagram.com/poojadugar_/ (fastest way to reach
-  the brand)
+  Pooja)
+- YouTube: https://www.youtube.com/@poojadugar
+- Video editing: https://studio.thepoojaedit.in
 
 ---
-Last updated: 2026-09-21. Generated for AI/LLM crawlers per the llms.txt
+Last updated: 2026-10-20. Generated for AI/LLM crawlers per the llms.txt
 convention — for full detail, see the linked pages above.

@@ -34,6 +34,11 @@ export default async function AboutPage() {
         </p>
       )}
       <p>
+        She edits videos for other creators and brands too: Reels, YouTube videos,
+        carousels and graphics. See{" "}
+        <a href="https://studio.thepoojaedit.in">Pooja Dugar Edit Studio</a>.
+      </p>
+      <p>
         Most of what we make and find is shared first on Instagram at{" "}
         <a
           href="https://www.instagram.com/poojadugar_/"

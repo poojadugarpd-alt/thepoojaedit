@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 import { publicEnv } from "@/lib/public-env";
 import type { CatalogType } from "@/lib/catalog-routes";
-import { SEGMENT_BY_CATALOG, getProduct, listProducts } from "@/server/catalog";
+import { closetSeoTitle } from "@/lib/seo-title";
+import {
+  SEGMENT_BY_CATALOG,
+  getProduct,
+  isRetiredClosetPiece,
+  isSoldClosetPiece,
+  listProducts,
+} from "@/server/catalog";
 
 import { ProductDetail } from "./product-detail";
 
@@ -23,8 +30,15 @@ export async function buildProductMetadata(
   const path = `/${segment}/${product.slug}`;
   const image = product.images[0]?.url;
 
+  // The owner's own SEO title wins; Closet pieces otherwise get size + Pre-loved.
+  const title =
+    product.metaTitle ??
+    (product.isThrift
+      ? closetSeoTitle(product.title, product.sizes[0] ?? product.thrift?.labelledSize ?? null)
+      : product.title);
+
   return {
-    title: product.metaTitle ?? product.title,
+    title,
     description,
     alternates: { canonical: path },
     openGraph: {
@@ -45,7 +59,17 @@ export async function CatalogProductPage({
   slug: string;
 }) {
   const product = await getProduct(catalog, slug);
-  if (!product) notFound();
+  const closet = `/${SEGMENT_BY_CATALOG.THRIFT}`;
+  if (!product) {
+    // An archived Closet piece's old link lands in the shop, not on a 404.
+    if (catalog === "THRIFT" && (await isRetiredClosetPiece(slug))) {
+      permanentRedirect(closet);
+    }
+    notFound();
+  }
+  // Sold Closet pieces are hidden straight away (owner, 2026-10-20). Not
+  // permanent: a returned piece can be put back on sale.
+  if (isSoldClosetPiece(product)) redirect(closet);
 
   const alternatives =
     product.availability === "SOLD"

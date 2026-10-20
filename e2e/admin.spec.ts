@@ -149,12 +149,13 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
 });
 
 /**
- * D-138: the owner's "Sold out" switch. Ticked in the editor, the piece stays
- * on the storefront marked sold and can't be bought; unticked, it's back on
- * sale with its stock untouched. Chromium only — every project shares one
- * database, and two projects flipping the same product at once would race.
+ * D-138: the owner's "Sold out" switch. Ticked in the editor, a one-of-one
+ * Closet piece counts as sold, so it leaves the shop straight away and its URL
+ * redirects to /closet (owner, 2026-10-20); unticked, it's back on sale with
+ * its stock untouched. Chromium only — every project shares one database, and
+ * two projects flipping the same product at once would race.
  */
-test("Sold out switch hides the buy button but keeps the product on the site", async ({
+test("Sold out switch takes a Closet piece off the shop until unticked", async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== "chromium", "shared DB — run once");
@@ -176,8 +177,7 @@ test("Sold out switch hides the buy button but keeps the product on the site", a
   await expect(page.getByText("Saved.")).toBeVisible();
 
   await page.goto("/closet/linen-shirt-stripe");
-  await expect(page.getByText(/This piece has sold/)).toBeVisible();
-  await expect(page.getByRole("button", { name: /add to cart/i })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/closet$/);
 
   await openEditor();
   await page.getByLabel("Sold out").uncheck();

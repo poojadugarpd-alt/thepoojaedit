@@ -20,6 +20,18 @@ import {
  * wrappers in `./index` bind the shared client.
  */
 
+/**
+ * A sold Closet piece leaves every list the moment it sells (owner,
+ * 2026-10-20, replacing D-143's 3 days on show). Its own URL redirects to
+ * /closet (see the Closet product route); the hourly archive job then hides
+ * it for good.
+ */
+export function isSoldClosetPiece(c: Pick<PublicProductCard, "catalog" | "availability">) {
+  return c.catalog === "THRIFT" && c.availability === "SOLD";
+}
+
+const listable = (c: PublicProductCard) => !isSoldClosetPiece(c);
+
 const CARD_INCLUDE = {
   variants: true,
   images: true,
@@ -137,7 +149,7 @@ export async function listPublishedProducts(
     getLiveSale(db),
   ]);
 
-  let cards = rows.map((r) => toPublicCard(r, sale));
+  let cards = rows.map((r) => toPublicCard(r, sale)).filter(listable);
   if (f?.inStockOnly) {
     // A held piece is likely back within minutes, so it stays listed (D-150).
     cards = cards.filter(
@@ -228,6 +240,23 @@ export async function getPublishedProduct(
   return toPublicDetail(p, sale);
 }
 
+/**
+ * True when `slug` was a Closet piece that has been archived (sold and taken
+ * down, D-143). Its old URL redirects to /closet instead of a 404, so shared
+ * links and search results land in the shop. Drafts are excluded on purpose:
+ * a drop's URL must not be redirected before it goes live.
+ */
+export async function isRetiredClosetSlug(
+  db: PrismaClient,
+  slug: string,
+): Promise<boolean> {
+  const p = await db.product.findUnique({
+    where: { catalog_slug: { catalog: "THRIFT", slug } },
+    select: { status: true },
+  });
+  return p?.status === "ARCHIVED";
+}
+
 export async function searchPublishedProducts(
   db: PrismaClient,
   opts: { q: string; catalog?: CatalogType; limit?: number },
@@ -251,7 +280,7 @@ export async function searchPublishedProducts(
     take: limit,
   });
   const sale = await getLiveSale(db);
-  return rows.map((r) => toPublicCard(r, sale));
+  return rows.map((r) => toPublicCard(r, sale)).filter(listable);
 }
 
 export async function listActiveCollections(
@@ -301,7 +330,8 @@ export async function getActiveCollection(
     products: col.products
       .map((pc) => pc.product)
       .filter((p) => p.status === "PUBLISHED" && p.publishedAt != null)
-      .map((p) => toPublicCard(p, sale)),
+      .map((p) => toPublicCard(p, sale))
+      .filter(listable),
   };
 }
 
@@ -340,7 +370,8 @@ export async function getHomeRailProducts(
     });
     if (rows.length > 0) {
       const sale = await getLiveSale(db);
-      return rows.map((r) => toPublicCard(r.product, sale));
+      const cards = rows.map((r) => toPublicCard(r.product, sale)).filter(listable);
+      if (cards.length > 0) return cards;
     }
   }
   return (await listPublishedProducts(db, { catalog, sort: "newest", limit: 12 }))

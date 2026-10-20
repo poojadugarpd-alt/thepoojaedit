@@ -20,7 +20,11 @@ const HELP_LINKS = [
   { href: "/contact", label: "Contact" },
 ];
 
+/** Pooja's video editing service is its own site (owner, 2026-10-20). */
+const EDITING_STUDIO_URL = "https://studio.thepoojaedit.in";
+
 const STUDIO_LINKS = [
+  { href: EDITING_STUDIO_URL, label: "Video editing" },
   { href: "/about", label: "About" },
   { href: "/policies/privacy", label: "Privacy" },
   { href: "/policies/terms", label: "Terms" },
@@ -59,12 +63,21 @@ export async function SiteFooter() {
               <ul className="mt-4 flex flex-col gap-3">
                 {col.links.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-[0.95rem] text-ink hover:text-ink-strong"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.href.startsWith("https://") ? (
+                      <a
+                        href={link.href}
+                        className="text-[0.95rem] text-ink hover:text-ink-strong"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-[0.95rem] text-ink hover:text-ink-strong"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
                 {col.heading === "Studio" && (
@@ -87,14 +100,24 @@ export async function SiteFooter() {
             © {new Date().getFullYear()} The Pooja Edit. All prices in INR, inclusive of
             taxes where applicable.
           </p>
-          <a
-            href="https://www.instagram.com/poojadugar_/"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="u-textlink"
-          >
-            @poojadugar_
-          </a>
+          <div className="flex gap-5">
+            <a
+              href="https://www.instagram.com/poojadugar_/"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="u-textlink"
+            >
+              @poojadugar_
+            </a>
+            <a
+              href="https://www.youtube.com/@poojadugar"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="u-textlink"
+            >
+              YouTube
+            </a>
+          </div>
         </div>
       </div>
     </footer>

@@ -13,6 +13,8 @@ import {
   getHomeRailProducts,
   getProductFacets,
   getPublishedProduct,
+  isRetiredClosetSlug,
+  isSoldClosetPiece,
   listActiveCollections,
   listPublishedProducts,
   searchPublishedProducts,
@@ -24,6 +26,7 @@ import {
 
 export * from "./public-shape";
 export { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX } from "./queries";
+export { isSoldClosetPiece };
 export type {
   ProductFacets,
   ProductFilters,
@@ -55,6 +58,10 @@ export function getFacets(catalog: CatalogType): Promise<ProductFacets> {
 
 export function getProduct(catalog: CatalogType, slug: string) {
   return getPublishedProduct(prisma, catalog, slug);
+}
+
+export function isRetiredClosetPiece(slug: string) {
+  return isRetiredClosetSlug(prisma, slug);
 }
 
 export function searchProducts(opts: {

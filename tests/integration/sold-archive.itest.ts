@@ -68,10 +68,17 @@ async function statusOf(id: string) {
 }
 
 describe("archiveSoldClosetPieces (D-143)", () => {
-  it("archives a Closet piece sold more than 3 days ago and keeps one sold 2 days ago", async () => {
+  it("by default archives a sold Closet piece straight away (owner, 2026-10-20)", async () => {
+    const justSold = await piece({ onHand: 0, soldDaysAgo: 0 });
+    const { archived } = await archiveSoldClosetPieces(db, { now: NOW });
+    expect(archived.map((a) => a.id)).toEqual([justSold.id]);
+    expect(await statusOf(justSold.id)).toBe("ARCHIVED");
+  });
+
+  it("with a grace period, archives only pieces sold before it", async () => {
     const old = await piece({ onHand: 0, soldDaysAgo: 4 });
     const recent = await piece({ onHand: 0, soldDaysAgo: 2 });
-    const { archived } = await archiveSoldClosetPieces(db, { now: NOW });
+    const { archived } = await archiveSoldClosetPieces(db, { now: NOW, graceDays: 3 });
     expect(archived.map((a) => a.id)).toEqual([old.id]);
     expect(await statusOf(old.id)).toBe("ARCHIVED");
     expect(await statusOf(recent.id)).toBe("PUBLISHED");
@@ -117,7 +124,7 @@ describe("archiveSoldClosetPieces (D-143)", () => {
     };
     const old = await ticked(5);
     const recent = await ticked(1);
-    await archiveSoldClosetPieces(db, { now: NOW });
+    await archiveSoldClosetPieces(db, { now: NOW, graceDays: 3 });
     expect(await statusOf(old.id)).toBe("ARCHIVED");
     expect(await statusOf(recent.id)).toBe("PUBLISHED");
   });

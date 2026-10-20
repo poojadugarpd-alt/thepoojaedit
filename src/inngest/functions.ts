@@ -308,8 +308,8 @@ export const reconcileRefunds = inngest.createFunction(
 );
 
 /**
- * Sold Closet pieces leave the shop 3 days after they sell (D-143). Hourly, so
- * a piece goes within an hour of its 3 days being up.
+ * Sold Closet pieces are archived at the next hourly run after they sell
+ * (D-143; no grace since 2026-10-20 — the storefront already hides them).
  */
 export const archiveSoldCloset = inngest.createFunction(
   { id: "archive-sold-closet", concurrency: 1 },

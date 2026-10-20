@@ -172,8 +172,8 @@ export default async function AdminProducts({
       {availability === "SOLD" && (
         <div className="mt-3 rounded border border-line p-3">
           <p className="text-xs text-ink-soft">
-            Sold Closet pieces leave the shop automatically 3 days after they sell. They
-            stay here under Archived, with their orders.
+            Sold Closet pieces leave the shop as soon as they sell, and move to Archived
+            within the hour, with their orders.
           </p>
           <ActionForm
             action={archiveSoldClosetNowAction}

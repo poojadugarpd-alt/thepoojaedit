@@ -6,6 +6,9 @@ import { notFound } from "next/navigation";
 import { EnquiryForm } from "@/features/styling/enquiry-form";
 import { Rail } from "@/features/styling/rail";
 import { prisma } from "@/lib/db";
+import { personId } from "@/lib/organization-jsonld";
+import { publicEnv } from "@/lib/public-env";
+import { stylingServicesJsonLd } from "@/lib/styling-jsonld";
 import { isSignedInAdmin } from "@/server/auth/require-admin";
 import {
   getStylingContent,
@@ -26,7 +29,9 @@ const WHATSAPP_URL = `https://wa.me/919971572036?text=${encodeURIComponent(
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getStylingContent(prisma);
   return {
-    title: "Personal styling",
+    // Search title chosen by the owner (2026-10-20); too long for the brand
+    // suffix, so it's absolute. The on-page heading stays the admin's.
+    title: { absolute: "Personal Shopping & Styling in Delhi NCR | Pooja Dugar" },
     description: c.seoDescription,
     alternates: { canonical: "/styling" },
     ...(c.published ? {} : { robots: { index: false, follow: false } }),
@@ -39,8 +44,18 @@ export default async function StylingPage() {
   if (!c.published && !(await isSignedInAdmin())) notFound();
   const testimonials = visibleTestimonials(c);
 
+  const base = publicEnv.NEXT_PUBLIC_SITE_URL;
+
   return (
     <div>
+      {c.offers.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(stylingServicesJsonLd(c.offers, base, personId(base))),
+          }}
+        />
+      )}
       {!c.published && (
         <p className="u-page pt-6">
           <span className="block rounded-[10px] border border-line bg-fill px-4 py-3 text-sm text-ink">

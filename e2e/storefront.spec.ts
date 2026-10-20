@@ -119,33 +119,16 @@ test.describe("mixed cart (AC-01)", () => {
 });
 
 test.describe("sold thrift (AC-02)", () => {
-  test("a SOLD one-of-one URL resolves and offers no buyable control", async ({
+  // Owner, 2026-10-20: a sold Closet piece is hidden straight away — not
+  // listed, and its URL lands on /closet. Seed: silk-scarf-paisley is sold.
+  test("a SOLD one-of-one is not listed and its URL redirects to /closet", async ({
     page,
   }) => {
     await page.goto("/closet");
-    // Sold-out pieces are deliberately sorted to the end of the listing
-    // (owner request, 2026-09-14), so on a catalog with more in-stock pieces
-    // than fit on one page, a SOLD card only shows up after paging in —
-    // "Load more" a bounded number of times rather than assuming page 1.
-    const soldCard = page
-      .locator("ul.grid > li")
-      .filter({ has: page.getByText("SOLD") })
-      .first();
-    const loadMore = page.getByRole("button", { name: /load more/i });
-    for (let i = 0; i < 6 && (await soldCard.count()) === 0; i++) {
-      if (!(await loadMore.isVisible().catch(() => false))) break;
-      const [response] = await Promise.all([
-        page.waitForResponse((r) => r.url().includes("/api/catalog/")),
-        loadMore.click(),
-      ]);
-      await response.finished();
-    }
-    await expect(soldCard).toBeVisible();
-    await soldCard.locator("a").click();
+    await expect(page.locator('a[href="/closet/silk-scarf-paisley"]')).toHaveCount(0);
 
-    await expect(page).toHaveURL(/\/closet\/[^/]+$/);
-    await expect(page.getByText(/this piece has sold/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /^add to cart$/i })).toHaveCount(0);
+    await page.goto("/closet/silk-scarf-paisley");
+    await expect(page).toHaveURL(/\/closet$/);
   });
 });
 

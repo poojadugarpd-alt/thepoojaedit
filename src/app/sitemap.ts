@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { publicEnv } from "@/lib/public-env";
+import { deriveAvailability } from "@/server/catalog/public-shape";
 import { getStylingContent } from "@/server/styling/content";
 
 export const revalidate = 3600;
@@ -44,6 +45,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     catalog: keyof typeof SEGMENT_BY_CATALOG;
     slug: string;
     updatedAt: Date;
+    markedSoldOut: boolean;
+    variants: { onHandQty: number; reservedQty: number; isActive: boolean }[];
+    thriftDetails: { isOneOfOne: boolean } | null;
   }[] = [];
   let collections: {
     catalog: keyof typeof SEGMENT_BY_CATALOG;
@@ -54,7 +58,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     [products, collections] = await Promise.all([
       prisma.product.findMany({
         where: { status: "PUBLISHED", publishedAt: { not: null } },
-        select: { catalog: true, slug: true, updatedAt: true },
+        select: {
+          catalog: true,
+          slug: true,
+          updatedAt: true,
+          markedSoldOut: true,
+          variants: { select: { onHandQty: true, reservedQty: true, isActive: true } },
+          thriftDetails: { select: { isOneOfOne: true } },
+        },
       }),
       prisma.collection.findMany({
         // isInternal collections (the home-page rails) are not a public page —
@@ -67,7 +78,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // keep the static entries only
   }
 
-  const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
+  // A sold Closet piece redirects to /closet, so it has no place here.
+  const listed = products.filter(
+    (p) =>
+      !(
+        p.catalog === "THRIFT" &&
+        deriveAvailability(
+          p.catalog,
+          p.thriftDetails?.isOneOfOne ?? false,
+          p.variants,
+          p.markedSoldOut,
+        ) === "SOLD"
+      ),
+  );
+
+  const productEntries: MetadataRoute.Sitemap = listed.map((p) => ({
     url: u(`/${SEGMENT_BY_CATALOG[p.catalog]}/${p.slug}`),
     lastModified: p.updatedAt,
     changeFrequency: "weekly",

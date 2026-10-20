@@ -7,6 +7,7 @@ import {
   getActiveCollection,
   getProductFacets,
   getPublishedProduct,
+  isRetiredClosetSlug,
   listPublishedProducts,
   searchPublishedProducts,
 } from "../../src/server/catalog/queries";
@@ -132,9 +133,22 @@ describe("publication vs availability (AC-02)", () => {
     expect(detail!.availability).toBe("SOLD");
     expect(detail!.variants.every((v) => v.available === false)).toBe(true);
 
-    // ...and it is NOT in the normal listing's in-stock signal
-    const card = (await listPublishedProducts(db, { catalog: "THRIFT" })).items[0];
-    expect(card.availability).toBe("SOLD");
+    // ...but it is hidden from every list straight away (owner, 2026-10-20);
+    // the Closet route redirects its URL to /closet.
+    const list = await listPublishedProducts(db, { catalog: "THRIFT" });
+    expect(list.items.map((c) => c.slug)).not.toContain("sold-scarf");
+    const found = await searchPublishedProducts(db, { q: "sold-scarf" });
+    expect(found).toEqual([]);
+  });
+
+  it("only an archived Closet slug counts as retired (drafts are never redirected)", async () => {
+    await makeProduct({ catalog: "THRIFT", slug: "gone-top", status: "ARCHIVED" });
+    await makeProduct({ catalog: "THRIFT", slug: "saturday-drop", status: "DRAFT" });
+    await makeProduct({ catalog: "THRIFT", slug: "live-top", onHand: 1 });
+    expect(await isRetiredClosetSlug(db, "gone-top")).toBe(true);
+    expect(await isRetiredClosetSlug(db, "saturday-drop")).toBe(false);
+    expect(await isRetiredClosetSlug(db, "live-top")).toBe(false);
+    expect(await isRetiredClosetSlug(db, "never-existed")).toBe(false);
   });
 
   it("out-of-stock restockable apparel is OUT_OF_STOCK, not SOLD", async () => {
@@ -236,16 +250,17 @@ describe("search", () => {
 describe("sold-out sink + filters (owner request, 2026-09-14)", () => {
   it("sold-out / out-of-stock products always sink below in-stock ones, regardless of sort", async () => {
     // Newest-first order would normally be [newer-sold, older-in-stock] —
-    // the in-stock one must still come first.
-    await makeProduct({ catalog: "THRIFT", slug: "older-in-stock", onHand: 1 });
-    await makeProduct({ catalog: "THRIFT", slug: "newer-sold", onHand: 0 });
+    // the in-stock one must still come first. Label: a sold Closet piece is
+    // not listed at all (see "publication vs availability").
+    await makeProduct({ catalog: "THE_POOJA_EDIT", slug: "older-in-stock", onHand: 1 });
+    await makeProduct({ catalog: "THE_POOJA_EDIT", slug: "newer-sold", onHand: 0 });
 
-    const list = await listPublishedProducts(db, { catalog: "THRIFT" });
+    const list = await listPublishedProducts(db, { catalog: "THE_POOJA_EDIT" });
     expect(list.items.map((c) => c.slug)).toEqual(["older-in-stock", "newer-sold"]);
 
     // Holds under a price sort too, not just "newest".
     const byPrice = await listPublishedProducts(db, {
-      catalog: "THRIFT",
+      catalog: "THE_POOJA_EDIT",
       sort: "price_asc",
     });
     expect(byPrice.items.map((c) => c.slug)).toEqual(["older-in-stock", "newer-sold"]);

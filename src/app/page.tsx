@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import Image from "next/image";
@@ -18,6 +19,10 @@ import {
 import { getStylingContent, type StylingContent } from "@/server/styling";
 
 export const revalidate = 300;
+
+// Title and description come from the root layout; every other page sets its
+// own canonical, and the home page needs one too.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const EMPTY_ITEMS: PublicProductCard[] = [];
 

@@ -3,10 +3,12 @@ import "server-only";
 import type { PrismaClient } from "@/generated/prisma";
 
 /**
- * Sold Closet pieces leave the shop (D-143). A one-of-one that has sold stays
- * on /closet marked "Sold" for a short while, then is archived — hidden from
- * every storefront page, kept in the database because orders, invoices and
- * returns still point at it (products are archived, never deleted).
+ * Sold Closet pieces leave the shop (D-143). Since 2026-10-20 the owner wants
+ * them gone straight away: the storefront stops listing a sold piece the
+ * moment it sells and its page redirects to /closet, and this job archives it
+ * at its next hourly run — hidden for good, kept in the database because
+ * orders, invoices and returns still point at it (products are archived,
+ * never deleted).
  *
  * "Sold" here means really gone, not "someone is checking out":
  *   - every variant's on-hand stock is 0 (a paid order converted it, or the
@@ -19,7 +21,7 @@ import type { PrismaClient } from "@/generated/prisma";
  * Sold-out switch the latest time it was ticked; with neither on record, the
  * product's last update.
  */
-export const SOLD_CLOSET_GRACE_DAYS = 3;
+export const SOLD_CLOSET_GRACE_DAYS = 0;
 
 export interface SoldArchiveResult {
   archived: { id: string; title: string; soldAt: string }[];
