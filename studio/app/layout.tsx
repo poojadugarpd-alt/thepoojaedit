@@ -27,6 +27,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   alternates: { canonical: "/" },
+  // Bing Webmaster Tools ownership (2026-10-20). Google is verified by DNS for the whole domain.
+  verification: { other: { "msvalidate.01": "53874445B6A99C480CCD4BA92DA49862" } },
 };
 
 export const viewport: Viewport = {

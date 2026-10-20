@@ -181,8 +181,9 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - `app/sitemap.ts`, `app/robots.ts` (all crawlers, AI included; `/api/` disallowed), `public/llms.txt`,
   `app/opengraph-image.jpg` (1200×630, made from three Reel covers).
 - Schema: `lib/schema.ts`. Pooja is the same Person `@id` as on thepoojaedit.in (`https://thepoojaedit.in#pooja-dugar`).
-- Google Search Console: covered by the `sc-domain:thepoojaedit.in` property (Pooja's Google account). Bing: add
-  `studio.thepoojaedit.in` and its sitemap there (not done yet).
+- Google Search Console: covered by the `sc-domain:thepoojaedit.in` property (Pooja's Google account); studio
+  sitemap submitted 2026-10-20. Bing Webmaster Tools: `studio.thepoojaedit.in` verified by the `msvalidate.01` meta
+  tag in `app/layout.tsx` (keep it) and its sitemap submitted 2026-10-20.
 
 ## Open items / next steps
 1. **Reel mp4s** for hover-play (export from IG or originals; compress; ffmpeg isn't installed on this Mac).
