@@ -153,6 +153,9 @@ Production only).
   link), two "Connect Now" WhatsApp buttons (+91 99715 72036), and Admin →
   Styling tabs My designs / Testimonials / Gallery feeding three carousels on
   `/styling` (stored in `styling.content`; each hidden until it has content).
+  Header "Shop Looks" tab links out (new tab) to Pooja's LehLah page
+  https://lehlah.club/poojadugar, NOT our own `/looks` (Admin → Looks is
+  unused and unlinked). Phones: logo + Cart on row 1, the four links on row 2.
 - Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
   steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
   valid email). Enquiries land in Admin → Styling (email to the enquiry

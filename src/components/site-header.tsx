@@ -4,7 +4,15 @@ import { HeaderLogo } from "@/components/brand/logo";
 import { CartLink } from "@/features/cart/cart-link";
 import { CATALOG_LABEL_SHORT, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 
-const CATALOG_LINKS = [
+type NavLink = {
+  href: string;
+  label: string;
+  shortLabel?: string;
+  /** Another site: opens in a new tab so the shopper keeps their cart here. */
+  external?: boolean;
+};
+
+const CATALOG_LINKS: NavLink[] = [
   ...(["THE_POOJA_EDIT", "THRIFT"] as const).map((catalog) => ({
     href: `/${SEGMENT_BY_CATALOG[catalog]}`,
     label: CATALOG_LABEL_SHORT[catalog],
@@ -13,6 +21,12 @@ const CATALOG_LINKS = [
   // again, remove this or it leads shoppers to a 404.
   // The full label pushes Cart onto a third row at 360px, so phones get "Styling".
   { href: "/styling", label: "Styling & Shopping", shortLabel: "Styling" },
+  // Pooja's LehLah shop-my-looks page (affiliate picks), not our /looks.
+  {
+    href: "https://lehlah.club/poojadugar?utm_source=thepoojaedit&utm_medium=website&utm_content=header",
+    label: "Shop Looks",
+    external: true,
+  },
 ];
 
 // "Account" is hidden until the Supabase Auth UI is built — checkout is
@@ -34,21 +48,35 @@ export function SiteHeader() {
           <HeaderLogo className="h-6 w-auto sm:h-10" />
         </Link>
 
-        <ul className="flex gap-x-3 gap-y-1 sm:gap-x-6">
-          {CATALOG_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link href={link.href} className="u-navlink">
-                {"shortLabel" in link ? (
-                  <>
-                    <span className="sm:hidden">{link.shortLabel}</span>
-                    <span className="hidden sm:inline">{link.label}</span>
-                  </>
+        <ul className="order-last flex w-full gap-x-3 gap-y-1 whitespace-nowrap sm:gap-x-6 lg:order-none lg:w-auto">
+          {CATALOG_LINKS.map((link) => {
+            const text = link.shortLabel ? (
+              <>
+                <span className="sm:hidden">{link.shortLabel}</span>
+                <span className="hidden sm:inline">{link.label}</span>
+              </>
+            ) : (
+              link.label
+            );
+            return (
+              <li key={link.href}>
+                {link.external ? (
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="u-navlink"
+                  >
+                    {text}
+                  </a>
                 ) : (
-                  link.label
+                  <Link href={link.href} className="u-navlink">
+                    {text}
+                  </Link>
                 )}
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
 
         <ul className="ml-auto flex items-center gap-x-6">
