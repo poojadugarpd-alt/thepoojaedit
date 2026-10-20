@@ -4,10 +4,16 @@ import { HeaderLogo } from "@/components/brand/logo";
 import { CartLink } from "@/features/cart/cart-link";
 import { CATALOG_LABEL_SHORT, SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 
-const CATALOG_LINKS = (["THE_POOJA_EDIT", "THRIFT"] as const).map((catalog) => ({
-  href: `/${SEGMENT_BY_CATALOG[catalog]}`,
-  label: CATALOG_LABEL_SHORT[catalog],
-}));
+const CATALOG_LINKS = [
+  ...(["THE_POOJA_EDIT", "THRIFT"] as const).map((catalog) => ({
+    href: `/${SEGMENT_BY_CATALOG[catalog]}`,
+    label: CATALOG_LABEL_SHORT[catalog],
+  })),
+  // Static link: /styling is published (2026-10-20). If it is unpublished
+  // again, remove this or it leads shoppers to a 404.
+  // The full label pushes Cart onto a third row at 360px, so phones get "Styling".
+  { href: "/styling", label: "Styling & Shopping", shortLabel: "Styling" },
+];
 
 // "Account" is hidden until the Supabase Auth UI is built — checkout is
 // guest-only for now and there is no /account route.
@@ -18,7 +24,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40">
       <nav
         aria-label="Primary"
-        className="u-bar flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-4 sm:gap-x-7 sm:px-6 sm:py-5"
+        className="u-bar flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-4 sm:gap-x-7 sm:px-6 sm:py-5"
       >
         <Link
           href="/"
@@ -28,11 +34,18 @@ export function SiteHeader() {
           <HeaderLogo className="h-6 w-auto sm:h-10" />
         </Link>
 
-        <ul className="flex gap-x-4 gap-y-1 sm:gap-x-6">
+        <ul className="flex gap-x-3 gap-y-1 sm:gap-x-6">
           {CATALOG_LINKS.map((link) => (
             <li key={link.href}>
               <Link href={link.href} className="u-navlink">
-                {link.label}
+                {"shortLabel" in link ? (
+                  <>
+                    <span className="sm:hidden">{link.shortLabel}</span>
+                    <span className="hidden sm:inline">{link.label}</span>
+                  </>
+                ) : (
+                  link.label
+                )}
               </Link>
             </li>
           ))}

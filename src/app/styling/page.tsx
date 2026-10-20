@@ -137,7 +137,7 @@ export default async function StylingPage() {
           <h2 className="u-h2">{c.formHeading}</h2>
           <p className="mt-4 text-ink">{c.formIntro}</p>
           <div className="mt-10">
-            <EnquiryForm services={serviceOptions(c)} />
+            <EnquiryForm services={serviceOptions(c)} whatsappUrl={WHATSAPP_URL} />
           </div>
           <p className="mt-10 text-sm text-ink-soft">
             Want to know more about me first?{" "}

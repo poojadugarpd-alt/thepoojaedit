@@ -30,7 +30,14 @@ function FieldShell({
   );
 }
 
-export function EnquiryForm({ services }: { services: string[] }) {
+export function EnquiryForm({
+  services,
+  whatsappUrl,
+}: {
+  services: string[];
+  /** Shown as a "Connect Now" button beside Send enquiry. */
+  whatsappUrl?: string;
+}) {
   const [state, action, pending] = useActionState<EnquiryFormState, FormData>(
     submitEnquiryAction,
     { status: "idle" },
@@ -115,9 +122,22 @@ export function EnquiryForm({ services }: { services: string[] }) {
             {state.message}
           </p>
         )}
-        <button type="submit" disabled={pending} className="u-pill self-start">
-          {pending ? "Sending…" : "Send enquiry"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button type="submit" disabled={pending} className="u-pill">
+            {pending ? "Sending…" : "Send enquiry"}
+          </button>
+          {whatsappUrl && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Connect Now on WhatsApp"
+              className="u-pill u-pill--ghost inline-flex"
+            >
+              Connect Now
+            </a>
+          )}
+        </div>
       </div>
     </form>
   );
