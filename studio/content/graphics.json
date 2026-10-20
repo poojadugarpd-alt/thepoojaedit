@@ -1,0 +1,10 @@
+[
+  { "id": "g1", "title": "Myntra Haul — Part 15", "category": "Thumbnail", "alt": "YouTube thumbnail for a Myntra haul video", "ratio": "16/9", "sample": true },
+  { "id": "g2", "title": "Festive Edit", "category": "Poster", "alt": "Festive season Instagram poster", "ratio": "4/5", "sample": true },
+  { "id": "g3", "title": "Diwali Pop-up", "category": "Event Creative", "alt": "Event creative for a Diwali pop-up", "ratio": "4/5", "sample": true },
+  { "id": "g4", "title": "Brand Kit Story", "category": "Brand Graphic", "alt": "Brand graphic with logo and palette", "ratio": "1/1", "sample": true },
+  { "id": "g5", "title": "Handbag Closet Tour", "category": "Thumbnail", "alt": "YouTube thumbnail for a handbag closet tour", "ratio": "16/9", "sample": true },
+  { "id": "g6", "title": "New Drop Friday", "category": "Social Creative", "alt": "Social media creative announcing a new product drop", "ratio": "1/1", "sample": true },
+  { "id": "g7", "title": "Weekend Sale", "category": "Social Creative", "alt": "Promotional graphic for a weekend sale", "ratio": "4/5", "sample": true },
+  { "id": "g8", "title": "Workshop Night", "category": "Event Creative", "alt": "Event poster for a creator workshop", "ratio": "4/5", "sample": true }
+]
