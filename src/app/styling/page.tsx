@@ -12,6 +12,11 @@ import { getStylingContent, serviceOptions } from "@/server/styling";
 // only — both need a per-request render.
 export const dynamic = "force-dynamic";
 
+/** Pooja's styling WhatsApp; wa.me wants the country code and digits only. */
+const WHATSAPP_URL = `https://wa.me/919971572036?text=${encodeURIComponent(
+  "Hi Pooja, I'd like to know more about personal styling.",
+)}`;
+
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getStylingContent(prisma);
   return {
@@ -46,9 +51,20 @@ export default async function StylingPage() {
           <p className="u-eyebrow">{c.eyebrow}</p>
           <h1 className="u-display mt-6 max-w-[16ch]">{c.heading}</h1>
           <p className="u-lead mt-7 whitespace-pre-line">{c.intro}</p>
-          <a href="#enquire" className="u-pill mt-10 inline-flex">
-            {c.formHeading}
-          </a>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <a href="#enquire" className="u-pill inline-flex">
+              {c.formHeading}
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Connect Now on WhatsApp"
+              className="u-pill u-pill--ghost inline-flex"
+            >
+              Connect Now
+            </a>
+          </div>
         </div>
         {c.portrait?.url && (
           <div className="u-media relative aspect-[4/5] overflow-hidden">

@@ -144,8 +144,11 @@ Production only).
   footer, About or sitemap until published. Signed-in admins see drafts with
   a banner. Both migrations (`20261011153151_styling_enquiries`,
   `20261011164408_looks`) were applied by the production build.
-- **The owner is filling in the content herself and will press Publish.
-  Do not publish `/styling` or any Look on her behalf.**
+- **2026-10-20: `/styling` PUBLISHED** (on the user's explicit request, from
+  Pooja's admin login; returns 200, linked from footer/About). Portrait not
+  uploaded yet and offer copy still rough; the owner is adding content and
+  pictures herself. Home-page "Personal styling" block still off.
+  No Looks created yet; do not publish a Look without an explicit request.
 - Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
   steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
   valid email). Enquiries land in Admin → Styling (email to the enquiry
