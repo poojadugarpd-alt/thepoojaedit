@@ -18,11 +18,11 @@ export function ProductGrid({ images }: { images: Partial<Record<PriceKey, strin
               {p.id === "carousels" && imgs.length >= 3 ? (
                 <span className="stack" aria-hidden="true">
                   {imgs.slice(0, 3).map((src) => (
-                    <img key={src} src={src} alt="" loading="lazy" decoding="async" />
+                    <img key={src} src={src} alt={`${p.name} example`} loading="lazy" decoding="async" />
                   ))}
                 </span>
               ) : imgs[0] ? (
-                <img src={imgs[0]} alt="" loading="lazy" decoding="async" />
+                <img src={imgs[0]} alt={`${p.name} example`} loading="lazy" decoding="async" />
               ) : null}
               {p.badge && <span className="tag">{p.badge}</span>}
               <span className="product-hover">see examples</span>
@@ -67,7 +67,7 @@ function LoveCard({ item: v }: { item: LoveItem }) {
   return (
     <div className="love-card" role="listitem" {...handlers}>
       <span className="love-media">
-        <img src={v.thumb} alt="" loading="lazy" decoding="async" />
+        <img src={v.thumb} alt={`Reel edited by Pooja Dugar: ${v.title.replace(/#\S+/g, "").trim().slice(0, 100)}`} loading="lazy" decoding="async" />
         <VideoPreview source={source} active={active} />
         <span className={`love-play-icon ${active && source ? "is-hidden" : ""}`} aria-hidden="true">
           <PlayIcon size={20} />

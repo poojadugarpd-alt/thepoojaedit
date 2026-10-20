@@ -208,7 +208,7 @@ export function InstagramCard({ item, index }: { item: InstagramItem; index: num
   const visual = (
     <span className={`media ${isCarousel ? "r-4x5" : "r-9x16"}`}>
       {item.thumbnailUrl ? (
-        <img className="media-fill" src={item.thumbnailUrl} alt="" loading="lazy" decoding="async" />
+        <img className="media-fill" src={item.thumbnailUrl} alt={`${badge}${item.brand ? ` for ${item.brand}` : ""}: ${title}`} loading="lazy" decoding="async" />
       ) : (
         <PlaceholderCover seed={index} label={item.sample ? "Sample" : undefined} title={item.brand} />
       )}
@@ -276,7 +276,7 @@ export function YouTubeCard({ video }: { video: YouTubeVideo }) {
   return (
     <div className="card" {...handlers}>
       <span className={`media ${video.isShort ? "r-9x16" : "r-16x9"}`}>
-        <img className="media-fill" src={video.thumbnailUrl} alt="" loading="lazy" decoding="async" />
+        <img className="media-fill" src={video.thumbnailUrl} alt={`YouTube ${video.isShort ? "Short" : "video"} thumbnail: ${video.title}`} loading="lazy" decoding="async" />
         <VideoPreview source={{ kind: "youtube", id: video.id }} active={active} />
         {dur && <span className="duration">{dur}</span>}
         {video.isShort && <span className="badge badge-on-media">Short</span>}

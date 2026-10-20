@@ -169,6 +169,21 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - Not included: "June Lookbook bestsellers" (owned by House Of Chikankari, view-only for this account).
 - 2026-10-19: owned designs with an "Anyone with the link: can edit" link were switched to **can view** (Malvin carousel, Frames). Two designs owned by OTHER accounts (THE CURSED JUNGLE, NO SMALL TALK) were left on can edit, because switching would remove this account's own edit access.
 
+## SEO pages (2026-10-20, D-174)
+- `/reels`, `/youtube`, `/carousels`, `/graphics`: one page per service (`app/[service]/page.tsx`, copy in
+  `lib/services.ts`, prices still from `lib/site.ts`). Linked **from the footer only** (owner); the header and tabs
+  are unchanged. Each has its own title/description, an answer-first intro, real samples, FAQ and Service +
+  FAQPage + BreadcrumbList JSON-LD.
+- Home: search words under the hero line, "brands i've edited for" row (built from the `brand` field of the Reels
+  in `content/instagram.json`, so it only lists brands tagged in real public Reels), "who edits your videos",
+  and an FAQ (`#faq`).
+- `components/Footer.tsx` is shared; it links back to the shop (Label, Closet, Personal styling, About).
+- `app/sitemap.ts`, `app/robots.ts` (all crawlers, AI included; `/api/` disallowed), `public/llms.txt`,
+  `app/opengraph-image.jpg` (1200×630, made from three Reel covers).
+- Schema: `lib/schema.ts`. Pooja is the same Person `@id` as on thepoojaedit.in (`https://thepoojaedit.in#pooja-dugar`).
+- Google Search Console: covered by the `sc-domain:thepoojaedit.in` property (Pooja's Google account). Bing: add
+  `studio.thepoojaedit.in` and its sitemap there (not done yet).
+
 ## Open items / next steps
 1. **Reel mp4s** for hover-play (export from IG or originals; compress; ffmpeg isn't installed on this Mac).
 2. ~~Real carousels and graphics~~ done via Canva links (2026-10-19).

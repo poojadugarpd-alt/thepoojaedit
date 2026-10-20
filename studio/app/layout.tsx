@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Figtree } from "next/font/google";
 import { site } from "@/lib/site";
+import { studioJsonLd } from "@/lib/schema";
 import "./globals.css";
 
 const display = Barlow_Condensed({
@@ -12,7 +13,7 @@ const display = Barlow_Condensed({
 const body = Figtree({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 
 const description =
-  "Instagram Reels, YouTube long-form, Shorts, carousels, and graphics — edited by Pooja Dugar. Reels from ₹200, YouTube from ₹1,000. Chat on WhatsApp.";
+  "Instagram Reels, Shorts, YouTube, carousels and graphics for fashion and lifestyle creators and brands, edited by Pooja Dugar. Reels from ₹200, YouTube ₹1,000.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -33,40 +34,17 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  name: site.studio,
-  founder: { "@type": "Person", name: site.name },
-  email: site.email,
-  telephone: site.whatsappDisplay.replace(/\s/g, ""),
-  url: site.url,
-  areaServed: "IN",
-  sameAs: [site.instagramUrl, site.youtubeUrl],
-  makesOffer: [
-    ["Instagram Reels editing", 200],
-    ["YouTube long-form editing", 1000],
-    ["Instagram carousel design", 200],
-    ["Graphic design", 500],
-  ].map(([name, price]) => ({
-    "@type": "Offer",
-    itemOffered: { "@type": "Service", name },
-    price,
-    priceCurrency: "INR",
-  })),
-};
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN" className={`${display.variable} ${body.variable}`}>
       <body>
-        <a className="skip" href="#shop">
-          Skip to shop
+        <a className="skip" href="#top">
+          Skip to content
         </a>
         {children}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(studioJsonLd()) }}
         />
       </body>
     </html>
