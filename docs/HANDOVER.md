@@ -1,6 +1,6 @@
 # PoojaEdit — Handover Summary
 
-Written 2026-09-16, refreshed 2026-10-12 (through D-163, `6b836a8`), for moving work to a different environment/tool (another
+Written 2026-09-16, refreshed 2026-10-20 (through D-170, `95c0daa`), for moving work to a different environment/tool (another
 Claude Code session, Cursor, ChatGPT, a human dev, etc.). Everything here is
 verifiable in this repo — treat it as a map, not a source of truth; re-check
 against the actual files/`git log`/`docs/decisions.md` before relying on a
@@ -10,7 +10,7 @@ specific detail.
 
 1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub, including
    the UTM attribution work (D-136, merged the same evening).
-2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-163).
+2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-170).
 3. Local setup: `npm install`, `npm run db:dev` in one terminal, then
    `npm run check`, `npm run test:integration` and
    `npm run test:e2e:local -- --project=chromium` to confirm a clean baseline.
@@ -114,7 +114,7 @@ outside the `npm run db:*` scripts; a format+typecheck-on-edit hook; skills
 `log-decision`, `db-migration`, `structured-data-audit`, `llms-txt`; subagents
 `money-safety-reviewer`, `e2e-unblocker`, `seo-aeo-reviewer`.
 
-## 5. Current live state (as of `6b836a8`, 2026-10-12)
+## 5. Current live state (as of `95c0daa`, 2026-10-20)
 
 `main` == `origin/main` == what's deployed. Vercel auto-deploys `main` to
 Production and runs `prisma migrate deploy` first (`scripts/vercel-migrate.mjs`,
@@ -144,32 +144,15 @@ Production only).
   footer, About or sitemap until published. Signed-in admins see drafts with
   a banner. Both migrations (`20261011153151_styling_enquiries`,
   `20261011164408_looks`) were applied by the production build.
-- **2026-10-20: `/styling` PUBLISHED** (on the user's explicit request, from
-  Pooja's admin login; returns 200, linked from footer/About). Portrait not
-  uploaded yet and offer copy still rough; the owner is adding content and
-  pictures herself. Home-page "Personal styling" block still off.
-  No Looks created yet; do not publish a Look without an explicit request.
-  Same day: header tab "Styling & Shopping" ("Styling" on phones, static
-  link), two "Connect Now" WhatsApp buttons (+91 99715 72036), and Admin →
-  Styling tabs My designs / Testimonials / Gallery feeding three carousels on
-  `/styling` (stored in `styling.content`; each hidden until it has content).
-  Header "Shop Looks" tab links out (new tab) to Pooja's LehLah page
-  https://lehlah.club/poojadugar. Our own Looks feature (D-163) was then
-  removed from the code: Admin → Looks, public `/looks` pages, their e2e +
-  integration tests and sitemap entries. The empty `Look`/`LookItem` tables
-  were left in the database (no migration).
-  Timed sale (2026-10-20): Admin → Discount codes → Sale (`sale.current`
-  setting, `src/server/sale`). While live, matching catalog prices drop on
-  the site (old price struck through), `computeQuote` charges the sale price,
-  and the announcement bar shows a countdown. It ends by itself at `endsAt`.
-  Codes stack on top. First run: Closet 30% off until 21 Oct 00:00 IST. Phones: logo + Cart on row 1, the four links on row 2.
+- Superseded on 2026-10-20: `/styling` is now published and Looks was
+  removed; see "Shipped 2026-10-20" below.
 - Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
   steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
   valid email). Enquiries land in Admin → Styling (email to the enquiry
   address with reply-to = the client, plus a phone push; the push can be
   switched off in Settings → "A styling enquiry comes in"). Optional home
   block: Admin → Home → Layout → "Personal styling" (off by default).
-- Looks: Admin → Looks → type a title → add up to 12 own Label/Closet pieces
+- (Removed 2026-10-20, D-168.) Looks: Admin → Looks → type a title → add up to 12 own Label/Closet pieces
   (no affiliate items for now), cover (falls back to the first piece's
   photo), caption, Instagram link → Preview → Publish. "Copy link" gives the
   Instagram URL with `utm_medium=look&utm_campaign=<slug>`.
@@ -177,6 +160,50 @@ Production only).
   (both covered by local e2e only).
 - Screenshot preview shown to the owner:
   https://claude.ai/artifact/1XqoAbF24hXrDgcmBrtimd
+
+**Shipped 2026-10-20 (D-165 → D-170, all live on production)**
+- **Functions run in Mumbai (D-170).** `vercel.json` pins `regions: ["bom1"]`,
+  next to the ap-south-1 database. Before this every query crossed from
+  `iad1` (~230 ms each) and the Closet page took ~6 s; now ~0.2–0.3 s TTFB on
+  Closet, Label, product, Styling and search. Check `x-vercel-id` shows
+  `bom1::bom1`. Do not remove this file.
+- **`/styling` published (D-165)** from Pooja's admin on the user's request.
+  Offer typos fixed and ₹ added to fees (content edit, not code). Portrait
+  still not uploaded; home-page "Personal styling" block still off.
+  Two "Connect Now" WhatsApp buttons (hero + beside the form's Send enquiry)
+  open `wa.me/919971572036` with a prefilled message (constant in
+  `src/app/styling/page.tsx`).
+- **Styling carousels (D-166).** Admin → Styling now has tabs Enquiries ·
+  Page · My designs · Testimonials · Gallery. My designs (≤30 photos +
+  captions, editable heading/intro), Testimonials (≤20; name, detail, quote,
+  ≤4 photos each), Gallery (≤30, no heading). Stored in `styling.content`
+  (`designs`, `testimonials`, `gallery`, headings); photos use the portrait's
+  signed-upload flow (R2, `home/styling-*/`). Each section shows on
+  `/styling` only once it has content. Code: `src/app/admin/styling/
+  {designs,testimonials,gallery}`, `photo-actions.ts`, `save-styling.ts`,
+  `src/features/styling/rail.tsx`. Not yet exercised with a real upload on
+  production by us (owner said "done" after adding content).
+- **Header (D-167).** Label · Closet · Styling & Shopping · Shop Looks.
+  "Shop Looks" is an external link (new tab) to Pooja's LehLah page
+  `https://lehlah.club/poojadugar?utm_source=thepoojaedit&…`. Phones: logo +
+  Cart on row 1, the four links on row 2 ("Styling" short label); tablets
+  (<1024px) two rows; laptops one row. The Styling link is static, so if
+  `/styling` is ever unpublished, remove it from `site-header.tsx`.
+- **Own Looks feature removed (D-168).** Admin → Looks, `/looks`, its e2e +
+  integration tests and sitemap entries are gone. The empty `Look` /
+  `LookItem` tables remain in the database (no migration written).
+- **Timed sale (D-169).** Admin → Discount codes → Sale: catalog (Closet /
+  Label / Everything), % off, end time (IST). Setting `sale.current`, logic in
+  `src/server/sale`. While live: catalog pages strike through the pre-sale
+  price, `computeQuote` charges the sale price (part of the quote hash),
+  and the announcement bar shows a maroon countdown. Ends by itself; "End
+  sale now" button. Discount codes stack on top. First run: **Closet 30% off,
+  2026-10-20 13:3x → 2026-10-21 00:00 IST.** Not verified on production: the
+  server-side total at "Review order" (needs an address); check the first
+  sale-period order's line prices in Admin → Orders. Known gaps: the cart
+  shows the price from when the item was added (checkout re-prices); the
+  listing price filter uses regular prices; the home page may show sale
+  prices for ≤5 min after the end.
 
 **Shipped 2026-10-07 (owner requests A–D; plan in `docs/plan-owner-requests-2026-10.md`)**
 - **D-137 Shipping:** Label-only orders ship free; any Closet item makes the
@@ -261,7 +288,7 @@ then ran). Do it after every such deploy.
 7. **Phase 13 operational drills**: backup/restore, rollback and budget
    alerts are not done.
 
-## 7. What we worked on most recently (2026-09-15 → 2026-10-12)
+## 7. What we worked on most recently (2026-09-15 → 2026-10-20)
 
 Full detail in `docs/decisions.md`.
 
@@ -297,6 +324,13 @@ Full detail in `docs/decisions.md`.
 | 10-08 | D-161 | Supabase photo copies backed up to the Mac and deleted |
 | 10-11 | D-162 | Personal Styling page `/styling` + enquiry inbox (deployed hidden) |
 | 10-11 | D-163 | Looks: "Shop this Reel" pages at `/looks/<slug>` (deployed hidden) |
+| 10-15 | D-164 | iPhone admin app: new-order chime re-unlocks after backgrounding |
+| 10-20 | D-165 | `/styling` published; WhatsApp "Connect Now" buttons; offer copy fixed |
+| 10-20 | D-166 | Admin → Styling tabs: My designs, Testimonials, Gallery carousels |
+| 10-20 | D-167 | Header: Styling & Shopping + Shop Looks (→ LehLah); 2-row phone header |
+| 10-20 | D-168 | Own Looks feature removed (tables kept) |
+| 10-20 | D-169 | Timed sale (Admin → Discount codes → Sale); Closet 30% till midnight |
+| 10-20 | D-170 | Vercel functions pinned to `bom1`; pages ~6 s → ~0.25 s |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -304,6 +338,15 @@ rows in `decisions.md` now are the original ones written on 2026-09-27; the
 backfill was superseded in the 2026-10-07 merge.
 
 ## 8. What's planned / next up
+
+**From 2026-10-20:**
+- Look at the first order placed during the Closet sale (20 Oct afternoon →
+  midnight) and confirm its Closet lines were charged at 70% of list.
+- Confirm the sale bar disappeared and prices reverted after 00:00 IST on
+  21 Oct (nothing to switch off; `sale.current` stays saved with `active`).
+- `/styling`: owner still to upload the portrait; optional home-page block.
+- Supabase grace period ends 23 Oct: re-check the usage page (§8 R2 note).
+- Optional: drop the empty `Look`/`LookItem` tables in a migration.
 
 **DONE 2026-10-08: photos → Cloudflare R2 (D-159).** Cloudflare account
 Poojadugar.pd@gmail.com (Pooja Chrome profile) now runs `thepoojaedit.in` DNS
@@ -370,13 +413,10 @@ Supabase usage page before the grace period ends on 23 Oct.
 5. **Supabase Storage quota** before 2026-10-23 (§6.2), and run the 3 new
    migrations on the dev project (§6.3).
 6. **Fix `npm audit`** (§6.4).
-7. **Website agent brief: `/styling` and Looks built and deployed hidden
-   (D-162, D-163, 2026-10-11).** Waiting on the owner's content and her own
-   Publish click (§5). Once live, worth checking one real enquiry arrives by
-   email + push and a tagged Look link shows "via instagram / look / <slug>"
-   on an order. Still not built: Picks/affiliate reviews (only once real
-   reviews exist) and outside/LehLah items inside Looks (owner: own pieces
-   only for now). Background: `docs/briefs/pooja-website-agent-brief-ANALYSIS.md`.
+7. **Website agent brief: `/styling` is live (2026-10-20); Looks removed
+   (D-168) in favour of the LehLah link.** Still worth checking that one real
+   styling enquiry arrives by email + push. Not built: Picks/affiliate
+   reviews. Background: `docs/briefs/pooja-website-agent-brief-ANALYSIS.md`.
 8. Optional tidy-up: move the Razorpay/Shadowfax webhooks and Inngest app URL
    from `thepoojaedit.vercel.app` to `thepoojaedit.in`.
 9. **Remaining live verifications**: a real Shadowfax pickup cancel (D-133),
