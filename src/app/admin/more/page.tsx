@@ -20,11 +20,6 @@ const ITEMS = [
     hint: "Edit the words shoppers see on the home page",
   },
   {
-    href: "/admin/looks",
-    label: "Looks",
-    hint: "Shop this Reel pages with your pieces",
-  },
-  {
     href: "/admin/styling",
     label: "Styling",
     hint: "Personal styling enquiries and the /styling page",
