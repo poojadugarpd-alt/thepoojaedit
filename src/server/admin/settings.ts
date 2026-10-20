@@ -26,6 +26,8 @@ const EDITABLE_KEYS = [
   "home.content",
   // Edited from /admin/styling/edit (D-162), also excluded from the JSON editor.
   "styling.content",
+  // The timed sale, edited from /admin/discounts; also excluded from the JSON editor.
+  "sale.current",
 ] as const;
 export type SettingKey = (typeof EDITABLE_KEYS)[number];
 

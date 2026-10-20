@@ -5,10 +5,12 @@ import { prisma } from "@/lib/db";
 import { formatPaiseINR } from "@/lib/money";
 import { requireAdmin } from "@/server/auth/require-admin";
 import { listCodesWithUses } from "@/server/discounts";
+import { getSaleSettings } from "@/server/sale";
 import { getCheckoutRules } from "@/server/settings";
 
 import { createDiscountAction } from "./actions";
 import { DiscountFields } from "./discount-fields";
+import { SalePanel } from "./sale-panel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Discount codes" };
@@ -23,14 +25,16 @@ export default async function AdminDiscountsPage() {
   await requireAdmin();
   const rules = await getCheckoutRules(prisma);
   const now = new Date();
-  const codes = await listCodesWithUses(prisma, {
-    now,
-    ttlSeconds: rules.reservationTtlSeconds,
-  });
+  const [codes, sale] = await Promise.all([
+    listCodesWithUses(prisma, { now, ttlSeconds: rules.reservationTtlSeconds }),
+    getSaleSettings(prisma),
+  ]);
 
   return (
     <div className="space-y-8">
       <h1 className="text-xl font-semibold text-ink-strong">Discount codes</h1>
+
+      <SalePanel settings={sale} now={now} />
 
       <section className="space-y-2">
         {codes.length > 0 ? (

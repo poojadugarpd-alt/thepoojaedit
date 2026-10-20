@@ -157,7 +157,12 @@ Production only).
   https://lehlah.club/poojadugar. Our own Looks feature (D-163) was then
   removed from the code: Admin → Looks, public `/looks` pages, their e2e +
   integration tests and sitemap entries. The empty `Look`/`LookItem` tables
-  were left in the database (no migration). Phones: logo + Cart on row 1, the four links on row 2.
+  were left in the database (no migration).
+  Timed sale (2026-10-20): Admin → Discount codes → Sale (`sale.current`
+  setting, `src/server/sale`). While live, matching catalog prices drop on
+  the site (old price struck through), `computeQuote` charges the sale price,
+  and the announcement bar shows a countdown. It ends by itself at `endsAt`.
+  Codes stack on top. First run: Closet 30% off until 21 Oct 00:00 IST. Phones: logo + Cart on row 1, the four links on row 2.
 - Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
   steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
   valid email). Enquiries land in Admin → Styling (email to the enquiry

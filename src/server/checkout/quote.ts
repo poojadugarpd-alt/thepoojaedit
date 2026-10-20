@@ -15,6 +15,7 @@ import {
   DiscountCodeError,
   findCode,
 } from "@/server/discounts";
+import { effectivePricePaise, getLiveSale } from "@/server/sale";
 import { computeOrderTax, type PricingMode } from "@/server/tax/calculator";
 import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
 
@@ -173,10 +174,15 @@ export async function computeQuote(
   const now = input.now ?? new Date();
   const shipping = input.shipping ?? getQuoteProvider();
 
-  const variants = await db.productVariant.findMany({
-    where: { id: { in: input.lines.map((l) => l.variantId) } },
-    include: { product: { include: { taxClass: { include: { rules: true } } } } },
-  });
+  const [variants, sale] = await Promise.all([
+    db.productVariant.findMany({
+      where: { id: { in: input.lines.map((l) => l.variantId) } },
+      include: { product: { include: { taxClass: { include: { rules: true } } } } },
+    }),
+    // A timed sale changes the unit price itself; it is part of the hash
+    // through `unitPricePaise`, so a quote from before it ends is rejected.
+    getLiveSale(db, now),
+  ]);
   const byId = new Map(variants.map((v) => [v.id, v]));
 
   // Build tax-calculator lines + line snapshots
@@ -230,8 +236,9 @@ export async function computeQuote(
     const pricingMode: PricingMode = rule?.pricingMode ?? "INCLUSIVE";
     const totalRateBps = rule?.totalRateBps ?? 0;
 
+    const unitPricePaise = effectivePricePaise(v.pricePaise, v.product.catalog, sale);
     taxLines.push({
-      unitPricePaise: v.pricePaise,
+      unitPricePaise,
       quantity: reqLine.quantity,
       rule: { treatment: "STANDARD" as const, pricingMode, totalRateBps },
       interState,
@@ -245,7 +252,7 @@ export async function computeQuote(
       size: v.size,
       color: v.color,
       quantity: reqLine.quantity,
-      unitPricePaise: v.pricePaise,
+      unitPricePaise,
       hsnCode: v.product.hsnCode ?? v.product.taxClass?.hsnCode ?? null,
       taxTreatment: "STANDARD",
       imageBucket: null,

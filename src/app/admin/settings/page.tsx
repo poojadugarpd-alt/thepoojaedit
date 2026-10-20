@@ -190,7 +190,12 @@ export default async function AdminSettingsPage() {
             (/admin/home, /admin/styling/edit) — plain forms, not a JSON box —
             so they're deliberately left out of this list. */}
         {settings
-          .filter((s) => s.key !== "home.content" && s.key !== "styling.content")
+          .filter(
+            (s) =>
+              s.key !== "home.content" &&
+              s.key !== "styling.content" &&
+              s.key !== "sale.current",
+          )
           .map((s) => (
             <div key={s.key} className="rounded border border-line p-3">
               <p className="text-xs font-medium text-ink-strong">

@@ -7,6 +7,7 @@ import type {
   ThriftDetails,
 } from "@/generated/prisma";
 import { productImageUrl } from "@/lib/storage-url";
+import { saleAppliesTo, salePricePaise, type LiveSale } from "@/server/sale";
 
 /**
  * Shapes the DB rows into the payload the public storefront is allowed to see.
@@ -172,7 +173,29 @@ type ProductRow = {
   markedSoldOut?: boolean;
 };
 
-export function toPublicCard(p: ProductRow): PublicProductCard {
+/** While a sale covers this catalog, the old price becomes the struck-through one. */
+function withSale(
+  catalog: CatalogType,
+  pricePaise: number,
+  compareAtPaise: number | null,
+  sale: LiveSale | null,
+): { pricePaise: number; compareAtPaise: number | null } {
+  if (!sale || !saleAppliesTo(sale, catalog)) return { pricePaise, compareAtPaise };
+  return {
+    pricePaise: salePricePaise(pricePaise, sale.percentBps),
+    compareAtPaise: Math.max(compareAtPaise ?? 0, pricePaise),
+  };
+}
+
+export function toPublicCard(
+  p: ProductRow,
+  sale: LiveSale | null = null,
+): PublicProductCard {
+  const from = fromPrice(p.variants);
+  const price =
+    from == null
+      ? { pricePaise: null, compareAtPaise: bestCompareAt(p.variants) }
+      : withSale(p.catalog, from, bestCompareAt(p.variants), sale);
   const isOneOfOne = p.thriftDetails?.isOneOfOne ?? false;
   const primary =
     [...p.images]
@@ -188,8 +211,8 @@ export function toPublicCard(p: ProductRow): PublicProductCard {
     isThrift: p.catalog === "THRIFT",
     isOneOfOne,
     primaryImage: primary ? toPublicImage(primary) : null,
-    fromPricePaise: fromPrice(p.variants),
-    compareAtPaise: bestCompareAt(p.variants),
+    fromPricePaise: price.pricePaise,
+    compareAtPaise: price.compareAtPaise,
     availability: deriveAvailability(
       p.catalog,
       isOneOfOne,
@@ -202,9 +225,10 @@ export function toPublicCard(p: ProductRow): PublicProductCard {
 
 export function toPublicDetail(
   p: ProductRow & { collections?: { collection: { slug: string; name: string } }[] },
+  sale: LiveSale | null = null,
 ): PublicProductDetail {
   return {
-    ...toPublicCard(p),
+    ...toPublicCard(p, sale),
     description: p.description,
     metaTitle: p.metaTitle,
     metaDescription: p.metaDescription,
@@ -218,8 +242,7 @@ export function toPublicDetail(
         sku: v.sku,
         size: v.size,
         color: v.color,
-        pricePaise: v.pricePaise,
-        compareAtPaise: v.compareAtPaise,
+        ...withSale(p.catalog, v.pricePaise, v.compareAtPaise, sale),
         available: !p.markedSoldOut && variantAvailable(v),
         onHold: !p.markedSoldOut && variantOnHold(v),
         maxOrderQty: p.markedSoldOut ? 0 : variantMaxOrderQty(v),

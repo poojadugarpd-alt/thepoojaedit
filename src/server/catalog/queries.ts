@@ -2,6 +2,7 @@ import "server-only";
 
 import type { CatalogType, PrismaClient } from "@/generated/prisma";
 import { Prisma } from "@/generated/prisma";
+import { getLiveSale } from "@/server/sale";
 
 import {
   toPublicCard,
@@ -126,14 +127,17 @@ export async function listPublishedProducts(
     ...(variantConditions.length ? { AND: variantConditions } : {}),
   };
 
-  const rows = await db.product.findMany({
-    where,
-    include: CARD_INCLUDE,
-    orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
-    take: FETCH_CAP,
-  });
+  const [rows, sale] = await Promise.all([
+    db.product.findMany({
+      where,
+      include: CARD_INCLUDE,
+      orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
+      take: FETCH_CAP,
+    }),
+    getLiveSale(db),
+  ]);
 
-  let cards = rows.map(toPublicCard);
+  let cards = rows.map((r) => toPublicCard(r, sale));
   if (f?.inStockOnly) {
     // A held piece is likely back within minutes, so it stays listed (D-150).
     cards = cards.filter(
@@ -217,7 +221,7 @@ export async function getPublishedProduct(
     include: DETAIL_INCLUDE,
   });
   if (!p || p.status !== "PUBLISHED" || p.publishedAt == null) return null;
-  return toPublicDetail(p);
+  return toPublicDetail(p, await getLiveSale(db));
 }
 
 export async function searchPublishedProducts(
@@ -242,7 +246,8 @@ export async function searchPublishedProducts(
     orderBy: [{ publishedAt: "desc" }, { id: "desc" }],
     take: limit,
   });
-  return rows.map(toPublicCard);
+  const sale = await getLiveSale(db);
+  return rows.map((r) => toPublicCard(r, sale));
 }
 
 export async function listActiveCollections(
@@ -284,6 +289,7 @@ export async function getActiveCollection(
   // isInternal 404s here exactly like inactive/missing does — its slug is
   // never meant to resolve as a public collection page.
   if (!col || !col.isActive || col.isInternal) return null;
+  const sale = await getLiveSale(db);
   return {
     slug: col.slug,
     name: col.name,
@@ -291,7 +297,7 @@ export async function getActiveCollection(
     products: col.products
       .map((pc) => pc.product)
       .filter((p) => p.status === "PUBLISHED" && p.publishedAt != null)
-      .map(toPublicCard),
+      .map((p) => toPublicCard(p, sale)),
   };
 }
 
@@ -328,7 +334,10 @@ export async function getHomeRailProducts(
       take: 12,
       include: { product: { include: CARD_INCLUDE } },
     });
-    if (rows.length > 0) return rows.map((r) => toPublicCard(r.product));
+    if (rows.length > 0) {
+      const sale = await getLiveSale(db);
+      return rows.map((r) => toPublicCard(r.product, sale));
+    }
   }
   return (await listPublishedProducts(db, { catalog, sort: "newest", limit: 12 }))
     .items;
