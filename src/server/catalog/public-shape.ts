@@ -173,7 +173,8 @@ type ProductRow = {
   markedSoldOut?: boolean;
 };
 
-/** While a sale covers this catalog, the old price becomes the struck-through one. */
+/** While a sale covers this catalog, the pre-sale price is the struck-through
+ *  one (not a higher original retail price), so "30% off" reads true. */
 function withSale(
   catalog: CatalogType,
   pricePaise: number,
@@ -183,7 +184,7 @@ function withSale(
   if (!sale || !saleAppliesTo(sale, catalog)) return { pricePaise, compareAtPaise };
   return {
     pricePaise: salePricePaise(pricePaise, sale.percentBps),
-    compareAtPaise: Math.max(compareAtPaise ?? 0, pricePaise),
+    compareAtPaise: pricePaise,
   };
 }
 
