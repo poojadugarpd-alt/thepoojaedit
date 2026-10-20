@@ -1,5 +1,10 @@
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Lives inside the store repo; keep file tracing scoped to studio/.
+  outputFileTracingRoot: dirname(fileURLToPath(import.meta.url)),
   poweredByHeader: false,
   async headers() {
     return [

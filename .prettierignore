@@ -18,3 +18,6 @@ docs
 design
 .claude
 .mcp.json
+
+# Separate app (editing-service site, Cloudflare); has its own tooling.
+studio

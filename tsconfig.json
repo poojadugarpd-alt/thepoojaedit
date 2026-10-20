@@ -29,5 +29,5 @@
     "**/*.mts",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "src/generated", ".next", ".pgdata"]
+  "exclude": ["node_modules", "src/generated", ".next", ".pgdata", "studio"]
 }

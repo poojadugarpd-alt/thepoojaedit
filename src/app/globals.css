@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* studio/ is a separate app; keep its markup out of the store's CSS. */
+@source not "../../studio";
 
 /* The site (including admin) is light-only by design — color-scheme: light
    only below. Tailwind's default `dark:` variant follows the OS setting
