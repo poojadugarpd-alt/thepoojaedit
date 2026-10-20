@@ -69,6 +69,19 @@ const nextConfig: NextConfig = {
       { source: "/thrift", destination: "/closet", permanent: true },
       { source: "/thrift/:path*", destination: "/closet/:path*", permanent: true },
 
+      // Label slugs renamed with the SEO titles (D-173): both were "-copy"
+      // leftovers from duplicating a product in admin.
+      {
+        source: "/label/raktima-kurti-copy",
+        destination: "/label/yashvi-kurti",
+        permanent: true,
+      },
+      {
+        source: "/label/shreya-kurti-copy",
+        destination: "/label/keepa-kurti",
+        permanent: true,
+      },
+
       // Legacy Shopify URLs (domain cutover, D-131). thepoojaedit.in served the
       // old Shopify store; its URLs live on in Instagram bios, posts and search
       // results. Product handles were carried over as slugs (migration keeps

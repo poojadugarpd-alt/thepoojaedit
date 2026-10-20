@@ -74,7 +74,7 @@ Driven by two owner-supplied docs: `docs/01-master-specification.md`
 feature, it gets diagnosed/built/verified in one pass, logged, shipped.
 
 **Every non-trivial decision is logged in `docs/decisions.md`** (currently
-through **D-172**) — one row per decision with *what*, *when*, *why*. This is
+through **D-173**) — one row per decision with *what*, *when*, *why*. This is
 the single best file to skim for real history; it's more reliable than this
 handover doc for anything past 2026-10-07. `docs/build-progress.md` covers
 the original phase-by-phase build (stops at Phase 12 — later work lives in
