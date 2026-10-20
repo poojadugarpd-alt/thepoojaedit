@@ -117,7 +117,7 @@ outside the `npm run db:*` scripts; a format+typecheck-on-edit hook; skills
 `log-decision`, `db-migration`, `structured-data-audit`, `llms-txt`; subagents
 `money-safety-reviewer`, `e2e-unblocker`, `seo-aeo-reviewer`.
 
-## 5. Current live state (as of `95c0daa`, 2026-10-20)
+## 5. Current live state (as of `4861adc`, 2026-10-20)
 
 `main` == `origin/main` == what's deployed. Vercel auto-deploys `main` to
 Production and runs `prisma migrate deploy` first (`scripts/vercel-migrate.mjs`,
@@ -140,6 +140,43 @@ Production only).
   Shopify import: their `bucket` is the placeholder `legacy-import`. Building
   from it broke every imported image for about 15 minutes on 2026-10-07; fixed
   in `1190569` (logged under D-135).
+
+**SEO / AEO and search accounts (2026-10-20, D-172–D-174)**
+- Plan: `~/Documents/Pooja-SEO-AEO-Plan.md`; status page (owner-facing):
+  https://claude.ai/artifact/XBVpviqzn2HYLXVY7FYUwB. Scope agreed with the owner:
+  websites only (Label, Closet, Styling, studio); Instagram/YouTube not started.
+- **Store (D-172):** site-wide `Person` JSON-LD (`#pooja-dugar`, `sameAs`
+  Instagram/YouTube/@poojasclosett/studio/LehLah) in `src/lib/organization-jsonld.ts`;
+  home canonical; footer "Video editing" → studio + YouTube; `/styling` search title
+  "Personal Shopping & Styling in Delhi NCR | Pooja Dugar" + Service JSON-LD
+  (`src/lib/styling-jsonld.ts`); `itemCondition` on products; Closet SEO titles
+  "<title>, Size X · Pre-loved" (`src/lib/seo-title.ts`); `public/llms.txt` rewritten.
+- **Sold Closet pieces now leave the shop at once (D-172, replaces D-143's 3 days):**
+  dropped from every list/search/rail and the sitemap; a sold URL 307s to /closet,
+  an ARCHIVED slug 308s to /closet (drafts never redirected); archive cron grace 0.
+  The Sold-out switch on a one-of-one Closet piece hides it the same way.
+- **Label (D-173):** all 27 products have owner-approved `metaTitle`/`metaDescription`
+  and an opening line in the description (entered via Admin). `raktima-kurti-copy` →
+  `yashvi-kurti`, `shreya-kurti-copy` → `keepa-kurti`, with 308s in `next.config.ts`
+  (the product editor does not redirect old slugs — add a redirect for any rename).
+- **Studio (D-174):** `/reels` `/youtube` `/carousels` `/graphics` service pages
+  (footer-only), brands row, FAQ, sitemap/robots/llms.txt, OG image, alt text, shared
+  Person `@id`. Deployed with `npm run cf:deploy` from `studio/` (this Mac's wrangler
+  is logged in as vinayakch17). Bing tag `msvalidate.01` in `studio/app/layout.tsx` —
+  keep it.
+- **Google Search Console:** Domain property `sc-domain:thepoojaedit.in` (Pooja's
+  Google account) covers the store and the studio. Verified by a TXT record on `@` in
+  Cloudflare DNS — **never delete it**. Store sitemap: Success (103 URLs). Studio
+  sitemap: "Couldn't fetch / temporary processing error" on 20 Oct although Googlebot
+  fetches the studio fine (home page indexed); re-submitted, recheck ~23 Oct.
+  Per-URL "Request indexing" hits a burst limit after a few requests.
+- **Bing Webmaster Tools:** store imported from Search Console; studio added and
+  verified by meta tag; both sitemaps submitted.
+- **Google Business Profile (styling):** "Pooja Dugar", Image Consultant + Stylist,
+  service area Delhi/Gurugram/Noida (no public address), Mon–Fri 09:30–16:30, phone +
+  WhatsApp, website `/styling?utm_source=google&utm_medium=organic&utm_campaign=gbp`,
+  description, portrait, 4 services, women-owned. **Not verified yet — owner to press
+  Get verified.** No profile for video editing (online-only isn't eligible).
 
 **Deployed hidden 2026-10-11/12: `/styling` (D-162) and Looks (D-163)**
 - Both are live in code but **unpublished**: `/styling`, `/looks` and every
@@ -335,6 +372,10 @@ Full detail in `docs/decisions.md`.
 | 10-20 | D-169 | Timed sale (Admin → Discount codes → Sale); Closet 30% till midnight |
 | 10-20 | D-170 | Vercel functions pinned to `bom1`; pages ~6 s → ~0.25 s |
 | 10-20 | D-171 | Studio site moved into this repo under `studio/` (still on Cloudflare) |
+| 10-20 | D-172 | SEO/AEO pass on the store; sold Closet pieces hidden straight away |
+| 10-20 | D-173 | Label SEO titles/descriptions (27, owner-approved); two `-copy` slugs renamed with redirects |
+| 10-20 | D-174 | Studio SEO: service pages, FAQ, brands row, sitemap/robots/llms.txt, schema |
+| 10-20 | (no D) | Search Console (domain property), Bing (both sites), Google Business Profile created (unverified) |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -348,7 +389,12 @@ backfill was superseded in the 2026-10-07 merge.
   midnight) and confirm its Closet lines were charged at 70% of list.
 - Confirm the sale bar disappeared and prices reverted after 00:00 IST on
   21 Oct (nothing to switch off; `sale.current` stays saved with `active`).
-- `/styling`: owner still to upload the portrait; optional home-page block.
+- `/styling`: optional home-page block (portrait is uploaded).
+- SEO (D-172–D-174): owner to verify the Google Business Profile; then add the
+  on-site/online appointment attributes. ~23 Oct: studio sitemap should read Success in
+  Search Console. ~27 Oct: check the new Label titles and studio pages in Search
+  Console. Not started: Instagram + YouTube items in the plan (first: the YouTube
+  upload description template still links the retired dm2buy closet).
 - Supabase grace period ends 23 Oct: re-check the usage page (§8 R2 note).
 - Optional: drop the empty `Look`/`LookItem` tables in a migration.
 

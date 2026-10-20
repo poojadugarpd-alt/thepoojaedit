@@ -45,11 +45,15 @@ Pooja Dugar (master brand)
 
 ## Rules that still apply
 
-- **The store is production.** Follow the D-number log for any store change, and never touch store DNS (apex/`www`/`img`/mail) from studio work. `studio.` is the studio's only record.
+- **The store is production.** Follow the D-number log for any store change, and never touch store DNS (apex/`www`/`img`/mail) from studio work. `studio.` is the studio's only record. The TXT `google-site-verification=…` on `@` is Search Console's ownership proof for both sites — never delete it.
 - **Never deploy the studio to Vercel.** It's a separate Next.js app in a subfolder; the Vercel project builds the repo root only.
-- Studio ↔ store cross-links (footer links etc.) are **not wanted yet** (owner, 2026-10-19). Ask first.
+- Studio ↔ store cross-links are **live** since 2026-10-20 (owner approved: footer + About on both sites, D-172/D-174). Both sites' schema name Pooja as one Person (`https://thepoojaedit.in#pooja-dugar`).
 - Owner decisions are asked as pop-up multiple-choice questions.
 - In Chrome, use the Pooja profile (GitHub `poojadugarpd-alt`) for this repo.
+
+## SEO / search (2026-10-20)
+
+Plan `~/Documents/Pooja-SEO-AEO-Plan.md` (poojadugar Mac); owner status page https://claude.ai/artifact/XBVpviqzn2HYLXVY7FYUwB. Store: D-172/D-173; studio: D-174. Search Console domain property and Bing cover both sites. Google Business Profile for styling exists but is **unverified** (owner to verify). Instagram/YouTube SEO not started. Details: `docs/HANDOVER.md` §5 "SEO / AEO and search accounts".
 
 ## Open items carried over (studio)
 
