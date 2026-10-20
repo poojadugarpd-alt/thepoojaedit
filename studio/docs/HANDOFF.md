@@ -1,6 +1,11 @@
 # Pooja Dugar Edit Studio — Handoff
 
-_Last updated: 2026-10-19_
+_Last updated: 2026-10-20_
+
+> **Moved 2026-10-20 (store D-171):** this site now lives in the store repo at `studio/`
+> (`poojadugarpd-alt/thepoojaedit`, local `~/Documents/PoojaEdit/studio`). The old repo
+> `vinayakch17/pooja-dugar-studio` is frozen at `bbf1adf`; don't commit there. Overview for all
+> Pooja work: `../docs/ONE-ROOF.md`. Hosting and deploy are unchanged (Cloudflare, `npm run cf:deploy` from `studio/`).
 
 ## What this is
 A one-page storefront for **Pooja Dugar's video editing & content service** (Instagram Reels, YouTube
@@ -15,8 +20,8 @@ This site used to deploy under PoojaEdit's Vercel team; it moved to Cloudflare o
 |---|---|
 | Live site | **https://studio.thepoojaedit.in** (public address) |
 | Origin | https://pooja-dugar-studio.vinayakch17.workers.dev (the real Worker; also reachable directly) |
-| Repo | https://github.com/vinayakch17/pooja-dugar-studio (private) |
-| Local path | `~/Documents/pooja-dugar-studio` |
+| Repo | https://github.com/poojadugarpd-alt/thepoojaedit, folder `studio/` (since 2026-10-20; old repo vinayakch17/pooja-dugar-studio frozen) |
+| Local path | `~/Documents/PoojaEdit/studio` |
 | Hosting | **Cloudflare Workers**, account *Vinayakch17@gmail.com's Account* (`4950ef49…`), Worker **pooja-dugar-studio**, via OpenNext (`@opennextjs/cloudflare`) |
 | Stack | Next.js 15 (App Router), React 19, TypeScript, plain CSS. No UI or animation libraries. |
 | Contact data | WhatsApp +91 99715 72036 · poojadugar.pd@gmail.com · IG @poojadugar_ · YT @poojadugar |
@@ -45,8 +50,8 @@ Shop my Looks and the Styling Service are built in the store's code but serve 40
 |---|---|---|---|
 | What | Editing-service storefront | Fashion e-commerce (new + thrift), **real customers** | Brand PR forms and emails for @poojadugar_ |
 | Live | studio.thepoojaedit.in | thepoojaedit.in | n/a |
-| Local | `~/Documents/pooja-dugar-studio` | `~/Documents/PoojaEdit` | `~/.claude/skills/pr/SKILL.md` |
-| GitHub | vinayakch17/pooja-dugar-studio | poojadugarpd-alt/thepoojaedit | n/a |
+| Local | `~/Documents/PoojaEdit/studio` | `~/Documents/PoojaEdit` | `~/.claude/skills/pr/SKILL.md` |
+| GitHub | poojadugarpd-alt/thepoojaedit, `studio/` | poojadugarpd-alt/thepoojaedit (root) | n/a |
 | Hosting | Cloudflare Workers (vinayakch17 account) | **Vercel** team `thepoojaedit` | Google Sheet "Pooja PR Forms" (poojadugar.pd@gmail.com) |
 | Deploy | `npm run cf:deploy` | per its docs/HANDOVER.md | never submit or send; prefill only |
 | Source of truth | `docs/HANDOFF.md` (this file) | `docs/HANDOVER.md` §8 on origin/main | the sheet |
@@ -55,7 +60,7 @@ Shared pieces and the rules for them:
 - **Domain**: the `thepoojaedit.in` zone sits in Pooja's Cloudflare account. The store's records (apex, `www`, `img`, mail)
   point to Vercel. `studio.` is the only record that belongs to this site, through the forwarder Worker. Never edit the store's DNS records from studio work.
 - **Brand**: the favicon "P" monogram is copied from the store's `src/app/` icons. WhatsApp +91 99715 72036 and IG @poojadugar_ are the same on both sites.
-- **Two Macs**: the store is also worked on from the `poojadugar` Mac. Run `git fetch` (or pull) in **both** repos before any work.
+- **Two Macs**: the store is also worked on from the `poojadugar` Mac. Both projects share one repo now, so a single `git pull` in `~/Documents/PoojaEdit` covers both.
 - **Cross-linking**: a store footer link to the studio, and one back, are not wanted yet (owner, 2026-10-19). Ask before adding them.
 - **Risk**: the store is in production with real orders. Treat any change there as production work and follow its decision log (D-numbers).
 
@@ -138,14 +143,17 @@ it is served from KV (`x-nextjs-cache: HIT`) and refreshes YouTube data in the b
 
 ## Deploy
 ```bash
-git pull
+cd ~/Documents/PoojaEdit && git pull && cd studio
+npm ci                     # first time on a machine; studio has its own node_modules
 npm run cf:deploy          # opennextjs-cloudflare build && deploy → origin Worker; live at studio.thepoojaedit.in
 npm run cf:preview         # build + run locally in the Workers runtime (wrangler dev)
 ```
 - `npm run build` runs `scripts/reel-videos.mjs` first (prebuild). It lists `public/reels/*.mp4` into
   `content/reel-videos.json`, because Workers have no filesystem at runtime.
 - Wrangler is logged in as vinayakch17@gmail.com (single account). Check with `npx wrangler whoami`.
-- GitHub isn't connected to Cloudflare; deploys are manual. Optionally connect the repo with Workers Builds.
+- GitHub isn't connected to Cloudflare; deploys are manual. Pushing to `main` deploys only the **store** (Vercel);
+  `vercel.json` skips the Vercel build when a push changes nothing outside `studio/`.
+- The store's tsconfig/ESLint/Prettier/Tailwind ignore `studio/`; `next.config.mjs` pins `outputFileTracingRoot` to this folder.
 
 ## Testing tips
 - `npm run dev`, or `npm run build && npm start`.

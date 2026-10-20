@@ -4,7 +4,9 @@ Read `docs/HANDOFF.md` first. It is the source of truth for current state, open 
 Update it whenever state changes.
 
 ## Ground rules
-- **Two Macs / two sessions:** run `git pull` before starting.
+- **Lives in the store repo** (`poojadugarpd-alt/thepoojaedit`) under `studio/` since 2026-10-20. Run all
+  studio commands from `studio/`. Old repo `vinayakch17/pooja-dugar-studio` is frozen. See `../docs/ONE-ROOF.md`.
+- **Two Macs / two sessions:** run `git pull` in `~/Documents/PoojaEdit` before starting.
 - **Not PoojaEdit.** Hosting is **Cloudflare Workers** (account vinayakch17@gmail.com, Worker
   `pooja-dugar-studio`). The old Vercel copy was deleted on 2026-10-17. Never touch the
   `thepoojaedit` Vercel project (the live fashion store).

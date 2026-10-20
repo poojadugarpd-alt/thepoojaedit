@@ -1,6 +1,6 @@
 # PoojaEdit — Handover Summary
 
-Written 2026-09-16, refreshed 2026-10-20 (through D-170, `95c0daa`), for moving work to a different environment/tool (another
+Written 2026-09-16, refreshed 2026-10-20 (through D-171), for moving work to a different environment/tool (another
 Claude Code session, Cursor, ChatGPT, a human dev, etc.). Everything here is
 verifiable in this repo — treat it as a map, not a source of truth; re-check
 against the actual files/`git log`/`docs/decisions.md` before relying on a
@@ -10,7 +10,9 @@ specific detail.
 
 1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub, including
    the UTM attribution work (D-136, merged the same evening).
-2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-170).
+2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-171).
+   **Since D-171 this repo also holds the editing-service site in `studio/`**
+   (Cloudflare, separate app). Read `docs/ONE-ROOF.md` for how the two fit.
 3. Local setup: `npm install`, `npm run db:dev` in one terminal, then
    `npm run check`, `npm run test:integration` and
    `npm run test:e2e:local -- --project=chromium` to confirm a clean baseline.
@@ -105,6 +107,7 @@ Working norms observed throughout, worth continuing:
 | `integration-setup.md`, `supabase-setup.md`, `operations-runbook.md` | Provider setup + on-call/runbook |
 | `admin-pwa-*.md` | The installable admin PWA + push notifications sub-effort |
 | `plan-owner-requests-2026-10.md` | Plan + owner answers for D-137–D-140 (all shipped) |
+| `ONE-ROOF.md` | All Pooja work: store (root) + studio (`studio/`) + PR; read first (D-171) |
 | `briefs/pooja-website-agent-brief*.md` | Parked `/picks` + `/styling` brief and its assessment (§8, item 7) |
 
 Project-scoped Claude Code tooling (commit `9328414`, 2026-09-21) lives in
@@ -331,6 +334,7 @@ Full detail in `docs/decisions.md`.
 | 10-20 | D-168 | Own Looks feature removed (tables kept) |
 | 10-20 | D-169 | Timed sale (Admin → Discount codes → Sale); Closet 30% till midnight |
 | 10-20 | D-170 | Vercel functions pinned to `bom1`; pages ~6 s → ~0.25 s |
+| 10-20 | D-171 | Studio site moved into this repo under `studio/` (still on Cloudflare) |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
