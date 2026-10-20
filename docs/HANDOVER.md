@@ -149,6 +149,10 @@ Production only).
   uploaded yet and offer copy still rough; the owner is adding content and
   pictures herself. Home-page "Personal styling" block still off.
   No Looks created yet; do not publish a Look without an explicit request.
+  Same day: header tab "Styling & Shopping" ("Styling" on phones, static
+  link), two "Connect Now" WhatsApp buttons (+91 99715 72036), and Admin →
+  Styling tabs My designs / Testimonials / Gallery feeding three carousels on
+  `/styling` (stored in `styling.content`; each hidden until it has content).
 - Styling: Admin → Styling → Edit page (intro, up to 4 offers with fees,
   steps, abroad note, portrait, enquiry email; Publish needs ≥1 offer and a
   valid email). Enquiries land in Admin → Styling (email to the enquiry

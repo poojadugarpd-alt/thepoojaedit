@@ -10,6 +10,8 @@ import {
   listStylingEnquiries,
 } from "@/server/styling";
 
+import { StylingTabs } from "./styling-tabs";
+
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Styling" };
 
@@ -49,6 +51,7 @@ export default async function AdminStylingPage({
           Edit page
         </Link>
       </div>
+      <StylingTabs current="enquiries" />
       {!content.published && (
         <p className="rounded-[10px] border border-line bg-fill px-4 py-3 text-sm text-ink">
           The Styling page is a draft, so shoppers can&rsquo;t send enquiries yet.{" "}

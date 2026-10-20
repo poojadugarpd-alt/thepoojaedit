@@ -1,15 +1,11 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
-import { after } from "next/server";
-
 import type { ActionState } from "@/app/admin/products/actions";
 import type { StylingEnquiryStatus } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { createStoragePort, photosOnR2 } from "@/lib/storage";
 import { photoLocation, storagePublicUrl } from "@/lib/storage-url";
 import { publicEnv } from "@/lib/public-env";
-import { updateSetting } from "@/server/admin";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {
   HOME_MEDIA_BUCKET,
@@ -27,39 +23,13 @@ import {
   updateStylingEnquiry,
   type StylingContent,
 } from "@/server/styling";
-import { STYLING_TAG } from "@/server/styling/published";
+
+import { saveStyling } from "./save-styling";
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v.trim() : "");
 
 /** The portrait lives next to the home page media, in its own folder. */
 const PORTRAIT_SLOT = "styling-portrait";
-
-/** `styling.content` is one JSON blob; each action rewrites only its slice. */
-async function saveStyling(
-  adminId: string,
-  reason: string,
-  patch: Partial<StylingContent>,
-): Promise<StylingContent> {
-  const current = await getStylingContent(prisma);
-  const next = { ...current, ...patch };
-  await updateSetting(prisma, {
-    key: "styling.content",
-    value: next,
-    adminUserId: adminId,
-    reason,
-  });
-  // After the response, not inside it: revalidating during the action makes
-  // Next 15.5 re-send this admin page with the result, and its client router
-  // then sometimes never commits it (button stuck on "Working…", D-155). The
-  // form reloads itself on success instead.
-  after(() => {
-    revalidateTag(STYLING_TAG);
-    revalidatePath("/styling");
-    revalidatePath("/", "page");
-    revalidatePath("/about");
-  });
-  return next;
-}
 
 export async function saveStylingPageAction(
   _prev: ActionState,

@@ -308,6 +308,22 @@ body {
     gap: 18px;
   }
 }
+/* /styling photo rails: fixed widths, so one or two photos don't stretch
+   across the page */
+.u-rail--photos {
+  grid-auto-columns: 78vw;
+}
+.u-rail--compact {
+  grid-auto-columns: 62vw;
+}
+@media (min-width: 640px) {
+  .u-rail--photos {
+    grid-auto-columns: 300px;
+  }
+  .u-rail--compact {
+    grid-auto-columns: 230px;
+  }
+}
 
 /* Circular carousel control */
 .u-railbtn {

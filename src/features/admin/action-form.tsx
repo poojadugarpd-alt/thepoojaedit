@@ -74,9 +74,12 @@ export function Field({
   hint,
   maxLength,
   step,
+  id: idProp,
 }: {
   label: string;
   name: string;
+  /** Needed when the same field name appears in several forms on one page. */
+  id?: string;
   defaultValue?: string | number | null;
   type?: string;
   required?: boolean;
@@ -88,7 +91,7 @@ export function Field({
    * numbers only). */
   step?: string;
 }) {
-  const id = `f-${name}`;
+  const id = idProp ?? `f-${name}`;
   return (
     <div>
       <label htmlFor={id} className="block text-xs font-medium">
@@ -124,9 +127,12 @@ export function TextArea({
   hint,
   maxLength,
   mono = true,
+  id: idProp,
 }: {
   label: string;
   name: string;
+  /** Needed when the same field name appears in several forms on one page. */
+  id?: string;
   defaultValue?: string | null;
   rows?: number;
   hint?: string;
@@ -135,7 +141,7 @@ export function TextArea({
    * copy) read better in the ordinary text font. */
   mono?: boolean;
 }) {
-  const id = `f-${name}`;
+  const id = idProp ?? `f-${name}`;
   return (
     <div>
       <label htmlFor={id} className="block text-xs font-medium">

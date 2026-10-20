@@ -4,9 +4,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EnquiryForm } from "@/features/styling/enquiry-form";
+import { Rail } from "@/features/styling/rail";
 import { prisma } from "@/lib/db";
 import { isSignedInAdmin } from "@/server/auth/require-admin";
-import { getStylingContent, serviceOptions } from "@/server/styling";
+import {
+  getStylingContent,
+  serviceOptions,
+  visibleTestimonials,
+  type StylingPhoto,
+} from "@/server/styling";
 
 // Content is edited live from admin, and a draft is shown to signed-in admins
 // only — both need a per-request render.
@@ -31,6 +37,7 @@ export default async function StylingPage() {
   const c = await getStylingContent(prisma);
   // Not published: a 404 for shoppers; Pooja sees the draft to check it.
   if (!c.published && !(await isSignedInAdmin())) notFound();
+  const testimonials = visibleTestimonials(c);
 
   return (
     <div>
@@ -79,6 +86,35 @@ export default async function StylingPage() {
           </div>
         )}
       </section>
+
+      {c.designs.length > 0 && (
+        <section className="u-section u-rule" aria-labelledby="designs">
+          <div className="u-page">
+            <h2 id="designs" className="u-h2">
+              {c.designsHeading}
+            </h2>
+            {c.designsIntro && (
+              <p className="mt-4 max-w-[62ch] whitespace-pre-line text-ink">
+                {c.designsIntro}
+              </p>
+            )}
+            <div className="mt-10">
+              <Rail count={c.designs.length} label="designs">
+                {c.designs.map((p) => (
+                  <figure key={p.id}>
+                    <RailPhoto photo={p} fallbackAlt="A design by Pooja Dugar" />
+                    {p.caption && (
+                      <figcaption className="mt-3 text-sm text-ink">
+                        {p.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </Rail>
+            </div>
+          </div>
+        </section>
+      )}
 
       {c.offers.length > 0 && (
         <section className="u-section u-section--fill" aria-labelledby="offers">
@@ -132,6 +168,72 @@ export default async function StylingPage() {
         </section>
       )}
 
+      {testimonials.length > 0 && (
+        <section className="u-section u-section--fill" aria-labelledby="testimonials">
+          <div className="u-page">
+            <h2 id="testimonials" className="u-h2">
+              {c.testimonialsHeading}
+            </h2>
+            <div className="mt-10">
+              <Rail count={testimonials.length} label="testimonials">
+                {testimonials.map((t) => (
+                  <figure
+                    key={t.id}
+                    className="flex flex-col border-t border-line pt-6"
+                  >
+                    {t.photos.length === 1 && (
+                      <RailPhoto
+                        photo={t.photos[0] as StylingPhoto}
+                        fallbackAlt={`${t.name}, styled by Pooja`}
+                      />
+                    )}
+                    {t.photos.length > 1 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {t.photos.map((p) => (
+                          <RailPhoto
+                            key={p.id}
+                            photo={p}
+                            fallbackAlt={`${t.name}, styled by Pooja`}
+                            square
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {t.quote && (
+                      <blockquote
+                        className={`whitespace-pre-line text-ink-strong ${t.photos.length > 0 ? "mt-5" : ""}`}
+                      >
+                        &ldquo;{t.quote}&rdquo;
+                      </blockquote>
+                    )}
+                    <figcaption className="mt-4">
+                      <span className="u-label block">{t.name}</span>
+                      {t.detail && (
+                        <span className="mt-1 block text-sm text-ink-soft">
+                          {t.detail}
+                        </span>
+                      )}
+                    </figcaption>
+                  </figure>
+                ))}
+              </Rail>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {c.gallery.length > 0 && (
+        <section className="u-section u-rule" aria-label="Gallery">
+          <div className="u-page">
+            <Rail count={c.gallery.length} label="photos" compact>
+              {c.gallery.map((p) => (
+                <RailPhoto key={p.id} photo={p} fallbackAlt="Styled by Pooja Dugar" />
+              ))}
+            </Rail>
+          </div>
+        </section>
+      )}
+
       <section id="enquire" className="u-section u-rule scroll-mt-24">
         <div className="u-page max-w-2xl">
           <h2 className="u-h2">{c.formHeading}</h2>
@@ -148,6 +250,33 @@ export default async function StylingPage() {
           </p>
         </div>
       </section>
+    </div>
+  );
+}
+
+function RailPhoto({
+  photo,
+  fallbackAlt,
+  square = false,
+}: {
+  photo: StylingPhoto;
+  fallbackAlt: string;
+  square?: boolean;
+}) {
+  if (!photo.url) return null;
+  return (
+    <div
+      className={`u-media relative overflow-hidden ${square ? "aspect-square" : "aspect-[4/5]"}`}
+    >
+      <Image
+        src={photo.url}
+        alt={photo.alt || fallbackAlt}
+        fill
+        sizes={
+          square ? "(min-width: 640px) 150px, 39vw" : "(min-width: 640px) 300px, 78vw"
+        }
+        className="object-cover"
+      />
     </div>
   );
 }

@@ -24,6 +24,27 @@ export interface StylingPortrait {
   alt: string;
 }
 
+/** One photo in a /styling carousel (My designs, a testimonial, the gallery). */
+export interface StylingPhoto {
+  /** The upload's mediaId; stable, used to reorder and remove. */
+  id: string;
+  bucket?: string;
+  path?: string;
+  url?: string;
+  /** Shown under the photo (My designs only). */
+  caption: string;
+  alt: string;
+}
+
+export interface StylingTestimonial {
+  id: string;
+  name: string;
+  /** e.g. "Mumbai" or "Wardrobe edit, 2025"; blank hides it. */
+  detail: string;
+  quote: string;
+  photos: StylingPhoto[];
+}
+
 export interface StylingContent {
   published: boolean;
   eyebrow: string;
@@ -41,10 +62,22 @@ export interface StylingContent {
   /** The optional home page block (Admin → Home → Layout → "Personal styling"). */
   homeBlock: { heading: string; body: string; cta: string };
   seoDescription: string;
+  /** "My designs" carousel, shown under the opening when it has photos. */
+  designsHeading: string;
+  designsIntro: string;
+  designs: StylingPhoto[];
+  testimonialsHeading: string;
+  testimonials: StylingTestimonial[];
+  /** Plain photo carousel above the enquiry form; no heading. */
+  gallery: StylingPhoto[];
 }
 
 export const MAX_OFFERS = 4;
 export const MAX_STEPS = 5;
+export const MAX_DESIGNS = 30;
+export const MAX_GALLERY = 30;
+export const MAX_TESTIMONIALS = 20;
+export const MAX_TESTIMONIAL_PHOTOS = 4;
 /** The service option shown after the offers in the enquiry form. */
 export const NOT_SURE_SERVICE = "Not sure yet";
 
@@ -75,6 +108,12 @@ export const DEFAULT_STYLING_CONTENT: StylingContent = {
   },
   seoDescription:
     "Personal styling and shopping with Pooja Dugar: wardrobe edits, personal shopping and online styling, in India and for clients abroad.",
+  designsHeading: "My designs",
+  designsIntro: "",
+  designs: [],
+  testimonialsHeading: "Kind words",
+  testimonials: [],
+  gallery: [],
 };
 
 type Raw = Partial<Record<keyof StylingContent, unknown>>;
@@ -117,6 +156,44 @@ function normalizePortrait(v: unknown): StylingPortrait | null {
   };
 }
 
+function normalizePhotos(v: unknown, max: number): StylingPhoto[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((raw): StylingPhoto | null => {
+      const p = raw as Partial<StylingPhoto> | null;
+      if (!p || typeof p !== "object" || typeof p.id !== "string") return null;
+      if (!p.path && !p.url) return null;
+      return {
+        id: p.id,
+        bucket: p.bucket,
+        path: p.path,
+        url: p.bucket && p.path ? storagePublicUrl(p.bucket, p.path, p.url) : p.url,
+        caption: optional(p.caption),
+        alt: optional(p.alt),
+      };
+    })
+    .filter((p): p is StylingPhoto => p !== null)
+    .slice(0, max);
+}
+
+function normalizeTestimonials(v: unknown): StylingTestimonial[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((raw): StylingTestimonial | null => {
+      const t = raw as Partial<StylingTestimonial> | null;
+      if (!t || typeof t !== "object" || typeof t.id !== "string") return null;
+      return {
+        id: t.id,
+        name: optional(t.name),
+        detail: optional(t.detail),
+        quote: optional(t.quote),
+        photos: normalizePhotos(t.photos, MAX_TESTIMONIAL_PHOTOS),
+      };
+    })
+    .filter((t): t is StylingTestimonial => t !== null)
+    .slice(0, MAX_TESTIMONIALS);
+}
+
 /** Pure merge of a saved value over the defaults; exported for tests. */
 export function resolveStylingContent(v: Raw | null): StylingContent {
   const d = DEFAULT_STYLING_CONTENT;
@@ -139,7 +216,18 @@ export function resolveStylingContent(v: Raw | null): StylingContent {
       cta: text(hb.cta, d.homeBlock.cta),
     },
     seoDescription: text(v?.seoDescription, d.seoDescription),
+    designsHeading: text(v?.designsHeading, d.designsHeading),
+    designsIntro: optional(v?.designsIntro),
+    designs: normalizePhotos(v?.designs, MAX_DESIGNS),
+    testimonialsHeading: text(v?.testimonialsHeading, d.testimonialsHeading),
+    testimonials: normalizeTestimonials(v?.testimonials),
+    gallery: normalizePhotos(v?.gallery, MAX_GALLERY),
   };
+}
+
+/** A testimonial is shown only once it has words or a photo. */
+export function visibleTestimonials(c: StylingContent): StylingTestimonial[] {
+  return c.testimonials.filter((t) => t.quote !== "" || t.photos.length > 0);
 }
 
 export async function getStylingContent(db: PrismaClient): Promise<StylingContent> {

@@ -19,6 +19,7 @@ import {
   saveStylingPageAction,
   setStylingPublishedAction,
 } from "../actions";
+import { StylingTabs } from "../styling-tabs";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Styling page" };
@@ -43,11 +44,7 @@ export default async function AdminStylingEditPage() {
           {c.published ? "View page ↗" : "Preview draft ↗"}
         </Link>
       </div>
-      <p className="text-xs text-ink-soft">
-        <Link href="/admin/styling" className="underline">
-          ← Enquiries
-        </Link>
-      </p>
+      <StylingTabs current="page" />
 
       <section className="space-y-3 rounded-[10px] border border-line p-4">
         <h2 className={H2}>{c.published ? "Live" : "Draft"}</h2>
