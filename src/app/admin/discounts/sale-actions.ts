@@ -28,7 +28,8 @@ async function saveSale(adminId: string, reason: string, value: SaleSettings) {
   // After the response (D-155). Catalog pages render per request; the home
   // page is cached for 5 minutes, so refresh it now.
   after(() => {
-    revalidateTag(SALE_TAG);
+    // Next 16: expire now (the old one-argument behaviour), not stale-while-revalidate.
+    revalidateTag(SALE_TAG, { expire: 0 });
     revalidatePath("/", "page");
   });
 }

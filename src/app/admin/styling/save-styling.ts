@@ -35,7 +35,8 @@ export async function saveStyling(
   // then sometimes never commits it (button stuck on "Working…", D-155). The
   // form reloads itself on success instead.
   after(() => {
-    revalidateTag(STYLING_TAG);
+    // Next 16: expire now (the old one-argument behaviour), not stale-while-revalidate.
+    revalidateTag(STYLING_TAG, { expire: 0 });
     revalidatePath("/styling");
     revalidatePath("/", "page");
     revalidatePath("/about");

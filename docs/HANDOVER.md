@@ -52,7 +52,7 @@ cutover; `https://thepoojaedit.vercel.app` remains a working alias).
 
 ## 2. Stack (fixed by `docs/01-master-specification.md`, do not casually change)
 
-Next.js 15.5.x App Router + React 19 + Node **22.x** (pinned — `engines`,
+Next.js 16.4.x App Router (D-176; was 15.5) + React 19 + Node **22.x** (pinned — `engines`,
 `.nvmrc`, Vercel Project Settings all agree; something drifted to 24.x once,
 was fixed) · Tailwind v4 + shadcn/ui · **Prisma 7** (`@prisma/adapter-pg`;
 `prisma@latest` resolves to a v8 RC — always pin 7 explicitly) · Supabase
@@ -383,6 +383,8 @@ Full detail in `docs/decisions.md`.
 | 10-20 | D-173 | Label SEO titles/descriptions (27, owner-approved); two `-copy` slugs renamed with redirects |
 | 10-20 | D-174 | Studio SEO: service pages, FAQ, brands row, sitemap/robots/llms.txt, schema |
 | 10-20 | (no D) | Search Console (domain property), Bing (both sites), Google Business Profile created (unverified) |
+| 10-21 | D-175 | Service pages: `/styling/nri`, `/styling/personal-stylist-cost`, `/styling/wedding-shopping`, FAQ on `/styling`; studio `/pricing`, `/ugc` |
+| 10-21 | D-176 | Store and studio on Next.js 16.4.2 (Next 15 left support); 7 react-hooks lint warnings to rework; `middleware.ts` → `proxy.ts` still to do |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
