@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 
 import type { CatalogType, ConditionGrade, ImageType } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
@@ -31,6 +32,7 @@ import {
   type UploadTicket,
 } from "@/server/catalog/product-images";
 import { archiveSoldClosetPieces } from "@/server/catalog/sold-archive";
+import { pingProduct } from "@/server/seo/indexnow";
 
 // ── FormData-based actions (still wrapped in `<ActionForm>`/`useActionState`
 // for the handful of small, independent, instant actions this page keeps —
@@ -303,6 +305,7 @@ export async function updateProductAction(
     return handleResult(e);
   }
   revalidatePath(`/admin/products/${productId}`);
+  after(() => pingProduct(prisma, productId));
   return { ok: true, message: "Saved." };
 }
 
@@ -357,6 +360,7 @@ export async function statusAction(
   }
   revalidatePath(`/admin/products/${productId}`);
   revalidatePath("/admin/products");
+  after(() => pingProduct(prisma, productId));
   return { ok: true, message: "Status changed." };
 }
 
@@ -378,6 +382,7 @@ export async function soldOutAction(
   revalidatePath(`/${segment}`);
   revalidatePath(`/${segment}/${p.slug}`);
   revalidatePath("/");
+  after(() => pingProduct(prisma, productId));
   return { ok: true, message: soldOut ? "Marked sold out." : "Back on sale." };
 }
 
@@ -644,6 +649,8 @@ export async function createFullProductAction(
   }
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${productId}`);
+  // Tell Bing at once when this save published the piece (D-177).
+  if (input.status === "PUBLISHED") after(() => pingProduct(prisma, productId));
   return { ok: true, productId };
 }
 
