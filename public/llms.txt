@@ -28,6 +28,14 @@
 - Services and fees are listed on the page as Pooja sets them (some are a
   price range, some are quoted on request). Enquiries go through the form on
   the page or WhatsApp.
+- Most of her styling clients live abroad (Australia, the UK and Europe, the
+  USA and Canada, the UAE). She shops for them over video calls or WhatsApp
+  photo shortlists, has pieces made or altered to their measurements, and
+  sends them by courier: `/styling/nri`.
+- Wedding, trousseau and festive shopping for brides and families:
+  `/styling/wedding-shopping`.
+- What personal styling costs in Delhi NCR and how her fees work (no
+  commission; clothes are paid for separately): `/styling/personal-stylist-cost`.
 
 ## Video editing (Pooja Dugar Edit Studio)
 
@@ -53,6 +61,9 @@
 - The Label: /label
 - The Closet: /closet
 - Personal styling: /styling
+- Shopping from abroad: /styling/nri
+- Wedding shopping: /styling/wedding-shopping
+- Styling fees: /styling/personal-stylist-cost
 - About: /about
 - Size guide: /size-guide
 - Contact: /contact
@@ -67,5 +78,5 @@
 - Video editing: https://studio.thepoojaedit.in
 
 ---
-Last updated: 2026-10-20. Generated for AI/LLM crawlers per the llms.txt
+Last updated: 2026-10-21. Generated for AI/LLM crawlers per the llms.txt
 convention — for full detail, see the linked pages above.

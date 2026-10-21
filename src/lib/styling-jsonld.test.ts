@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { rupeeAmounts, stylingServicesJsonLd } from "./styling-jsonld";
+import {
+  rupeeAmounts,
+  stylingGuideJsonLd,
+  stylingServicesJsonLd,
+} from "./styling-jsonld";
 
 describe("rupeeAmounts", () => {
   it("reads a range", () => {
@@ -20,7 +24,11 @@ describe("stylingServicesJsonLd", () => {
   const base = "https://thepoojaedit.in";
   const [range, quote] = stylingServicesJsonLd(
     [
-      { title: "Personal Shopping (in person)", includes: "Let's go\nshopping", fee: "₹10,000 to ₹50,000" },
+      {
+        title: "Personal Shopping (in person)",
+        includes: "Let's go\nshopping",
+        fee: "₹10,000 to ₹50,000",
+      },
       { title: "Personal Styling", includes: "", fee: "Quote on request" },
     ],
     base,
@@ -44,5 +52,36 @@ describe("stylingServicesJsonLd", () => {
   it("gives a quote-only offer no price and no empty description", () => {
     expect(quote.offers).toBeUndefined();
     expect(quote.description).toBeUndefined();
+  });
+});
+
+describe("stylingGuideJsonLd", () => {
+  const g = {
+    slug: "nri",
+    name: "Shopping from abroad",
+    answer: "I shop for clients abroad.",
+    faqs: [{ q: "Do you ship abroad?", a: "Yes." }],
+  };
+
+  it("has a breadcrumb and the questions", () => {
+    const ld = stylingGuideJsonLd(g, "https://x.test", "https://x.test#p");
+    const types = ld["@graph"].map((n) => (n as { "@type": string })["@type"]);
+    expect(types).toEqual(["BreadcrumbList", "FAQPage"]);
+  });
+
+  it("adds a Service only for service pages", () => {
+    const ld = stylingGuideJsonLd(
+      { ...g, service: { name: "Shopping", areaServed: "worldwide" } },
+      "https://x.test",
+      "https://x.test#p",
+    );
+    const service = ld["@graph"][2] as {
+      "@type": string;
+      url: string;
+      provider: object;
+    };
+    expect(service["@type"]).toBe("Service");
+    expect(service.url).toBe("https://x.test/styling/nri");
+    expect(service.provider).toEqual({ "@id": "https://x.test#p" });
   });
 });

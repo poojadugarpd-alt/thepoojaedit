@@ -15,7 +15,9 @@ describe("withBrandIfFits", () => {
 
 describe("closetSeoTitle", () => {
   it("adds the size and Pre-loved", () => {
-    expect(closetSeoTitle("Zara Top - Black", "S")).toBe("Zara Top - Black, Size S · Pre-loved");
+    expect(closetSeoTitle("Zara Top - Black", "S")).toBe(
+      "Zara Top - Black, Size S · Pre-loved",
+    );
   });
 
   it("leaves the size out when there is none", () => {

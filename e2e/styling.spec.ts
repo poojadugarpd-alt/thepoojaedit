@@ -81,3 +81,28 @@ test("the enquiry form shows field errors and keeps what was typed", async ({
   await expect(page.getByText("Please check your email address.")).toBeVisible();
   await expect(page.getByLabel("Name")).toHaveValue("Short Message");
 });
+
+test("the styling guides show live fees and link back to the enquiry form", async ({
+  page,
+}) => {
+  await page.goto("/styling");
+  // Skip on a fresh database where the page hasn't been published yet.
+  test.skip((await page.getByRole("button", { name: "Send enquiry" }).count()) === 0);
+  await expect(page.getByRole("heading", { name: "Questions" })).toBeVisible();
+  await page
+    .getByRole("link", { name: "Shopping in India from abroad" })
+    .first()
+    .click();
+
+  await expect(page).toHaveURL(/\/styling\/nri$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Your personal shopper in India, wherever you live",
+  );
+  // The fee list comes from Admin → Styling (saved by the first test).
+  await expect(page.getByRole("heading", { name: "Wardrobe edit" })).toBeVisible();
+  await page.getByRole("link", { name: "Send an enquiry" }).first().click();
+  await expect(page).toHaveURL(/\/styling#enquire$/);
+
+  const missing = await page.goto("/styling/not-a-guide");
+  expect(missing?.status()).toBe(404);
+});

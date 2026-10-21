@@ -6,5 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: site.url },
     ...serviceIds.map((id) => ({ url: `${site.url}/${id}` })),
+    { url: `${site.url}/ugc` },
+    { url: `${site.url}/pricing` },
   ];
 }

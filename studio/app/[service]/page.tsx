@@ -5,6 +5,7 @@ import { pricing, site, waLink } from "@/lib/site";
 import { commonFaqs, isServiceId, serviceIds, services } from "@/lib/services";
 import { personJsonLd } from "@/lib/schema";
 import { Footer } from "@/components/Footer";
+import { PageHeader } from "@/components/PageHeader";
 import { GraphicCard, InstagramCard, ModalProvider, YouTubeCard } from "@/components/Media";
 import { WhatsAppIcon } from "@/components/icons";
 
@@ -89,22 +90,7 @@ export default async function ServicePage({ params }: Params) {
 
   return (
     <ModalProvider>
-      <header className="header">
-        <div className="header-row">
-          <a href="/" className="service-back">
-            ← all services
-          </a>
-          <a href="/" className="logo" aria-label={`${site.name} studio — home`}>
-            <span className="logo-main">POOJA DUGAR</span>
-            <span className="logo-sub">EDIT STUDIO</span>
-          </a>
-          <div className="header-right">
-            <a className="icon-btn wa-icon" href={waLink(message)} target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
-              <WhatsAppIcon size={21} />
-            </a>
-          </div>
-        </div>
-      </header>
+      <PageHeader message={message} />
 
       <main id="top">
         <section className="block service-hero" aria-labelledby="service-title">

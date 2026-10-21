@@ -164,6 +164,13 @@ Production only).
   Person `@id`. Deployed with `npm run cf:deploy` from `studio/` (this Mac's wrangler
   is logged in as vinayakch17). Bing tag `msvalidate.01` in `studio/app/layout.tsx` —
   keep it.
+- **Service content pages (2026-10-21, D-175):** `/styling/nri` (lead: most
+  styling clients are abroad), `/styling/personal-stylist-cost`,
+  `/styling/wedding-shopping`, plus questions and guide links on `/styling`. Copy in
+  `src/features/styling/guides.ts` (owner-approved; the cost guide's intro quotes her
+  fees in words, so update it if she changes fees in Admin). Studio `/pricing` and
+  `/ugc` (copy in `studio/lib/pages.ts`). Drafts and research:
+  `~/Documents/Pooja-Service-Pages/`.
 - **Google Search Console:** Domain property `sc-domain:thepoojaedit.in` (Pooja's
   Google account) covers the store and the studio. Verified by a TXT record on `@` in
   Cloudflare DNS — **never delete it**. Store sitemap: Success (103 URLs). Studio

@@ -26,7 +26,9 @@ import {
  * /closet (see the Closet product route); the hourly archive job then hides
  * it for good.
  */
-export function isSoldClosetPiece(c: Pick<PublicProductCard, "catalog" | "availability">) {
+export function isSoldClosetPiece(
+  c: Pick<PublicProductCard, "catalog" | "availability">,
+) {
   return c.catalog === "THRIFT" && c.availability === "SOLD";
 }
 

@@ -16,6 +16,11 @@
 - Instagram carousels (`/carousels`): ₹200 per carousel. Ready in 24–48 hours.
 - Graphics (`/graphics`): thumbnails, posters, social creatives and brand
   visuals, ₹500 per graphic. Ready in 24–48 hours.
+- UGC and brand videos (`/ugc`): she shoots and edits UGC, product videos
+  and Reels for fashion, beauty and lifestyle brands; shoots are quoted on
+  request.
+- All prices, and what Reel and YouTube editing usually cost in India:
+  `/pricing`.
 - Every order includes 1–2 revisions. Bulk discounts, monthly packages and
   rush delivery are available on request.
 
@@ -32,4 +37,4 @@
   closet and personal styling and shopping in Gurugram and Delhi NCR.
 
 ---
-Last updated: 2026-10-20.
+Last updated: 2026-10-21.

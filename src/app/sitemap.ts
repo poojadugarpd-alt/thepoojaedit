@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { SEGMENT_BY_CATALOG } from "@/lib/catalog-routes";
 import { publicEnv } from "@/lib/public-env";
 import { deriveAvailability } from "@/server/catalog/public-shape";
+import { guides } from "@/features/styling/guides";
 import { getStylingContent } from "@/server/styling/content";
 
 export const revalidate = 3600;
@@ -114,7 +115,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // a cold database just leaves it out
   }
   const stylingEntries: MetadataRoute.Sitemap = stylingPublished
-    ? [{ url: u("/styling"), changeFrequency: "monthly", priority: 0.6 }]
+    ? [
+        { url: u("/styling"), changeFrequency: "monthly", priority: 0.6 },
+        ...guides.map((g) => ({
+          url: u(`/styling/${g.slug}`),
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        })),
+      ]
     : [];
 
   return [...staticEntries, ...stylingEntries, ...productEntries, ...collectionEntries];

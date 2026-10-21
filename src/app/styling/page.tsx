@@ -4,11 +4,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EnquiryForm } from "@/features/styling/enquiry-form";
+import { FaqList } from "@/features/styling/faq-list";
+import { STYLING_LINKS, stylingFaqs, WHERE_I_WORK } from "@/features/styling/guides";
 import { Rail } from "@/features/styling/rail";
 import { prisma } from "@/lib/db";
 import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
-import { stylingServicesJsonLd } from "@/lib/styling-jsonld";
+import { faqPageJsonLd, stylingServicesJsonLd } from "@/lib/styling-jsonld";
 import { isSignedInAdmin } from "@/server/auth/require-admin";
 import {
   getStylingContent,
@@ -52,10 +54,21 @@ export default async function StylingPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(stylingServicesJsonLd(c.offers, base, personId(base))),
+            __html: JSON.stringify(
+              stylingServicesJsonLd(c.offers, base, personId(base)),
+            ),
           }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            ...faqPageJsonLd(stylingFaqs),
+          }),
+        }}
+      />
       {!c.published && (
         <p className="u-page pt-6">
           <span className="block rounded-[10px] border border-line bg-fill px-4 py-3 text-sm text-ink">
@@ -248,6 +261,26 @@ export default async function StylingPage() {
           </div>
         </section>
       )}
+
+      {/* Where she works, the guide pages and the questions (D-175). */}
+      <section className="u-section u-rule" aria-labelledby="questions">
+        <div className="u-page">
+          <p className="max-w-[62ch] text-ink">{WHERE_I_WORK}</p>
+          <ul className="mt-6 flex flex-wrap gap-3">
+            {STYLING_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="u-pill u-pill--ghost inline-flex">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <h2 id="questions" className="u-h2 mt-16">
+            Questions
+          </h2>
+          <FaqList faqs={stylingFaqs} />
+        </div>
+      </section>
 
       <section id="enquire" className="u-section u-rule scroll-mt-24">
         <div className="u-page max-w-2xl">

@@ -47,7 +47,11 @@ function priceOf(fee: string) {
   };
 }
 
-export function stylingServicesJsonLd(offers: Offer[], base: string, providerId: string) {
+export function stylingServicesJsonLd(
+  offers: Offer[],
+  base: string,
+  providerId: string,
+) {
   return {
     "@context": "https://schema.org",
     "@graph": offers.map((o) => ({
@@ -68,4 +72,74 @@ export function stylingServicesJsonLd(offers: Offer[], base: string, providerId:
       offers: priceOf(o.fee),
     })),
   };
+}
+
+interface Question {
+  q: string;
+  a: string;
+}
+
+/** FAQPage for the questions on /styling and its guide pages. */
+export function faqPageJsonLd(faqs: Question[]) {
+  return {
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+}
+
+interface GuideMeta {
+  slug: string;
+  name: string;
+  answer: string;
+  faqs: Question[];
+  service?: { name: string; areaServed: "worldwide" | "ncr" };
+}
+
+/** A /styling/<slug> guide: breadcrumb, its questions and, for a service page, the Service. */
+export function stylingGuideJsonLd(g: GuideMeta, base: string, providerId: string) {
+  const url = `${base}/styling/${g.slug}`;
+  const graph: object[] = [
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Personal styling",
+          item: `${base}/styling`,
+        },
+        { "@type": "ListItem", position: 2, name: g.name, item: url },
+      ],
+    },
+    faqPageJsonLd(g.faqs),
+  ];
+  if (g.service) {
+    graph.push({
+      "@type": "Service",
+      name: g.service.name,
+      description: g.answer,
+      serviceType: "Personal styling and shopping",
+      provider: { "@id": providerId },
+      url,
+      areaServed:
+        g.service.areaServed === "worldwide"
+          ? [
+              { "@type": "Country", name: "Australia" },
+              { "@type": "Country", name: "United Kingdom" },
+              { "@type": "Country", name: "United States" },
+              { "@type": "Country", name: "Canada" },
+              { "@type": "Country", name: "United Arab Emirates" },
+              { "@type": "Country", name: "India" },
+            ]
+          : [
+              { "@type": "City", name: "Gurugram" },
+              { "@type": "AdministrativeArea", name: "Delhi NCR" },
+            ],
+    });
+  }
+  return { "@context": "https://schema.org", "@graph": graph };
 }

@@ -34,7 +34,10 @@ export async function buildProductMetadata(
   const title =
     product.metaTitle ??
     (product.isThrift
-      ? closetSeoTitle(product.title, product.sizes[0] ?? product.thrift?.labelledSize ?? null)
+      ? closetSeoTitle(
+          product.title,
+          product.sizes[0] ?? product.thrift?.labelledSize ?? null,
+        )
       : product.title);
 
   return {
