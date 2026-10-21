@@ -188,8 +188,8 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
   videos; brand Reels and the brands named in the intro come from Reels tagged with a brand or the brand/ugc
   category), copy in `lib/pages.ts`, added 2026-10-21 (D-175). Footer: "ugc & brand videos" under services, help →
   "pricing" now goes to `/pricing`. Inner pages share `components/PageHeader.tsx`.
-- **Build flag:** Next 15 passed its 2-year support window on 2026-10-21 and OpenNext refuses it, so `cf:build`,
-  `cf:preview` and `cf:deploy` pass `--dangerouslyUseUnsupportedNextVersion`. Upgrade to Next 16 soon, then drop it.
+- **Next.js 16** (16.4.2) since 2026-10-21. OpenNext 1.20 needs Next >=16.4.1; the temporary
+  `--dangerouslyUseUnsupportedNextVersion` flag (Next 15 left support that day) is gone.
 
 ## Open items / next steps
 1. **Reel mp4s** for hover-play (export from IG or originals; compress; ffmpeg isn't installed on this Mac).
