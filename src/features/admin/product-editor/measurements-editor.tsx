@@ -72,12 +72,15 @@ export function MeasurementsEditor({
   onChange,
   title = "Measurements",
   hint = "The actual garment’s measurements — how a buyer checks fit on a one-of-one piece with no size chart. At least one is required to publish.",
+  required = true,
 }: {
   rows: MeasurementRow[];
   onChange: (rows: MeasurementRow[]) => void;
   /** Per-size use (D-139): e.g. "Measurements — size M". */
   title?: string;
   hint?: string;
+  /** Closet needs one to publish; Label measurements are optional (D-179). */
+  required?: boolean;
 }) {
   function addRow() {
     onChange([
@@ -100,7 +103,7 @@ export function MeasurementsEditor({
   return (
     <div>
       <label className="block text-xs font-medium">
-        {title} <span className="text-stop">*</span>
+        {title} {required && <span className="text-stop">*</span>}
       </label>
       <p className="mt-0.5 text-[11px] text-ink-soft">{hint}</p>
       <datalist id="measurement-labels">

@@ -185,9 +185,11 @@ export function ProductEditor({
   const publicSiteUrl = publicEnv.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
   const oneOfOneConflict =
     isThrift && isOneOfOne && rows.filter((r) => !r.orphaned).length > 1;
-  // A Closet item in more than one size gets measurements per size (D-139).
+  // A Closet item in more than one size gets measurements per size (D-139);
+  // a Label piece always keeps them on its sizes (D-179).
   const sizedRows = rows.filter((r) => !r.orphaned && r.size);
-  const perSizeMeasurements = isThrift && sizedRows.length > 1;
+  const labelRows = rows.filter((r) => !r.orphaned);
+  const perSizeMeasurements = isThrift ? sizedRows.length > 1 : true;
 
   async function handleSave() {
     setSaving(true);
@@ -537,6 +539,34 @@ export function ProductEditor({
               onColorsChange={setColors}
             />
           </section>
+
+          {!isThrift && labelRows.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-strong">
+                Size &amp; measurements
+              </h2>
+              {labelRows.map((row) => (
+                <MeasurementsEditor
+                  key={row.key}
+                  title={
+                    row.size
+                      ? `Measurements — size ${row.size}${row.color ? ` ${row.color}` : ""}`
+                      : "Measurements"
+                  }
+                  hint="Garment measurements for this size, shown to buyers on the product page (e.g. Bust 34 in)."
+                  required={false}
+                  rows={row.measurementRows}
+                  onChange={(next) =>
+                    setRows((prev) =>
+                      prev.map((r) =>
+                        r.key === row.key ? { ...r, measurementRows: next } : r,
+                      ),
+                    )
+                  }
+                />
+              ))}
+            </section>
+          )}
 
           {isThrift && (
             <section className="space-y-3">

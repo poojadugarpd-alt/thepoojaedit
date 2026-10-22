@@ -32,9 +32,11 @@ function measurementEntries(value: unknown): [string, unknown][] {
 function Measurements({
   value,
   label = "Measurements",
+  note = "Units as recorded by the seller; confirm before ordering.",
 }: {
   value: unknown;
   label?: string;
+  note?: string;
 }) {
   const entries = measurementEntries(value);
   if (entries.length === 0) return null;
@@ -56,11 +58,39 @@ function Measurements({
             );
           })}
         </ul>
-        <p className="mt-1 text-xs text-ink-soft">
-          Units as recorded by the seller; confirm before ordering.
-        </p>
+        <p className="mt-1 text-xs text-ink-soft">{note}</p>
       </dd>
     </div>
+  );
+}
+
+/** Label pieces (D-179): each size and its garment measurements. */
+function LabelSizesBlock({ variants }: { variants: PublicProductDetail["variants"] }) {
+  const sized = variants.filter(
+    (v) => v.size || measurementEntries(v.measurements).length > 0,
+  );
+  if (sized.length === 0) return null;
+  return (
+    <section className="mt-16 border-t border-line pt-10">
+      <h2 className="u-label">Size &amp; measurements</h2>
+      <dl className="mt-6 grid gap-6 text-[0.95rem] text-ink sm:grid-cols-2">
+        {sized.map((v) =>
+          measurementEntries(v.measurements).length > 0 ? (
+            <Measurements
+              key={v.id}
+              label={v.size ? `Size ${v.size}` : "Measurements"}
+              value={v.measurements}
+              note="Garment measurements for this size."
+            />
+          ) : (
+            <div key={v.id}>
+              <dt className="u-label">Size</dt>
+              <dd className="mt-1">{v.size}</dd>
+            </div>
+          ),
+        )}
+      </dl>
+    </section>
   );
 }
 
@@ -303,6 +333,7 @@ export function ProductDetail({
       {product.thrift && (
         <ThriftDetailsBlock thrift={product.thrift} variants={product.variants} />
       )}
+      {!product.thrift && <LabelSizesBlock variants={product.variants} />}
 
       {product.availability === "SOLD" && alternatives.length > 0 && (
         <section className="mt-16 border-t border-line pt-10">

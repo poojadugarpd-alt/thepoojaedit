@@ -186,6 +186,7 @@ async function seedNotifyOnlyPiece(taxClassId: string, categoryId: string) {
         create: {
           sku: "TPE-NOTIFY-S",
           size: "S",
+          measurements: { bust: { value: "34", unit: "in" } },
           pricePaise: 250000,
           onHandQty: 1,
           reservedQty: 0,

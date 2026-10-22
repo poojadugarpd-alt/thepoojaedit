@@ -153,6 +153,10 @@ test("a Notify me piece takes an email instead of an order (D-178)", async ({
   await page.goto("/label/e2e-notify-blouse");
   await expect(page.getByText("Coming soon").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /add to (cart|bag)/i })).toHaveCount(0);
+  // D-179: Label size and measurements.
+  await expect(page.getByText("Size & measurements")).toBeVisible();
+  await expect(page.getByText("Size S", { exact: true })).toBeVisible();
+  await expect(page.getByText("Bust: 34 in")).toBeVisible();
   await page.getByLabel("Email").fill("not-an-email");
   await page.getByRole("button", { name: "Notify me" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(

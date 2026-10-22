@@ -384,6 +384,7 @@ Full detail in `docs/decisions.md`.
 | 10-20 | D-174 | Studio SEO: service pages, FAQ, brands row, sitemap/robots/llms.txt, schema |
 | 10-20 | (no D) | Search Console (domain property), Bing (both sites), Google Business Profile created (unverified) |
 | 10-21 | D-175 | Service pages: `/styling/nri`, `/styling/personal-stylist-cost`, `/styling/wedding-shopping`, FAQ on `/styling`; studio `/pricing`, `/ugc` |
+| 10-22 | D-179 | Label pieces get per-size measurements in Admin and a Size & measurements block on the product page |
 | 10-22 | D-178 | "Notify me" pieces: email sign-up instead of Add to cart, waiting list in Admin |
 | 10-21 | D-177 | IndexNow: Bing is pinged when a product is published/changed (key file in `public/`) |
 | 10-21 | D-176 | Store and studio on Next.js 16.4.2 (Next 15 left support); 7 react-hooks lint warnings to rework; `middleware.ts` → `proxy.ts` still to do |

@@ -146,6 +146,15 @@ test("create a Label product with two sizes in one Save", async ({ page }) => {
   );
   await expect(page.getByLabel("Price, ₹ (S)")).toHaveValue("1999.00");
   await expect(page.getByLabel("Price, ₹ (M)")).toHaveValue("1999.00");
+
+  // D-179: a Label size keeps its own measurements.
+  await page.getByRole("button", { name: "+ Add measurement" }).first().click();
+  await page.getByLabel("Measurement name").first().fill("Bust");
+  await page.getByLabel("Bust value").fill("34");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Bust value")).toHaveValue("34");
 });
 
 /**
