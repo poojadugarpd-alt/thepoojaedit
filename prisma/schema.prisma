@@ -442,6 +442,9 @@ model Product {
   // Owner's manual "Sold out" switch (D-138): the product stays listed but
   // can't be bought, and stock is left untouched so switching back restores it.
   markedSoldOut  Boolean       @default(false)
+  // "Notify me" mode (D-178): the page shows an email sign-up instead of Add
+  // to cart, for pieces Pooja is gauging interest in before making them.
+  notifyOnly     Boolean       @default(false)
   publishedAt    DateTime?     @db.Timestamptz(6)
   createdAt      DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt      DateTime      @updatedAt @db.Timestamptz(6)
@@ -451,6 +454,7 @@ model Product {
   images         ProductImage[]
   collections    ProductCollection[]
   lookItems      LookItem[]
+  interests      ProductInterest[]
 
   @@unique([catalog, slug])
   @@index([catalog, status, publishedAt])
@@ -1283,4 +1287,19 @@ model LookItem {
   @@unique([lookId, productId])
   @@index([lookId, position])
   @@index([productId])
+}
+
+/// Someone asked to hear when a "Notify me" piece (D-178) can be bought.
+model ProductInterest {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  productId   String   @db.Uuid
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  email       String
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([productId, email])
+  @@index([createdAt])
 }

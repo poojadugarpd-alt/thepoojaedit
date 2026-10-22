@@ -15,6 +15,7 @@ import {
   createProduct,
   deleteProduct,
   publishProduct,
+  setProductNotifyOnly,
   setProductSoldOut,
   setProductStatus,
   switchProductCatalog,
@@ -384,6 +385,30 @@ export async function soldOutAction(
   revalidatePath("/");
   after(() => pingProduct(prisma, productId));
   return { ok: true, message: soldOut ? "Marked sold out." : "Back on sale." };
+}
+
+/** Saves the "Notify me" switch (D-178) and refreshes the storefront pages. */
+export async function notifyOnlyAction(
+  productId: string,
+  notifyOnly: boolean,
+): Promise<SimpleResult> {
+  const admin = await requireAdmin();
+  let p;
+  try {
+    p = await setProductNotifyOnly(prisma, admin, productId, notifyOnly);
+  } catch (e) {
+    return handleResult(e);
+  }
+  const segment = p.catalog === "THRIFT" ? "closet" : "label";
+  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath(`/${segment}`);
+  revalidatePath(`/${segment}/${p.slug}`);
+  revalidatePath("/");
+  after(() => pingProduct(prisma, productId));
+  return {
+    ok: true,
+    message: notifyOnly ? "Now taking Notify me sign-ups." : "Back to Add to cart.",
+  };
 }
 
 export type VariantInput = {

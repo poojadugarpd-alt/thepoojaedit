@@ -6,6 +6,7 @@ import { ProductEditor } from "@/features/admin/product-editor/product-editor";
 import { prisma } from "@/lib/db";
 import { timed } from "@/lib/perf";
 import { getAdminProduct, validateForPublication } from "@/server/catalog/admin";
+import { listInterest } from "@/server/catalog/interest";
 import { HOME_RAIL_SLUG } from "@/server/catalog/queries";
 
 // React's per-request cache: `generateMetadata` and the page component both
@@ -39,6 +40,7 @@ export default async function EditProduct({
   );
   if (!p) notFound();
   const check = validateForPublication(p);
+  const interest = await listInterest(prisma, p.id);
 
   return (
     <ProductEditor
@@ -46,6 +48,7 @@ export default async function EditProduct({
       initialCatalog={p.catalog}
       homeRailSlug={HOME_RAIL_SLUG[p.catalog]}
       initialCheck={check}
+      interest={interest.map((i) => ({ ...i, createdAt: i.createdAt.toISOString() }))}
     />
   );
 }

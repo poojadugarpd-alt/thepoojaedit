@@ -7,6 +7,7 @@ import type { PublicProductDetail } from "@/server/catalog/public-shape";
 
 import { AddToCart } from "./add-to-cart";
 import { AvailabilityBadge } from "./availability-badge";
+import { NotifyMe } from "./notify-me";
 import { Gallery } from "./gallery";
 import { Price } from "./price";
 import { ProductGrid } from "./product-grid";
@@ -260,23 +261,33 @@ export function ProductDetail({
               compareAtPaise={product.compareAtPaise}
               className="text-lg"
             />
-            <AvailabilityBadge availability={product.availability} />
+            {product.notifyOnly ? (
+              <span className="text-[0.6875rem] font-bold uppercase tracking-[0.06em] text-ink-soft">
+                Coming soon
+              </span>
+            ) : (
+              <AvailabilityBadge availability={product.availability} />
+            )}
             {product.isThrift && product.isOneOfOne && (
               <span className="u-eyebrow">One of one</span>
             )}
           </div>
 
           <div className="mt-8">
-            <AddToCart
-              catalog={product.catalog}
-              productSlug={product.slug}
-              productTitle={product.title}
-              variants={product.variants}
-              imageUrl={product.images[0]?.url ?? null}
-              availability={product.availability}
-              isOneOfOne={product.isThrift && product.isOneOfOne}
-              returnPolicyNote={returnPolicyNote(product.catalog)}
-            />
+            {product.notifyOnly ? (
+              <NotifyMe catalog={product.catalog} slug={product.slug} />
+            ) : (
+              <AddToCart
+                catalog={product.catalog}
+                productSlug={product.slug}
+                productTitle={product.title}
+                variants={product.variants}
+                imageUrl={product.images[0]?.url ?? null}
+                availability={product.availability}
+                isOneOfOne={product.isThrift && product.isOneOfOne}
+                returnPolicyNote={returnPolicyNote(product.catalog)}
+              />
+            )}
           </div>
 
           {descParas.length > 0 && (

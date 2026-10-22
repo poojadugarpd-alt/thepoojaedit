@@ -89,6 +89,9 @@ export interface PublicProductCard {
    * Closet listing carrying more than one size) — drives the size filter and
    * a size badge on the card. Empty when no variant has a size set. */
   sizes: string[];
+  /** "Notify me" piece (D-178): shown, but not for sale yet; the page takes an
+   *  email instead of an order. Its variants are never `available`. */
+  notifyOnly: boolean;
 }
 
 export interface PublicProductDetail extends PublicProductCard {
@@ -171,7 +174,12 @@ type ProductRow = {
   images: ProductImage[];
   thriftDetails: ThriftDetails | null;
   markedSoldOut?: boolean;
+  notifyOnly?: boolean;
 };
+
+/** Sold out by hand, or a "Notify me" piece: either way nothing can be bought. */
+const notBuyable = (p: ProductRow) =>
+  (p.markedSoldOut ?? false) || (p.notifyOnly ?? false);
 
 /** While a sale covers this catalog, the pre-sale price is the struck-through
  *  one (not a higher original retail price), so "30% off" reads true. */
@@ -214,13 +222,9 @@ export function toPublicCard(
     primaryImage: primary ? toPublicImage(primary) : null,
     fromPricePaise: price.pricePaise,
     compareAtPaise: price.compareAtPaise,
-    availability: deriveAvailability(
-      p.catalog,
-      isOneOfOne,
-      p.variants,
-      p.markedSoldOut ?? false,
-    ),
+    availability: deriveAvailability(p.catalog, isOneOfOne, p.variants, notBuyable(p)),
     sizes: [...new Set(p.variants.map((v) => v.size).filter((s): s is string => !!s))],
+    notifyOnly: p.notifyOnly ?? false,
   };
 }
 
@@ -244,9 +248,9 @@ export function toPublicDetail(
         size: v.size,
         color: v.color,
         ...withSale(p.catalog, v.pricePaise, v.compareAtPaise, sale),
-        available: !p.markedSoldOut && variantAvailable(v),
-        onHold: !p.markedSoldOut && variantOnHold(v),
-        maxOrderQty: p.markedSoldOut ? 0 : variantMaxOrderQty(v),
+        available: !notBuyable(p) && variantAvailable(v),
+        onHold: !notBuyable(p) && variantOnHold(v),
+        maxOrderQty: notBuyable(p) ? 0 : variantMaxOrderQty(v),
         measurements: v.measurements ?? null,
       })),
     thrift: p.thriftDetails

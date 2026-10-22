@@ -146,3 +146,23 @@ test("skip link is the first focusable element on the storefront", async ({
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: /skip to main content/i })).toBeFocused();
 });
+
+test("a Notify me piece takes an email instead of an order (D-178)", async ({
+  page,
+}) => {
+  await page.goto("/label/e2e-notify-blouse");
+  await expect(page.getByText("Coming soon").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /add to (cart|bag)/i })).toHaveCount(0);
+  await page.getByLabel("Email").fill("not-an-email");
+  await page.getByRole("button", { name: "Notify me" }).click();
+  await expect(page.getByRole("main").getByRole("alert")).toContainText(
+    "Please check your email address.",
+  );
+  await page
+    .getByLabel("Email")
+    .fill(`e2e-${Math.random().toString(36).slice(2, 8)}@example.com`);
+  await page.getByRole("button", { name: "Notify me" }).click();
+  await expect(page.getByRole("main").getByRole("status")).toContainText(
+    "You’re on the list",
+  );
+});

@@ -401,6 +401,31 @@ export async function setProductSoldOut(
   return after;
 }
 
+/**
+ * "Notify me" mode (D-178): the piece is listed with an email sign-up instead
+ * of Add to cart, for designs Pooja is gauging interest in before making them.
+ */
+export async function setProductNotifyOnly(
+  db: PrismaClient,
+  admin: AdminUser,
+  id: string,
+  notifyOnly: boolean,
+): Promise<Product> {
+  const before = await db.product.findUniqueOrThrow({ where: { id } });
+  if (before.notifyOnly === notifyOnly) return before;
+  const after = await db.product.update({ where: { id }, data: { notifyOnly } });
+  await auditLog(db, {
+    adminUserId: admin.id,
+    action: notifyOnly ? "product.notify_only_on" : "product.notify_only_off",
+    entityType: "Product",
+    entityId: id,
+    before: { notifyOnly: before.notifyOnly },
+    after: { notifyOnly: after.notifyOnly },
+    reason: null,
+  });
+  return after;
+}
+
 /** Thrown when a delete is refused because the product has real order history. */
 export class ProductHasHistoryError extends ValidationError {
   constructor() {

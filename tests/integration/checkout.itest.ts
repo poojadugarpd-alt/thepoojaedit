@@ -278,6 +278,22 @@ describe("Sold out switch blocks checkout (D-138)", () => {
       }),
     ).rejects.toThrow(`${v.product.title}: sold out`);
   });
+
+  it("rejects a Notify me piece (D-178), naming it", async () => {
+    const variantId = await makeVariant({ onHand: 5 });
+    const v = await db.productVariant.findUniqueOrThrow({
+      where: { id: variantId },
+      include: { product: true },
+    });
+    await db.product.update({ where: { id: v.productId }, data: { notifyOnly: true } });
+    await expect(
+      computeQuote(db, {
+        lines: [{ variantId, quantity: 1 }],
+        paymentMethod: "PREPAID_RAZORPAY",
+        destination: { stateCode: "08", postcode: "302001" },
+      }),
+    ).rejects.toThrow(`${v.product.title}: not on sale yet`);
+  });
 });
 
 describe("prepaid vs COD placement (AC-09)", () => {

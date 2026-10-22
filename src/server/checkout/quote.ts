@@ -208,6 +208,13 @@ export async function computeQuote(
     if (v.product.status !== "PUBLISHED" || v.product.publishedAt == null) {
       throw new ItemUnavailableError(v.id, "no longer available", v.product.title);
     }
+    if (v.product.notifyOnly) {
+      throw new ItemUnavailableError(
+        v.id,
+        "not on sale yet — please remove it from your cart",
+        v.product.title,
+      );
+    }
     if (v.product.markedSoldOut) {
       throw new ItemUnavailableError(
         v.id,

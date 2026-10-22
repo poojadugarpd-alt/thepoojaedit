@@ -10,10 +10,13 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
   const segment = SEGMENT_BY_CATALOG[product.catalog];
   const href = `/${segment}/${product.slug}`;
   const img = product.primaryImage;
+  // A "Notify me" piece (D-178) isn't sold out, just not on sale yet.
   const sold =
-    product.availability === "SOLD" || product.availability === "OUT_OF_STOCK";
-  const tag =
-    product.availability === "SOLD"
+    !product.notifyOnly &&
+    (product.availability === "SOLD" || product.availability === "OUT_OF_STOCK");
+  const tag = product.notifyOnly
+    ? "Coming soon"
+    : product.availability === "SOLD"
       ? "SOLD"
       : product.availability === "OUT_OF_STOCK"
         ? "Sold out"

@@ -162,6 +162,39 @@ async function upsertCategory(
   return prisma.category.create({ data: { catalog, slug, name } });
 }
 
+/** A "Notify me" Label piece (D-178) for its e2e. Published before everything
+ *  else so it sorts last and never becomes the "first product" other specs buy. */
+async function seedNotifyOnlyPiece(taxClassId: string, categoryId: string) {
+  const slug = "e2e-notify-blouse";
+  const existing = await prisma.product.findUnique({
+    where: { catalog_slug: { catalog: "THE_POOJA_EDIT", slug } },
+  });
+  if (existing) return existing;
+  return prisma.product.create({
+    data: {
+      catalog: "THE_POOJA_EDIT",
+      slug,
+      title: "Notify Me Blouse",
+      description: "A blouse that is not on sale yet.",
+      status: "PUBLISHED",
+      publishedAt: new Date(PAST.getTime() - 86_400_000),
+      notifyOnly: true,
+      categoryId,
+      taxClassId,
+      brand: "The Pooja Edit",
+      variants: {
+        create: {
+          sku: "TPE-NOTIFY-S",
+          size: "S",
+          pricePaise: 250000,
+          onHandQty: 1,
+          reservedQty: 0,
+        },
+      },
+    },
+  });
+}
+
 async function seedNewApparel(taxClassId: string, categoryId: string) {
   const slug = "marigold-cotton-kurta";
   const existing = await prisma.product.findUnique({
@@ -524,6 +557,7 @@ async function main() {
   const { dresses, outerwear } = await seedCategories();
 
   const kurta = await seedNewApparel(taxClass.id, dresses.id);
+  await seedNotifyOnlyPiece(taxClass.id, dresses.id);
   await seedThriftPiece({
     slug: "vintage-denim-jacket",
     title: "Vintage Denim Jacket",

@@ -21,6 +21,7 @@ import {
   deleteProductAction,
   reorderImageAction,
   setPrimaryImageAction,
+  notifyOnlyAction,
   soldOutAction,
   statusAction,
   switchCatalogAction,
@@ -45,6 +46,7 @@ import {
 } from "./measurements-editor";
 import { SeoPreview } from "./seo-preview";
 import { TagInput } from "./tag-input";
+import { WaitingList, type WaitingPerson } from "./waiting-list";
 import {
   VariantMatrix,
   variantsToMatrixState,
@@ -90,6 +92,7 @@ export function ProductEditor({
   initialCatalog,
   homeRailSlug,
   initialCheck,
+  interest,
 }: {
   /** Null when this is a brand-new, not-yet-saved product. */
   initial: AdminProductData | null;
@@ -103,6 +106,8 @@ export function ProductEditor({
    *  server-only) — a snapshot as of the last load/refresh, only shown
    *  once saved. */
   initialCheck?: { ok: boolean; errors: string[] } | null;
+  /** "Notify me" sign-ups for this piece (D-178). */
+  interest?: WaitingPerson[];
 }) {
   const router = useRouter();
 
@@ -124,6 +129,7 @@ export function ProductEditor({
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [status, setStatus] = useState(initial?.status ?? "DRAFT");
   const [soldOut, setSoldOut] = useState(initial?.markedSoldOut ?? false);
+  const [notifyOnly, setNotifyOnly] = useState(initial?.notifyOnly ?? false);
   const [reason, setReason] = useState("");
 
   const initialMatrix = initial
@@ -291,6 +297,11 @@ export function ProductEditor({
     if (soldOut !== (initial?.markedSoldOut ?? false)) {
       const soldRes = await soldOutAction(productId, soldOut);
       if (!soldRes.ok) errors.push(soldRes.message);
+    }
+
+    if (notifyOnly !== (initial?.notifyOnly ?? false)) {
+      const notifyRes = await notifyOnlyAction(productId, notifyOnly);
+      if (!notifyRes.ok) errors.push(notifyRes.message);
     }
 
     // Closet details go first so unticking "one of one" lets a second size
@@ -688,6 +699,20 @@ export function ProductEditor({
                 </p>
               </div>
             )}
+            {productId && (
+              <div>
+                <CheckboxInput
+                  label="Notify me (not on sale yet)"
+                  checked={notifyOnly}
+                  onChange={setNotifyOnly}
+                />
+                <p className="text-[11px] text-ink-soft">
+                  Shows “Coming soon” and an email box instead of Add to cart. Emails
+                  appear below under Waiting list.
+                </p>
+              </div>
+            )}
+            {interest && interest.length > 0 && <WaitingList people={interest} />}
             {initialCheck && (
               <ul className="text-xs">
                 {initialCheck.ok ? (
