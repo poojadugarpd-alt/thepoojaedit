@@ -152,12 +152,11 @@ export async function listPublishedProducts(
   ]);
 
   let cards = rows.map((r) => toPublicCard(r, sale)).filter(listable);
-  if (f?.inStockOnly) {
-    // A held piece is likely back within minutes, so it stays listed (D-150).
-    cards = cards.filter(
-      (c) => c.availability === "IN_STOCK" || c.availability === "ON_HOLD",
-    );
-  }
+  // A held piece is likely back within minutes (D-150), and a "Notify me"
+  // piece (D-178) is new, not sold out: both rank and filter with what's on sale.
+  const forSale = (c: PublicProductCard) =>
+    c.availability === "IN_STOCK" || c.availability === "ON_HOLD" || c.notifyOnly;
+  if (f?.inStockOnly) cards = cards.filter(forSale);
 
   const byChosenSort = (a: PublicProductCard, b: PublicProductCard) => {
     if (sort === "price_asc")
@@ -166,8 +165,6 @@ export async function listPublishedProducts(
       return (b.fromPricePaise ?? -Infinity) - (a.fromPricePaise ?? -Infinity);
     return 0; // "newest" — rows already arrive publishedAt desc; keep that order
   };
-  const forSale = (c: PublicProductCard) =>
-    c.availability === "IN_STOCK" || c.availability === "ON_HOLD";
   const available = cards.filter(forSale).sort(byChosenSort);
   const soldOrOut = cards.filter((c) => !forSale(c)).sort(byChosenSort);
   const sorted = [...available, ...soldOrOut];

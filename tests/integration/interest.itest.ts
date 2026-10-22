@@ -97,3 +97,21 @@ describe("Notify me (D-178)", () => {
     );
   });
 });
+
+describe("Notify me pieces in the listing (D-178)", () => {
+  it("rank with what's on sale, newest first, not after sold-out pieces", async () => {
+    const { listPublishedProducts } = await import("../../src/server/catalog/queries");
+    const soldOut = await makePiece({ notifyOnly: false });
+    await db.product.update({
+      where: { id: soldOut.id },
+      data: { markedSoldOut: true },
+    });
+    const comingSoon = await makePiece({ notifyOnly: true });
+    const res = await listPublishedProducts(db, {
+      catalog: "THE_POOJA_EDIT",
+      limit: 10,
+    });
+    const order = res.items.map((c) => c.slug);
+    expect(order.indexOf(comingSoon.slug)).toBeLessThan(order.indexOf(soldOut.slug));
+  });
+});
