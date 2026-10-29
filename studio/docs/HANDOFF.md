@@ -184,6 +184,10 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - Google Search Console: covered by the `sc-domain:thepoojaedit.in` property (Pooja's Google account); studio
   sitemap submitted 2026-10-20. Bing Webmaster Tools: `studio.thepoojaedit.in` verified by the `msvalidate.01` meta
   tag in `app/layout.tsx` (keep it) and its sitemap submitted 2026-10-20.
+  GSC showed "Couldn't fetch" for the studio sitemap from 2026-10-20 onward even though the file serves valid XML
+  (200, any user agent) and Cloudflare isn't blocking it (checked 2026-10-29: no custom rules, Bot Fight Mode off, no
+  Google events). Removed and re-added 2026-10-29. `app/sitemap.ts` now has fixed `lastModified` dates (content-change
+  dates, not build dates): bump them when you edit a page's copy.
 - `/pricing` ("how much does reel editing cost in india?", rates table from `lib/site.ts`) and `/ugc` (UGC and brand
   videos; brand Reels and the brands named in the intro come from Reels tagged with a brand or the brand/ugc
   category), copy in `lib/pages.ts`, added 2026-10-21 (D-175). Footer: "ugc & brand videos" under services, help →
