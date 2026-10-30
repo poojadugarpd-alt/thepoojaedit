@@ -67,6 +67,10 @@ export const SHOPPER_GUIDE: GuideLink = {
   href: "/styling/personal-shopper-india",
   label: "Personal shopping in India",
 };
+export const ABROAD_GUIDE: GuideLink = {
+  href: "/styling/shop-indian-clothes-from-abroad",
+  label: "How to shop for Indian clothes from abroad",
+};
 /** The custom-made section on /styling (SEO plan X1, 2026-10-30). */
 export const CUSTOM_LINK: GuideLink = {
   href: "/styling#custom",
@@ -425,8 +429,7 @@ export const guides: Guide[] = [
       {
         kind: "fees",
         heading: "What it costs",
-        after:
-          "We agree my fee before I start. The clothes are paid for separately.",
+        after: "We agree my fee before I start. The clothes are paid for separately.",
       },
     ],
     faqs: [
@@ -456,6 +459,113 @@ export const guides: Guide[] = [
       },
     ],
   },
+  {
+    slug: "shop-indian-clothes-from-abroad",
+    title: "How to Shop for Indian Clothes from Abroad | Pooja Dugar",
+    description:
+      "Buying Indian outfits from abroad: how to measure, get fittings, and handle courier and import duty. A Delhi stylist explains each step.",
+    name: "Buying Indian clothes from abroad",
+    eyebrow: "Guide",
+    h1: "How to shop for Indian clothes from abroad",
+    answer:
+      "You can shop for Indian clothes from abroad in three ways: order from online stores, travel and shop yourself, or have someone shop for you in India. Whichever you choose, the same three things decide whether the outfit works: your measurements, a fitting before it ships, and a plan for courier and import duty. This guide covers each one.",
+    sections: [
+      {
+        kind: "text",
+        heading: "Three ways to shop from abroad",
+        paras: [
+          "Online stores are quick, but you can't see the fabric, check the stitching or try the fit. Returns from abroad are often hard, so the size you order is the size you keep.",
+          "Travelling and shopping yourself gives you the most choice, but the trip is short and Delhi's markets, malls and studios are spread across the city.",
+          "A personal shopper in India shops for you, shows pieces live on video or in photos, and gets them altered before they ship. That is what I do for my clients, most of whom live outside India.",
+        ],
+        link: NRI_GUIDE,
+      },
+      {
+        kind: "list",
+        heading: "How to give your measurements",
+        items: [
+          "Bust or chest, waist and hip, measured over thin clothing and without pulling the tape tight",
+          "Shoulder width, sleeve length and the length you want for a kurta, top or blouse",
+          "Your height, and the heel height you'll wear with the outfit",
+          "A garment that fits you well, laid flat and measured, which is often more reliable than body measurements",
+        ],
+        after:
+          "Photos of you in clothes that fit well also help. I send my clients a simple measurement guide, so you don't have to work out what to measure.",
+      },
+      {
+        kind: "text",
+        heading: "Fittings and alterations",
+        paras: [
+          "Indian outfits are often cut with extra fabric at the seams, so alterations are usually possible. The best time to alter a piece is before it leaves India, while a tailor can still try it on a sample or on a garment you have measured.",
+          "I have shop-bought pieces altered here and check the fit before anything is packed. For custom pieces, fittings and a final check are part of the process.",
+        ],
+        link: CUSTOM_LINK,
+      },
+      {
+        kind: "text",
+        heading: "Courier and import duty",
+        paras: [
+          "Pieces travel by international courier. You pay the courier charges, at the courier's rate for your country, and any import duty your country charges.",
+          "Import rules differ by country and change over time, so check your own customs website, or ask the courier for an estimate before you buy. Knowing this early helps you set your budget.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "When to start",
+        paras: [
+          "For a wedding, start two to three months before so there is time for shopping, alterations and shipping. For festivals and other events, start as early as you can, because custom pieces and alterations add time. If you aren't sure how long yours will take, ask me and we agree the timeline on our first call.",
+        ],
+        link: WEDDING_GUIDE,
+      },
+      {
+        kind: "text",
+        heading: "Ready-made or custom?",
+        paras: [
+          "Ready-made pieces are faster and let you see exactly what you are getting. Custom pieces are made to your measurements and suit people who find that standard sizes never fit. I design some custom pieces myself and coordinate others with tailors and boutiques, and I tell you which route before we start.",
+        ],
+        link: CUSTOM_LINK,
+      },
+      {
+        kind: "steps",
+        heading: "How I shop for clients abroad",
+        items: [
+          "You send an enquiry with the occasion, your size, your budget and pictures you like.",
+          "We have a short call and agree the plan and my fee before anything starts.",
+          "I shop in Delhi and Gurugram and show you pieces live on a video call, or send a shortlist on WhatsApp.",
+          "I get the pieces altered to your measurements, and check each one.",
+          "I send everything by courier. You pay the courier and any import duty.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "Can I buy Indian clothes online and get them altered?",
+        a: "Yes, but alterations are easier before the clothes leave India. Once a piece reaches you, you'd need a local tailor who knows Indian garments.",
+      },
+      {
+        q: "How do I measure myself for an Indian outfit?",
+        a: "Measure your bust or chest, waist, hip, shoulder, sleeve length and the garment length you want. Or measure a garment that fits you well and send me those numbers.",
+      },
+      {
+        q: "Who pays import duty on clothes from India?",
+        a: "You do. It depends on your country's rules, so check with your customs authority or ask the courier for an estimate.",
+      },
+      {
+        q: "How much does a personal shopper in India cost?",
+        a: "My fees are on the cost page, and we agree yours before anything starts. The clothes are paid for separately.",
+        link: COST_GUIDE,
+      },
+      {
+        q: "How long does shipping from India take?",
+        a: "It depends on the courier and your country. Ask me about yours when you send your enquiry.",
+      },
+      {
+        q: "Can you shop for my wedding if I live abroad?",
+        a: "Yes. We plan on calls, I shop and shortlist for you, pieces are altered here, and everything is couriered to you or ready when you land.",
+        link: WEDDING_GUIDE,
+      },
+    ],
+  },
 ];
 
 export function getGuide(slug: string): Guide | undefined {
@@ -471,6 +581,7 @@ export const STYLING_LINKS: GuideLink[] = [
   WEDDING_GUIDE,
   ONLINE_GUIDE,
   SHOPPER_GUIDE,
+  ABROAD_GUIDE,
   COST_GUIDE,
 ];
 
