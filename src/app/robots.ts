@@ -14,7 +14,7 @@ export default function robots(): MetadataRoute.Robots {
         "/account",
         "/cart",
         "/checkout",
-        "/auth",
+        // /auth is noindexed in auth/layout.tsx; Google must crawl it to see that.
         "/api/",
         "/search",
         "/legacy-media/",
