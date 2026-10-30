@@ -536,3 +536,52 @@ tree or delete it.
    machine — copy it rather than reconstructing from `.env.example` if you
    have access to it.
 4. Run `npm run check` to confirm a clean baseline before changing anything.
+
+## 13. SEO state as of 2026-10-30
+
+Everything below is live on `main` (Vercel auto-deploys). Re-check against
+`git log` before relying on it.
+
+**Shipped this session**
+- `/auth` is noindexed in `src/app/auth/layout.tsx` and no longer disallowed
+  in `src/app/robots.ts` (6931dfc). Google cannot read a noindex on a page
+  robots.txt blocks, so `/auth/login` stayed indexed until this fix.
+- NRI-focused copy pass (fef528b, e817542): guides in
+  `src/features/styling/guides.ts` (new `online`, `personal-shopper-india`,
+  `shop-indian-clothes-from-abroad`), a `#custom` section on `/styling`,
+  unique policy/contact/home meta, WhatsApp button on every guide
+  (`src/features/styling/whatsapp.ts`).
+- `/closet` now lists every piece as a plain link under the grid
+  (`RemainingPieces` in `src/features/catalog/catalog-listing.tsx`, 8fdfc13).
+  "Load more" is cursor-based, so only the first 24 of 64 pieces were
+  crawlable before. Shown only on the default, unfiltered view.
+- `/styling` heading and search description are Admin settings (Admin →
+  Styling → Edit page), not code.
+
+**GSC / Bing (domain property `sc-domain:thepoojaedit.in`)**
+- Page indexing: 249 not indexed, 90 indexed; nothing is a site fault.
+  Redirects, canonical alternates, robots-blocked, 404 and noindex groups are
+  expected. "Crawled, not indexed" (13) is only fonts and favicons.
+  "Discovered, not indexed" (43) is live Closet pieces awaiting crawl.
+- Studio robots.txt is fetched fine (last read 20 Oct; Googlebot rarely visits
+  the studio host). Studio sitemap still shows "Couldn't fetch" in GSC though
+  the file serves valid XML; Bing reads both sitemaps as Success.
+- IndexNow key `81f57ce0a7c4cc1437d40716cb424d82`; all 64 Closet URLs sent
+  on 30 Oct (200).
+- GSC "Request indexing" works at about one URL per 40 s and errors out after
+  a handful in a row. Done: adidas sports bra, gingham crop top, both
+  athleisure sports bras, beaded bag.
+
+**Open**
+- Request indexing for: black-round-neck-sweater, boat-neck-jumper,
+  bolero---blue, bonkers-fitted-tee, boohoo-floral-corset-top-pink.
+- Confirm `/auth/login` has dropped from the index (expect 1–2 weeks).
+- Owner: 4 photos for `/styling/online` and `/styling/personal-shopper-india`
+  (alt text drafted); Google Business Profile video verification on phone.
+- Checks planned 3 Nov (new pages and Closet "Discovered" count, studio
+  sitemap) and 10 Nov (GSC 28-day vs baseline of 4 clicks / 230 impressions /
+  position 7.1). These were session-only cron jobs: re-run by hand if the
+  session closed.
+- Chrome automation: use the Pooja profile (deviceId
+  `7204aef4-3ebe-4986-914a-1453181cc4a2`); the other connected profile cannot
+  see this GSC property.
