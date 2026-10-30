@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { rupeesToPaise } from "@/lib/money";
 import { CATALOG_LABEL, type CatalogType } from "@/lib/catalog-routes";
+import { prisma } from "@/lib/db";
 import { publicEnv } from "@/lib/public-env";
+import { deriveAvailability } from "@/server/catalog/public-shape";
 import {
   SEGMENT_BY_CATALOG,
   getFacets,
@@ -53,6 +55,55 @@ function breadcrumbJsonLd(catalog: CatalogType, segment: string) {
   };
 }
 
+// "Load more" only reveals pieces to shoppers, so Google never saw a link to
+// anything past the first page. This lists the rest as plain links.
+async function RemainingPieces({
+  segment,
+  shownSlugs,
+}: {
+  segment: string;
+  shownSlugs: Set<string>;
+}) {
+  const rows = await prisma.product.findMany({
+    where: { catalog: "THRIFT", status: "PUBLISHED", publishedAt: { not: null } },
+    orderBy: { publishedAt: "desc" },
+    select: {
+      slug: true,
+      title: true,
+      markedSoldOut: true,
+      variants: {
+        select: { onHandQty: true, reservedQty: true, isActive: true },
+      },
+      thriftDetails: { select: { isOneOfOne: true } },
+    },
+  });
+  const rest = rows.filter(
+    (p) =>
+      !shownSlugs.has(p.slug) &&
+      deriveAvailability(
+        "THRIFT",
+        p.thriftDetails?.isOneOfOne ?? false,
+        p.variants,
+        p.markedSoldOut,
+      ) !== "SOLD",
+  );
+  if (rest.length === 0) return null;
+  return (
+    <nav aria-label="All pieces" className="mt-16">
+      <h2 className="u-eyebrow">More pieces</h2>
+      <ul className="mt-4 columns-1 gap-x-8 text-sm sm:columns-2 lg:columns-3">
+        {rest.map((p) => (
+          <li key={p.slug} className="mb-1.5">
+            <Link href={`/${segment}/${p.slug}`} className="hover:opacity-60">
+              {p.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
 export async function CatalogListing({
   catalog,
   searchParams,
@@ -65,6 +116,11 @@ export async function CatalogListing({
     ? (searchParams.sort as ProductSort)
     : "newest";
   const filterState = parseFilterState(searchParams);
+  const hasFilters =
+    filterState.sizes.length > 0 ||
+    Boolean(filterState.priceMin) ||
+    Boolean(filterState.priceMax) ||
+    filterState.inStockOnly;
 
   const [page, facets] = await Promise.all([
     listProducts({
@@ -151,6 +207,13 @@ export async function CatalogListing({
           />
         )}
       </div>
+
+      {catalog === "THRIFT" && sort === "newest" && !hasFilters && (
+        <RemainingPieces
+          segment={segment}
+          shownSlugs={new Set(page.items.map((i) => i.slug))}
+        />
+      )}
     </div>
   );
 }
