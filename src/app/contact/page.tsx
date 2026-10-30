@@ -5,7 +5,8 @@ import { LegalPage } from "@/features/site-content/legal-page";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "How to reach The Pooja Edit — by Pooja Dugar.",
+  description:
+    "Contact Pooja Dugar by Instagram message for orders, styling and custom pieces, or use the styling enquiry form.",
   alternates: { canonical: "/contact" },
 };
 

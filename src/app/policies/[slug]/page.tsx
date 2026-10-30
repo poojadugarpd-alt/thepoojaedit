@@ -22,6 +22,10 @@ import { LegalPage } from "@/features/site-content/legal-page";
 const SHIPPING_FAQ: { q: string; a: string }[] = [
   { q: "Do you ship across India?", a: "Yes — we ship across India." },
   {
+    q: "Do you ship outside India?",
+    a: "For personal styling and personal shopping clients, yes. Pieces go by courier after alterations and a final check. You pay the courier charges, at the courier's rate for your country, and any import duty your country charges. Ask about your country when you send your styling enquiry.",
+  },
+  {
     q: "How long does The Label take to ship?",
     a: "The Label pieces are slow-made or made to order and currently ship in about 5–10 business days.",
   },
@@ -196,6 +200,16 @@ const FAQ_BY_SLUG: Partial<Record<Slug, { q: string; a: string }[]>> = {
   "returns-exchanges": RETURNS_FAQ,
 };
 
+/** One search description per policy, so none falls back to the homepage's. */
+const POLICY_DESCRIPTIONS: Record<keyof typeof POLICIES, string> = {
+  shipping:
+    "How The Pooja Edit ships within India, and how couriers and import duty work for styling clients abroad.",
+  "returns-exchanges":
+    "Returns and exchanges for Label and Closet pieces from The Pooja Edit: what can be sent back, and how.",
+  privacy: "How The Pooja Edit collects, uses and protects your personal information.",
+  terms: "The terms for shopping at The Pooja Edit, Pooja Dugar's Label and Closet.",
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -204,7 +218,11 @@ export async function generateMetadata({
   const { slug } = await params;
   const p = POLICIES[slug as Slug];
   if (!p) return { title: "Not found", robots: { index: false } };
-  return { title: p.title, alternates: { canonical: `/policies/${slug}` } };
+  return {
+    title: p.title,
+    description: POLICY_DESCRIPTIONS[slug as Slug],
+    alternates: { canonical: `/policies/${slug}` },
+  };
 }
 
 export default async function PolicyPage({

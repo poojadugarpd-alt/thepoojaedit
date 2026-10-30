@@ -21,11 +21,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL),
   title: {
-    default: "The Pooja Edit — by Pooja Dugar",
+    default: "The Pooja Edit | Clothes & Personal Styling by Pooja Dugar",
     template: "%s · The Pooja Edit",
   },
   description:
-    "Realistic, wearable clothes by Pooja Dugar — pieces she designs, and one-of-one pieces from her own closet.",
+    "The Pooja Edit by Pooja Dugar: pieces she designs, pre-loved one-of-ones from her closet, and personal styling and shopping in Delhi NCR and abroad.",
   applicationName: "The Pooja Edit",
   // NOT set here — Next only honours `manifest` from the root layout's
   // metadata, unconditionally, for every route (confirmed empirically —

@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     // Search title chosen by the owner (2026-10-20); too long for the brand
     // suffix, so it's absolute. The on-page heading stays the admin's.
-    title: { absolute: "Personal Shopping & Styling in Delhi NCR | Pooja Dugar" },
+    title: { absolute: "Personal Stylist & Shopper in Delhi NCR | Pooja Dugar" },
     description: c.seoDescription,
     alternates: { canonical: "/styling" },
     ...(c.published ? {} : { robots: { index: false, follow: false } }),
@@ -172,6 +172,45 @@ export default async function StylingPage() {
           </div>
         </section>
       )}
+
+      {/* Custom-made clothes: the section the custom-tailoring searches land on (SEO plan X1). */}
+      <section
+        id="custom"
+        className="u-section u-rule scroll-mt-24"
+        aria-labelledby="custom-heading"
+      >
+        <div className="u-page">
+          <h2 id="custom-heading" className="u-h2">
+            Custom-made Indian clothes, designed and tailored for you
+          </h2>
+          <div className="mt-6 max-w-[62ch] space-y-4 text-ink">
+            <p>
+              When the right piece doesn&rsquo;t exist, I make it. I&rsquo;m a fashion
+              designer, so I can design an outfit for you from scratch or recreate one
+              you&rsquo;ve seen. For other pieces I work with tailors and boutiques, and
+              I manage the fittings and quality checks for you. Which route we take
+              depends on the order, and I tell you before we start.
+            </p>
+            <p>
+              Custom pieces are made to your measurements, whether you live in Delhi or
+              abroad. You can send measurements from my guide, or measure a garment that
+              fits you well and send me those. Pieces are fitted and checked here in
+              India, then couriered to you if you live abroad.
+            </p>
+          </div>
+          <h3 className="u-label mt-8">What I can make</h3>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-ink">
+            <li>Indian ethnic wear and festive outfits designed to your measurements</li>
+            <li>Wedding outfits made to measure</li>
+            <li>Alterations to bought pieces so they fit before they ship</li>
+            <li>Fittings and a final quality check on every piece</li>
+          </ul>
+          <p className="mt-6 font-medium text-ink-strong">Quote on request</p>
+          <a href="#enquire" className="u-pill mt-6 inline-flex">
+            Ask about a custom piece
+          </a>
+        </div>
+      </section>
 
       {c.steps.length > 0 && (
         <section className="u-section u-rule" aria-labelledby="how">

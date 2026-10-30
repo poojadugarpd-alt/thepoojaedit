@@ -59,18 +59,31 @@ export const WEDDING_GUIDE: GuideLink = {
   href: "/styling/wedding-shopping",
   label: "Wedding and trousseau shopping",
 };
+export const ONLINE_GUIDE: GuideLink = {
+  href: "/styling/online",
+  label: "Online personal styling",
+};
+export const SHOPPER_GUIDE: GuideLink = {
+  href: "/styling/personal-shopper-india",
+  label: "Personal shopping in India",
+};
+/** The custom-made section on /styling (SEO plan X1, 2026-10-30). */
+export const CUSTOM_LINK: GuideLink = {
+  href: "/styling#custom",
+  label: "Custom-made clothes, designed and tailored for you",
+};
 
 export const guides: Guide[] = [
   {
     slug: "nri",
-    title: "Personal Shopper in India for NRIs | Pooja Dugar",
+    title: "Personal Stylist & Shopper in India for NRIs | Pooja Dugar",
     description:
-      "Shop Indian wear from abroad with Pooja Dugar. Live video-call shopping in Delhi NCR, custom pieces, alterations and courier to Australia, UK, USA, UAE.",
+      "Shop Indian wear from abroad with a Delhi stylist. Video-call shopping, custom pieces, fittings and courier to the UK, USA, Australia and UAE.",
     name: "Shopping from abroad",
     eyebrow: "For clients abroad",
-    h1: "Your personal shopper in India, wherever you live",
+    h1: "Your personal stylist and shopper in India, for NRIs and clients abroad",
     answer:
-      "I'm Pooja Dugar, a fashion designer and stylist based in Delhi NCR. Most of my clients live outside India, in Australia, the UK and Europe, the USA and Canada, and the UAE. I shop for them in Delhi and Gurugram over a video call, get pieces made or altered to their measurements, and send everything by courier.",
+      "I'm Pooja Dugar, a fashion designer and stylist based in Delhi NCR. Most of my clients are NRIs and others living outside India, in Australia, the UK and Europe, the USA and Canada, and the UAE. I style and shop for them in Delhi and Gurugram over a video call, get pieces made or altered to their measurements, and send everything by courier.",
     service: {
       name: "Personal shopping in India for clients abroad",
       areaServed: "worldwide",
@@ -99,6 +112,21 @@ export const guides: Guide[] = [
         ],
       },
       { kind: "text", heading: "Where I shop", paras: [PLACES] },
+      {
+        kind: "text",
+        heading: "Custom-made pieces from India",
+        paras: [
+          "If the right outfit doesn't exist, I design it or coordinate it with tailors, to your measurements. Custom work is explained in the custom-made section of my styling page, including measuring from abroad, fittings and courier.",
+        ],
+        link: CUSTOM_LINK,
+      },
+      {
+        kind: "text",
+        heading: "Measuring from abroad",
+        paras: [
+          "I send you a simple measurement guide. Or measure a garment you own that fits you well and send me those numbers. I check fit here in India with fittings, so pieces arrive ready to wear.",
+        ],
+      },
       {
         kind: "fees",
         heading: "What it costs",
@@ -132,6 +160,18 @@ export const guides: Guide[] = [
       {
         q: "How long does it take?",
         a: "It depends on what we're shopping for and whether pieces are being made. We agree the timeline on our first call.",
+      },
+      {
+        q: "What is an NRI personal shopper?",
+        a: "A personal shopper in India who shops and styles for people who live abroad. I shop on a video call or send photos, have pieces altered, and courier everything to you.",
+      },
+      {
+        q: "Do you style me, or only shop for me?",
+        a: "Both. We plan outfits first, then I shop for what's missing.",
+      },
+      {
+        q: "Can I get custom Indian clothes made from abroad?",
+        a: "Yes. I design or coordinate custom pieces to your measurements, fit them here, and courier them to you.",
       },
       {
         q: "Can you shop for my wedding from abroad?",
@@ -198,14 +238,14 @@ export const guides: Guide[] = [
   },
   {
     slug: "wedding-shopping",
-    title: "Wedding & Trousseau Shopping Stylist in Delhi | Pooja Dugar",
+    title: "NRI Wedding Shopping in India | Pooja Dugar",
     description:
-      "Wedding, trousseau and festive outfit shopping in Delhi NCR with designer Pooja Dugar: for brides, families and NRI clients, with custom pieces and fittings.",
+      "Wedding and trousseau shopping in Delhi for NRI brides and families: outfits, fittings, custom pieces and shipping abroad, planned from afar.",
     name: "Wedding shopping",
     eyebrow: "Weddings",
-    h1: "Wedding and trousseau shopping in Delhi, with a designer",
+    h1: "Wedding and trousseau shopping in India, for NRI brides and families",
     answer:
-      "I help brides and their families shop for weddings in Delhi NCR: the trousseau, outfits for each function, and pieces for parents and siblings. I'm a fashion designer, so when the right piece doesn't exist I can design it and get it made. Many of my wedding clients live abroad and shop with me over video calls.",
+      "I help brides and their families shop for weddings in India: the trousseau, outfits for each function, and pieces for parents and siblings. I'm a fashion designer, so when the right piece doesn't exist I can design it and get it made. Many of my clients are NRIs who plan everything with me over video calls before they travel.",
     service: { name: "Wedding and trousseau shopping", areaServed: "ncr" },
     sections: [
       {
@@ -247,12 +287,172 @@ export const guides: Guide[] = [
     ],
     faqs: [
       { q: "How early should I start?", a: "Two to three months before the wedding." },
+      {
+        q: "Can you plan an NRI wedding wardrobe from abroad?",
+        a: "Yes. We plan on calls, I shop and shortlist for you, pieces are altered here, and everything is couriered to you or ready when you land. Start two to three months before.",
+        link: NRI_GUIDE,
+      },
       { q: "Do you shop for the whole family?", a: "Yes, quote on request." },
       { q: "Can you make my outfit?", a: "Yes, custom pieces are quoted separately." },
       {
         q: "What does it cost?",
         a: "My fees are on the cost page, and we agree yours before anything starts.",
         link: COST_GUIDE,
+      },
+    ],
+  },
+  {
+    slug: "online",
+    title: "Online Personal Stylist in India | Pooja Dugar",
+    description:
+      "Work with a personal stylist in India over video call. Wardrobe edits, outfit planning and shopping from anywhere. Enquire for a plan and fee.",
+    name: "Online styling",
+    eyebrow: "Online styling",
+    h1: "Online personal styling with Pooja, from anywhere",
+    answer:
+      "I style clients over video call and WhatsApp, in India and abroad. We go through what you own, agree what's missing, and plan outfits for the occasions you have coming up. If you want to shop, I can shop for you or with you on the same call.",
+    service: { name: "Online personal styling", areaServed: "worldwide" },
+    sections: [
+      {
+        kind: "list",
+        heading: "What an online session covers",
+        items: [
+          "Going through your wardrobe, from photos or on camera, and keeping what works",
+          "Outfit planning for events, travel and everyday wear",
+          "A list of what's missing, in order of what matters most",
+          "Shopping for those pieces with you on video, or sending a shortlist on WhatsApp",
+          "Custom pieces, if the right one doesn't exist",
+        ],
+        after: "Custom-made clothes are explained on my styling page.",
+      },
+      {
+        kind: "steps",
+        heading: "How it works",
+        items: [
+          "Send an enquiry with the occasion, your size, your budget and a few pictures you like.",
+          "We have a short call and agree the plan and my fee before anything starts.",
+          "You send photos of what you own, or show me on camera.",
+          "We plan the looks, and I shop for the gaps if you want me to.",
+          "Anything I buy is altered in India and sent by courier. You pay the courier.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "What to have ready",
+        paras: [
+          "Photos of your wardrobe in daylight, a few full-length pictures of you, your measurements or a garment that fits well, and a note on the occasions you're dressing for. Don't worry if you have only some of these. We start with what you have.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "Online or in person?",
+        paras: [
+          "In Gurugram, Delhi and Noida I also style and shop in person. Everywhere else, we work online. If you live outside India, my page for clients abroad explains how shopping, alterations and courier work.",
+        ],
+        link: NRI_GUIDE,
+      },
+    ],
+    faqs: [
+      {
+        q: "How does an online styling session work?",
+        a: "We have a video call, go through what you own and what you need, and agree a plan. If you want me to shop, I do that on a call or send you photos on WhatsApp.",
+      },
+      {
+        q: "Do I need to send photos of my wardrobe?",
+        a: "It helps, but you can also show me on camera. We start with whatever you have.",
+      },
+      {
+        q: "Can we shop together on a video call?",
+        a: "Yes. I go to the stores and show you pieces live, or send a shortlist of photos on WhatsApp. You pick.",
+      },
+      {
+        q: "What does online styling cost?",
+        a: "My fees are on the cost page, and we agree yours before anything starts.",
+        link: COST_GUIDE,
+      },
+      {
+        q: "Can you style me if I live outside India?",
+        a: "Yes. Most of my clients live abroad. Anything I buy for you is altered in India and couriered to you.",
+        link: NRI_GUIDE,
+      },
+      { q: "Do you style men?", a: "Yes, quote on request." },
+    ],
+  },
+  {
+    slug: "personal-shopper-india",
+    title: "Personal Shopping Service in India | Pooja Dugar",
+    description:
+      "A personal shopper in Delhi for clients in India and abroad: curated edits, boutique and designer sourcing, video-call shopping and shipping.",
+    name: "Personal shopping",
+    eyebrow: "Personal shopping",
+    h1: "A personal shopping service in India, built around you",
+    answer:
+      "A personal shopper finds, compares and buys clothes for you or with you. I shop in Delhi NCR for clients who live here and for clients who live abroad, from malls and boutiques to markets and designer studios.",
+    service: { name: "Personal shopping in India", areaServed: "ncr" },
+    sections: [
+      {
+        kind: "list",
+        heading: "What personal shopping with me includes",
+        items: [
+          "A curated shortlist for your occasion, size and budget",
+          "Boutique and designer sourcing, including pieces you can't find online",
+          "Shopping together in person, or live on a video call",
+          "Alterations so pieces fit before they reach you",
+          "A quality check on every piece",
+          "Courier coordination for clients abroad",
+        ],
+      },
+      { kind: "text", heading: "Where I shop", paras: [PLACES] },
+      {
+        kind: "steps",
+        heading: "How it works",
+        items: [
+          "Send an enquiry with what you're looking for, your size, your budget and pictures you like.",
+          "We have a short call and agree the plan and my fee.",
+          "I shop and show you a shortlist, in person, on video, or as photos on WhatsApp.",
+          "You choose. I get pieces altered if they need it.",
+          "In person, you pay the stores. When you're abroad, I buy and you pay me back what the clothes cost, and I send everything by courier.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "In person or from abroad",
+        paras: [
+          "In Gurugram, Delhi and Noida we can shop together. If you live abroad, I shop for you and we choose over video. My page for NRIs and clients abroad covers measurements, courier and import duty.",
+        ],
+        link: NRI_GUIDE,
+      },
+      {
+        kind: "fees",
+        heading: "What it costs",
+        after:
+          "We agree my fee before I start. The clothes are paid for separately.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What does a personal shopper do?",
+        a: "A personal shopper finds and buys clothes for you or with you. I also style, so we look at how the pieces work together, and I can have things altered.",
+      },
+      {
+        q: "How much does personal shopping cost?",
+        a: "My fee is on this page and on the cost page. We agree it before I start, and the clothes are paid for separately.",
+        link: COST_GUIDE,
+      },
+      {
+        q: "Do you shop in markets as well as boutiques?",
+        a: "Yes. Markets like Lajpat Nagar and Chandni Chowk, malls, boutiques and designer studios, depending on what you need.",
+      },
+      {
+        q: "Can you shop for me when I'm not in India?",
+        a: "Yes. I shop on a video call or send photos, and courier the pieces to you. You pay the courier and any import duty.",
+        link: NRI_GUIDE,
+      },
+      { q: "Can I shop with you in person?", a: "Yes, in Gurugram, Delhi and Noida." },
+      {
+        q: "Do you shop for weddings?",
+        a: "Yes, including trousseau and outfits for the family. Start two to three months before.",
+        link: WEDDING_GUIDE,
       },
     ],
   },
@@ -266,7 +466,13 @@ export function getGuide(slug: string): Guide | undefined {
 export const WHERE_I_WORK =
   "In person in Gurugram, Delhi and Noida. Online, worldwide: most of my clients live in Australia, the UK and Europe, the USA and Canada, and the UAE.";
 
-export const STYLING_LINKS: GuideLink[] = [NRI_GUIDE, WEDDING_GUIDE, COST_GUIDE];
+export const STYLING_LINKS: GuideLink[] = [
+  NRI_GUIDE,
+  WEDDING_GUIDE,
+  ONLINE_GUIDE,
+  SHOPPER_GUIDE,
+  COST_GUIDE,
+];
 
 /** The questions on /styling. */
 export const stylingFaqs: Faq[] = [
@@ -289,6 +495,23 @@ export const stylingFaqs: Faq[] = [
     a: "A stylist works out what suits you and puts outfits together. A personal shopper buys for you or with you. An image consultant also covers colours, grooming and how you come across. I do the first two, and as a designer I can make pieces for you too.",
   },
   { q: "Do you style men?", a: "Yes, quote on request." },
-  { q: "Can we do it online?", a: "Yes, over a video call." },
+  { q: "Can we do it online?", a: "Yes, over a video call.", link: ONLINE_GUIDE },
+  {
+    q: "Can you make an outfit to my measurements?",
+    a: "Yes. I design custom pieces and get them made to your measurements. For some orders I coordinate with tailors and boutiques instead, and I tell you which route before we start.",
+  },
+  {
+    q: "How do I measure myself for a custom order?",
+    a: "I send you a simple measurement guide. Or measure a garment you own that fits well and send me those numbers.",
+  },
+  {
+    q: "How long does a custom outfit take?",
+    a: "It depends on the piece. We agree the timeline on our first call, before anything is made.",
+  },
+  {
+    q: "Can custom pieces be shipped abroad?",
+    a: "Yes. I pack the pieces after fittings and send them by courier. You pay the courier charges and any import duty your country charges.",
+    link: NRI_GUIDE,
+  },
   { q: "Which areas do you cover in person?", a: "Gurugram, Delhi and Noida." },
 ];
