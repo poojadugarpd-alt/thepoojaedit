@@ -142,9 +142,9 @@ export const guides: Guide[] = [
   },
   {
     slug: "personal-stylist-cost",
-    title: "How Much Does a Personal Stylist Cost in Delhi NCR?",
+    title: "Personal Stylist Cost in Delhi NCR (₹5,000–₹50,000)",
     description:
-      "What personal styling and shopping cost in Delhi, Gurugram and Noida, what's included, and how Pooja Dugar's fees work, including for clients abroad.",
+      "How much does a personal or fashion stylist cost in Delhi NCR? Online sessions start near ₹1,000; shopping in person is ₹10,000–₹50,000. See what's included.",
     name: "What it costs",
     eyebrow: "Fees",
     h1: "How much does a personal stylist cost in Delhi NCR?",
