@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { EnquiryForm } from "@/features/styling/enquiry-form";
 import { FaqList } from "@/features/styling/faq-list";
 import { STYLING_LINKS, stylingFaqs, WHERE_I_WORK } from "@/features/styling/guides";
+import { stylingWhatsAppUrl } from "@/features/styling/whatsapp";
 import { Rail } from "@/features/styling/rail";
 import { prisma } from "@/lib/db";
 import { personId } from "@/lib/organization-jsonld";
@@ -23,10 +24,9 @@ import {
 // only — both need a per-request render.
 export const dynamic = "force-dynamic";
 
-/** Pooja's styling WhatsApp; wa.me wants the country code and digits only. */
-const WHATSAPP_URL = `https://wa.me/919971572036?text=${encodeURIComponent(
+const WHATSAPP_URL = stylingWhatsAppUrl(
   "Hi Pooja, I'd like to know more about personal styling.",
-)}`;
+);
 
 export async function generateMetadata(): Promise<Metadata> {
   const c = await getStylingContent(prisma);
@@ -200,7 +200,9 @@ export default async function StylingPage() {
           </div>
           <h3 className="u-label mt-8">What I can make</h3>
           <ul className="mt-3 list-disc space-y-1 pl-5 text-ink">
-            <li>Indian ethnic wear and festive outfits designed to your measurements</li>
+            <li>
+              Indian ethnic wear and festive outfits designed to your measurements
+            </li>
             <li>Wedding outfits made to measure</li>
             <li>Alterations to bought pieces so they fit before they ship</li>
             <li>Fittings and a final quality check on every piece</li>

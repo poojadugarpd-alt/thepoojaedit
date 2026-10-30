@@ -9,6 +9,7 @@ import {
   STYLING_LINKS,
   type GuideSection,
 } from "@/features/styling/guides";
+import { stylingWhatsAppUrl } from "@/features/styling/whatsapp";
 import { prisma } from "@/lib/db";
 import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
@@ -51,6 +52,9 @@ export default async function StylingGuidePage({ params }: Params) {
   if (!c.published && !(await isSignedInAdmin())) notFound();
 
   const base = publicEnv.NEXT_PUBLIC_SITE_URL;
+  const whatsapp = stylingWhatsAppUrl(
+    `Hi Pooja, I'd like to know more about ${g.name.toLowerCase()}.`,
+  );
   const others = STYLING_LINKS.filter((l) => l.href !== `/styling/${g.slug}`);
 
   return (
@@ -76,6 +80,15 @@ export default async function StylingGuidePage({ params }: Params) {
           <Link href="/styling#enquire" className="u-pill inline-flex">
             Send an enquiry
           </Link>
+          <a
+            href={whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Message Pooja on WhatsApp"
+            className="u-pill u-pill--ghost inline-flex"
+          >
+            WhatsApp Pooja
+          </a>
         </div>
       </section>
 
@@ -103,6 +116,15 @@ export default async function StylingGuidePage({ params }: Params) {
             <Link href="/styling#enquire" className="u-pill inline-flex">
               Send an enquiry
             </Link>
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Message Pooja on WhatsApp"
+              className="u-pill u-pill--ghost inline-flex"
+            >
+              WhatsApp Pooja
+            </a>
           </div>
           <p className="mt-10 text-sm text-ink-soft">
             Also:{" "}
