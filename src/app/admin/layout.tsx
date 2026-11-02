@@ -63,6 +63,7 @@ const NAV = [
   { href: "/admin/discounts", label: "Discount codes" },
   { href: "/admin/home", label: "Home page" },
   { href: "/admin/styling", label: "Styling" },
+  { href: "/admin/reviews", label: "Reviews" },
   { href: "/admin/activity", label: "Activity" },
   { href: "/admin/settings", label: "Settings" },
 ];

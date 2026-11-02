@@ -54,6 +54,8 @@ const STATUS_TONE: Record<string, keyof typeof TONE_CLASS> = {
   QUEUED: "warn",
   SENT: "warn",
   NEW: "warn", // styling enquiry not answered yet (D-162)
+  PENDING: "warn", // review waiting for approval
+  APPROVED: "ok", // review shown on the site
   NEEDS_REVIEW: "bad",
   FAILED: "bad",
   CANCELLED: "bad",

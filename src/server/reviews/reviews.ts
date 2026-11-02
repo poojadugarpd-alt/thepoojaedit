@@ -36,6 +36,9 @@ export class ReviewRateLimitError extends Error {
   }
 }
 
+/** Cache tag for anything that shows approved reviews. */
+export const REVIEWS_TAG = "reviews";
+
 const trimmed = (max: number) => z.string().trim().max(max);
 
 /** No links in a review: keeps spam and ads out. */
