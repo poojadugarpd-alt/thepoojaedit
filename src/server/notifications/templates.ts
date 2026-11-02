@@ -366,6 +366,41 @@ export const TEMPLATES = {
       priority: 1,
     }),
   }),
+  // A client review from the styling page or the editing studio. Always held
+  // for approval; the email goes to Pooja with Reply going to the client.
+  admin_review_received: defineTemplate({
+    version: 1,
+    channels: ["EMAIL", "IN_APP"],
+    schema: z.object({
+      displayName: z.string(),
+      siteLabel: z.string(),
+      service: z.string(),
+      rating: z.number().int().nullable(),
+      text: z.string(),
+      email: z.string().email(),
+      phone: z.string().nullable(),
+      verified: z.boolean(),
+      adminUrl: z.string().url(),
+    }),
+    email: (v) => ({
+      subject: `New ${v.siteLabel} review from ${v.displayName}`,
+      replyTo: v.email,
+      text: `${v.displayName} (${v.email}${v.phone ? `, ${v.phone}` : ""})${v.verified ? " [invited client]" : ""}\n${v.service}${v.rating ? ` · ${v.rating}/5` : ""}\n\n${v.text}\n\nApprove or hide it in admin: ${v.adminUrl}`,
+      html: emailShell(
+        `New ${v.siteLabel} review`,
+        `<p><b>${escapeHtml(v.displayName)}</b>${v.verified ? " (invited client)" : ""}<br>${escapeHtml(v.service)}${v.rating ? ` · ${v.rating}/5` : ""}</p>
+         <p style="white-space:pre-wrap">${escapeHtml(v.text)}</p>
+         <p style="color:#888">${escapeHtml(v.email)}${v.phone ? ` · ${escapeHtml(v.phone)}` : ""}</p>
+         <p><a href="${v.adminUrl}">Approve or hide it in admin</a></p>`,
+      ),
+    }),
+    inApp: (v) => ({
+      type: "REVIEW_RECEIVED",
+      title: `New review from ${v.displayName}`,
+      message: `${v.siteLabel} · ${v.service}${v.rating ? ` · ${v.rating}/5` : ""}`,
+      priority: 1,
+    }),
+  }),
   admin_delivery_failed: defineTemplate({
     version: 1,
     channels: ["IN_APP"],

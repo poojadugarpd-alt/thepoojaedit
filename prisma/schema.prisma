@@ -272,25 +272,41 @@ enum StylingEnquiryStatus {
   CLOSED
 }
 
+enum ReviewSite {
+  STYLING
+  STUDIO
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+enum ReviewSource {
+  OPEN
+  INVITE
+}
+
 // ─────────────────────────── Identity ───────────────────────────
 
 model Customer {
-  id             String   @id @default(uuid(7)) @db.Uuid
-  authUserId     String?  @unique @db.Uuid
-  name           String?
-  email          String?
-  emailNormalized String?
-  phone          String?
-  phoneNormalized String?
-  marketingConsent Boolean @default(false)
-  transactionalConsent Boolean @default(true)
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+  id                   String   @id @default(uuid(7)) @db.Uuid
+  authUserId           String?  @unique @db.Uuid
+  name                 String?
+  email                String?
+  emailNormalized      String?
+  phone                String?
+  phoneNormalized      String?
+  marketingConsent     Boolean  @default(false)
+  transactionalConsent Boolean  @default(true)
+  createdAt            DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
 
-  addresses      CustomerAddress[]
-  orders         Order[]
-  notes          CustomerNote[]
-  notifications  NotificationDelivery[]
+  addresses     CustomerAddress[]
+  orders        Order[]
+  notes         CustomerNote[]
+  notifications NotificationDelivery[]
 
   @@index([emailNormalized])
   @@index([phoneNormalized])
@@ -298,23 +314,23 @@ model Customer {
 }
 
 model CustomerAddress {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  customerId  String   @db.Uuid
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  label       String?
-  name        String
-  phone       String
-  line1       String
-  line2       String?
-  landmark    String?
-  city        String
-  stateName   String
-  stateCode   String
-  postcode    String
-  country     String   @default("IN")
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+  id         String   @id @default(uuid(7)) @db.Uuid
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String?
+  name       String
+  phone      String
+  line1      String
+  line2      String?
+  landmark   String?
+  city       String
+  stateName  String
+  stateCode  String
+  postcode   String
+  country    String   @default("IN")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
 
   @@index([customerId])
 }
@@ -328,12 +344,12 @@ model AdminUser {
   createdAt  DateTime  @default(now()) @db.Timestamptz(6)
   updatedAt  DateTime  @updatedAt @db.Timestamptz(6)
 
-  inventoryTransactions InventoryTransaction[]
-  refunds               Refund[]
-  activityLogs          AdminActivityLog[]
-  customerNotes         CustomerNote[]
-  returnRequests        ReturnRequest[]
-  pushSubscriptions     AdminPushSubscription[]
+  inventoryTransactions  InventoryTransaction[]
+  refunds                Refund[]
+  activityLogs           AdminActivityLog[]
+  customerNotes          CustomerNote[]
+  returnRequests         ReturnRequest[]
+  pushSubscriptions      AdminPushSubscription[]
   notificationPreference AdminNotificationPreference?
 }
 
@@ -344,15 +360,15 @@ model AdminUser {
  * inferred any other way.
  */
 model AdminPushSubscription {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  adminUserId String   @db.Uuid
+  id          String    @id @default(uuid(7)) @db.Uuid
+  adminUserId String    @db.Uuid
   admin       AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
-  endpoint    String   @unique
+  endpoint    String    @unique
   p256dh      String
   auth        String
   userAgent   String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  lastSeenAt  DateTime @default(now()) @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  lastSeenAt  DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([adminUserId])
 }
@@ -363,18 +379,18 @@ model AdminPushSubscription {
  * someone opens Settings and turns something off.
  */
 model AdminNotificationPreference {
-  id              String   @id @default(uuid(7)) @db.Uuid
-  adminUserId     String   @unique @db.Uuid
+  id              String    @id @default(uuid(7)) @db.Uuid
+  adminUserId     String    @unique @db.Uuid
   admin           AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
-  newPaidOrder    Boolean  @default(true)
-  codConfirmation Boolean  @default(true)
-  paymentIssue    Boolean  @default(true)
-  shipmentFailure Boolean  @default(true)
-  ndrRto          Boolean  @default(true)
-  jobExhausted    Boolean  @default(true)
-  lowStock        Boolean  @default(true)
-  stylingEnquiry  Boolean  @default(true)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(6)
+  newPaidOrder    Boolean   @default(true)
+  codConfirmation Boolean   @default(true)
+  paymentIssue    Boolean   @default(true)
+  shipmentFailure Boolean   @default(true)
+  ndrRto          Boolean   @default(true)
+  jobExhausted    Boolean   @default(true)
+  lowStock        Boolean   @default(true)
+  stylingEnquiry  Boolean   @default(true)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(6)
 }
 
 // ─────────────────────────── Catalog ────────────────────────────
@@ -415,46 +431,46 @@ model Collection {
   createdAt   DateTime    @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime    @updatedAt @db.Timestamptz(6)
 
-  products    ProductCollection[]
+  products ProductCollection[]
 
   @@unique([catalog, slug])
 }
 
 model Product {
-  id             String        @id @default(uuid(7)) @db.Uuid
-  catalog        CatalogType
-  slug           String
-  title          String
-  description    String        @default("")
-  status         ProductStatus @default(DRAFT)
-  categoryId     String?       @db.Uuid
-  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  brand          String?
+  id              String        @id @default(uuid(7)) @db.Uuid
+  catalog         CatalogType
+  slug            String
+  title           String
+  description     String        @default("")
+  status          ProductStatus @default(DRAFT)
+  categoryId      String?       @db.Uuid
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand           String?
   // Shown as "Vendor" in the admin UI (Shopify-style product editor) — kept
   // as `brand` in the schema since every existing reader/writer already
   // uses that name; this is a UI label choice, not a new column.
-  tags           String[]      @default([])
-  hsnCode        String?
-  taxClassId     String?       @db.Uuid
-  taxClass       TaxClass?     @relation(fields: [taxClassId], references: [id], onDelete: Restrict)
-  metaTitle      String?
+  tags            String[]      @default([])
+  hsnCode         String?
+  taxClassId      String?       @db.Uuid
+  taxClass        TaxClass?     @relation(fields: [taxClassId], references: [id], onDelete: Restrict)
+  metaTitle       String?
   metaDescription String?
   // Owner's manual "Sold out" switch (D-138): the product stays listed but
   // can't be bought, and stock is left untouched so switching back restores it.
-  markedSoldOut  Boolean       @default(false)
+  markedSoldOut   Boolean       @default(false)
   // "Notify me" mode (D-178): the page shows an email sign-up instead of Add
   // to cart, for pieces Pooja is gauging interest in before making them.
-  notifyOnly     Boolean       @default(false)
-  publishedAt    DateTime?     @db.Timestamptz(6)
-  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
-  updatedAt      DateTime      @updatedAt @db.Timestamptz(6)
+  notifyOnly      Boolean       @default(false)
+  publishedAt     DateTime?     @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @db.Timestamptz(6)
 
-  thriftDetails  ThriftDetails?
-  variants       ProductVariant[]
-  images         ProductImage[]
-  collections    ProductCollection[]
-  lookItems      LookItem[]
-  interests      ProductInterest[]
+  thriftDetails ThriftDetails?
+  variants      ProductVariant[]
+  images        ProductImage[]
+  collections   ProductCollection[]
+  lookItems     LookItem[]
+  interests     ProductInterest[]
 
   @@unique([catalog, slug])
   @@index([catalog, status, publishedAt])
@@ -462,70 +478,70 @@ model Product {
 }
 
 model ThriftDetails {
-  id               String         @id @default(uuid(7)) @db.Uuid
-  productId        String         @unique @db.Uuid
-  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  conditionGrade   ConditionGrade
-  conditionNotes   String?
-  originalBrand    String?
-  labelledSize     String?
-  recommendedFit   String?
-  fabric           String?
-  measurements     Json           // { chest: {value, unit}, ... } — validated snapshot
-  flaws            Json           @default("[]") // [{ description, imagePath? }]
-  alterations      String?
-  authenticityNotes String?
-  careNotes        String?
-  isOneOfOne       Boolean        @default(true)
-  acquisitionCostPaise Int?       // admin-only, never in public payloads
-  acquisitionDate  DateTime?      @db.Timestamptz(6)
-  createdAt        DateTime       @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime       @updatedAt @db.Timestamptz(6)
+  id                   String         @id @default(uuid(7)) @db.Uuid
+  productId            String         @unique @db.Uuid
+  product              Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  conditionGrade       ConditionGrade
+  conditionNotes       String?
+  originalBrand        String?
+  labelledSize         String?
+  recommendedFit       String?
+  fabric               String?
+  measurements         Json // { chest: {value, unit}, ... } — validated snapshot
+  flaws                Json           @default("[]") // [{ description, imagePath? }]
+  alterations          String?
+  authenticityNotes    String?
+  careNotes            String?
+  isOneOfOne           Boolean        @default(true)
+  acquisitionCostPaise Int? // admin-only, never in public payloads
+  acquisitionDate      DateTime?      @db.Timestamptz(6)
+  createdAt            DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt            DateTime       @updatedAt @db.Timestamptz(6)
 }
 
 model ProductVariant {
-  id                 String   @id @default(uuid(7)) @db.Uuid
-  productId          String   @db.Uuid
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku                String   @unique
-  size               String?
-  color              String?
-  pricePaise         Int
-  compareAtPaise     Int?
-  onHandQty          Int      @default(0)
-  reservedQty        Int      @default(0)
-  lowStockThreshold  Int      @default(0)
-  weightGrams        Int?
-  lengthMm           Int?
-  widthMm            Int?
-  heightMm           Int?
+  id                String   @id @default(uuid(7)) @db.Uuid
+  productId         String   @db.Uuid
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku               String   @unique
+  size              String?
+  color             String?
+  pricePaise        Int
+  compareAtPaise    Int?
+  onHandQty         Int      @default(0)
+  reservedQty       Int      @default(0)
+  lowStockThreshold Int      @default(0)
+  weightGrams       Int?
+  lengthMm          Int?
+  widthMm           Int?
+  heightMm          Int?
   // Per-size measurements for a Closet item sold in several sizes (D-139),
   // same shape as ThriftDetails.measurements. Null = use the product's own.
-  measurements       Json?
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime @updatedAt @db.Timestamptz(6)
+  measurements      Json?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(6)
 
-  reservations       InventoryReservation[]
+  reservations          InventoryReservation[]
   inventoryTransactions InventoryTransaction[]
 
   @@index([productId])
 }
 
 model ProductImage {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  productId   String    @db.Uuid
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  bucket      String    @default("product-images")
-  path        String    // canonical identifier
-  publicUrl   String?   // optional cached
-  widthPx     Int?
-  heightPx    Int?
-  altText     String
-  sortPosition Int      @default(0)
-  isPrimary   Boolean   @default(false)
-  type        ImageType @default(GALLERY)
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  id           String    @id @default(uuid(7)) @db.Uuid
+  productId    String    @db.Uuid
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  bucket       String    @default("product-images")
+  path         String // canonical identifier
+  publicUrl    String? // optional cached
+  widthPx      Int?
+  heightPx     Int?
+  altText      String
+  sortPosition Int       @default(0)
+  isPrimary    Boolean   @default(false)
+  type         ImageType @default(GALLERY)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
 
   @@unique([bucket, path])
   @@index([productId, sortPosition])
@@ -545,18 +561,18 @@ model ProductCollection {
 // ─────────────────────── Inventory ledger ───────────────────────
 
 model InventoryReservation {
-  id              String            @id @default(uuid(7)) @db.Uuid
-  orderId         String            @db.Uuid
-  order           Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  variantId       String            @db.Uuid
-  variant         ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  quantity        Int
-  status          ReservationStatus @default(ACTIVE)
-  reservationKey  String            @unique // logical identity: <orderId>:<variantId>
-  expiresAt       DateTime          @db.Timestamptz(6)
-  terminalAt      DateTime?         @db.Timestamptz(6)
-  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt       DateTime          @updatedAt @db.Timestamptz(6)
+  id             String            @id @default(uuid(7)) @db.Uuid
+  orderId        String            @db.Uuid
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  variantId      String            @db.Uuid
+  variant        ProductVariant    @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  quantity       Int
+  status         ReservationStatus @default(ACTIVE)
+  reservationKey String            @unique // logical identity: <orderId>:<variantId>
+  expiresAt      DateTime          @db.Timestamptz(6)
+  terminalAt     DateTime?         @db.Timestamptz(6)
+  createdAt      DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime          @updatedAt @db.Timestamptz(6)
 
   @@index([status, expiresAt])
   @@index([orderId])
@@ -564,19 +580,19 @@ model InventoryReservation {
 }
 
 model InventoryTransaction {
-  id             String          @id @default(uuid(7)) @db.Uuid
-  variantId      String          @db.Uuid
-  variant        ProductVariant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  orderId        String?         @db.Uuid
-  order          Order?          @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  adminUserId    String?         @db.Uuid
-  adminUser      AdminUser?      @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
+  id             String           @id @default(uuid(7)) @db.Uuid
+  variantId      String           @db.Uuid
+  variant        ProductVariant   @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  orderId        String?          @db.Uuid
+  order          Order?           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  adminUserId    String?          @db.Uuid
+  adminUser      AdminUser?       @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
   type           InventoryTxnType
-  onHandDelta    Int             @default(0)
-  reservedDelta  Int             @default(0)
+  onHandDelta    Int              @default(0)
+  reservedDelta  Int              @default(0)
   reason         String?
-  idempotencyKey String          @unique
-  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+  idempotencyKey String           @unique
+  createdAt      DateTime         @default(now()) @db.Timestamptz(6)
 
   @@index([variantId, createdAt])
   @@index([orderId])
@@ -586,63 +602,63 @@ model InventoryTransaction {
 // ─────────────────────────── Orders ─────────────────────────────
 
 model Order {
-  id                 String            @id @default(uuid(7)) @db.Uuid
-  orderNumber        String            @unique
-  customerId         String?           @db.Uuid
-  customer           Customer?         @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  id          String    @id @default(uuid(7)) @db.Uuid
+  orderNumber String    @unique
+  customerId  String?   @db.Uuid
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Restrict)
 
-  contactEmail       String?
-  contactPhone       String
+  contactEmail String?
+  contactPhone String
 
-  orderStatus        OrderStatus       @default(PENDING_PAYMENT)
-  paymentStatus      PaymentStatus     @default(UNPAID)
-  fulfillmentStatus  FulfillmentStatus @default(UNFULFILLED)
-  paymentMethod      PaymentMethod
+  orderStatus       OrderStatus       @default(PENDING_PAYMENT)
+  paymentStatus     PaymentStatus     @default(UNPAID)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  paymentMethod     PaymentMethod
   // An internal test order (D-146): hidden from the dashboard, analytics and the
   // default orders list; the records themselves are kept intact.
-  isTest             Boolean   @default(false)
-  currency           String            @default("INR")
+  isTest            Boolean           @default(false)
+  currency          String            @default("INR")
 
-  source             String?
-  utmSource          String?
-  utmMedium          String?
-  utmCampaign        String?
+  source      String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
 
   // Totals contract (master §6). All paise.
-  subtotalPaise      Int
-  discountPaise      Int               @default(0)
-  shippingPaise      Int               @default(0)
-  codFeePaise        Int               @default(0)
-  taxPaise           Int               @default(0)
-  totalPaise         Int
+  subtotalPaise Int
+  discountPaise Int @default(0)
+  shippingPaise Int @default(0)
+  codFeePaise   Int @default(0)
+  taxPaise      Int @default(0)
+  totalPaise    Int
 
-  taxBreakdown       Json?             // resolved treatment, rates, inputs, split amounts
+  taxBreakdown Json? // resolved treatment, rates, inputs, split amounts
   // Code the shopper applied (D-140), stored as typed-in-uppercase snapshot.
-  discountCode       String?
+  discountCode String?
 
-  placedAt           DateTime?         @db.Timestamptz(6)
-  confirmedAt        DateTime?         @db.Timestamptz(6)
-  cancelledAt        DateTime?         @db.Timestamptz(6)
-  completedAt        DateTime?         @db.Timestamptz(6)
-  createdAt          DateTime          @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime          @updatedAt @db.Timestamptz(6)
-  version            Int               @default(0)
+  placedAt    DateTime? @db.Timestamptz(6)
+  confirmedAt DateTime? @db.Timestamptz(6)
+  cancelledAt DateTime? @db.Timestamptz(6)
+  completedAt DateTime? @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6)
+  version     Int       @default(0)
 
-  items              OrderItem[]
-  addresses          OrderAddress[]
-  reservations       InventoryReservation[]
+  items                 OrderItem[]
+  addresses             OrderAddress[]
+  reservations          InventoryReservation[]
   inventoryTransactions InventoryTransaction[]
-  checkoutRequests   CheckoutRequest[]
-  accessTokens       OrderAccessToken[]
-  paymentAttempts    PaymentAttempt[]
-  shipments          Shipment[]
-  invoices           Invoice[]
-  refunds            Refund[]
-  returnRequests     ReturnRequest[]
-  events             OrderEvent[]
-  notifications      NotificationDelivery[]
-  codRemittances     CodRemittance[]
-  discountRedemption DiscountRedemption?
+  checkoutRequests      CheckoutRequest[]
+  accessTokens          OrderAccessToken[]
+  paymentAttempts       PaymentAttempt[]
+  shipments             Shipment[]
+  invoices              Invoice[]
+  refunds               Refund[]
+  returnRequests        ReturnRequest[]
+  events                OrderEvent[]
+  notifications         NotificationDelivery[]
+  codRemittances        CodRemittance[]
+  discountRedemption    DiscountRedemption?
 
   @@index([createdAt, id])
   @@index([paymentStatus, createdAt])
@@ -652,37 +668,37 @@ model Order {
 }
 
 model OrderItem {
-  id                String      @id @default(uuid(7)) @db.Uuid
-  orderId           String      @db.Uuid
-  order             Order       @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  productId         String?     @db.Uuid
-  variantId         String?     @db.Uuid
+  id        String  @id @default(uuid(7)) @db.Uuid
+  orderId   String  @db.Uuid
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  productId String? @db.Uuid
+  variantId String? @db.Uuid
 
   // Immutable snapshots
-  catalog           CatalogType
-  sku               String
-  title             String
-  imageBucket       String?
-  imagePath         String?
-  size              String?
-  color             String?
-  quantity          Int
-  unitPricePaise    Int
-  discountPaise     Int         @default(0)
-  hsnCode           String?
-  taxTreatment      TaxTreatment @default(STANDARD)
-  taxRateBps        Int         @default(0)
-  taxableValuePaise Int
-  cgstPaise         Int         @default(0)
-  sgstPaise         Int         @default(0)
-  igstPaise         Int         @default(0)
-  totalPaise        Int
+  catalog              CatalogType
+  sku                  String
+  title                String
+  imageBucket          String?
+  imagePath            String?
+  size                 String?
+  color                String?
+  quantity             Int
+  unitPricePaise       Int
+  discountPaise        Int          @default(0)
+  hsnCode              String?
+  taxTreatment         TaxTreatment @default(STANDARD)
+  taxRateBps           Int          @default(0)
+  taxableValuePaise    Int
+  cgstPaise            Int          @default(0)
+  sgstPaise            Int          @default(0)
+  igstPaise            Int          @default(0)
+  totalPaise           Int
   returnPolicySnapshot Json
 
-  createdAt         DateTime    @default(now()) @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
-  returnItems       ReturnItem[]
-  shipmentItems     ShipmentItem[]
+  returnItems   ReturnItem[]
+  shipmentItems ShipmentItem[]
 
   @@index([orderId])
 }
@@ -709,7 +725,7 @@ model DiscountCode {
   createdAt        DateTime      @default(now()) @db.Timestamptz(6)
   updatedAt        DateTime      @updatedAt @db.Timestamptz(6)
 
-  redemptions      DiscountRedemption[]
+  redemptions DiscountRedemption[]
 }
 
 /// One use of a code by one order. `releasedAt` is set when that order is
@@ -766,14 +782,14 @@ model CheckoutRequest {
 }
 
 model OrderAccessToken {
-  id         String           @id @default(uuid(7)) @db.Uuid
-  orderId    String           @db.Uuid
-  order      Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  tokenHash  String           @unique
-  scope      AccessTokenScope
-  expiresAt  DateTime         @db.Timestamptz(6)
-  revokedAt  DateTime?        @db.Timestamptz(6)
-  createdAt  DateTime         @default(now()) @db.Timestamptz(6)
+  id        String           @id @default(uuid(7)) @db.Uuid
+  orderId   String           @db.Uuid
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  tokenHash String           @unique
+  scope     AccessTokenScope
+  expiresAt DateTime         @db.Timestamptz(6)
+  revokedAt DateTime?        @db.Timestamptz(6)
+  createdAt DateTime         @default(now()) @db.Timestamptz(6)
 
   @@index([orderId])
 }
@@ -795,7 +811,7 @@ model PaymentAttempt {
   createdAt         DateTime             @default(now()) @db.Timestamptz(6)
   updatedAt         DateTime             @updatedAt @db.Timestamptz(6)
 
-  refunds           Refund[]
+  refunds Refund[]
 
   @@unique([provider, providerPaymentId])
   @@index([orderId])
@@ -803,24 +819,24 @@ model PaymentAttempt {
 }
 
 model Refund {
-  id                String       @id @default(uuid(7)) @db.Uuid
-  orderId           String       @db.Uuid
-  order             Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  paymentAttemptId  String?      @db.Uuid
-  paymentAttempt    PaymentAttempt? @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
-  provider          String       @default("razorpay")
-  providerRefundId  String?
-  amountPaise       Int
-  reason            String?
-  status            RefundStatus @default(REQUESTED)
-  requestedById     String?      @db.Uuid
-  requestedBy       AdminUser?   @relation(fields: [requestedById], references: [id], onDelete: Restrict)
-  operationKey      String       @unique
-  completedAt       DateTime?    @db.Timestamptz(6)
-  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime     @updatedAt @db.Timestamptz(6)
+  id               String          @id @default(uuid(7)) @db.Uuid
+  orderId          String          @db.Uuid
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  paymentAttemptId String?         @db.Uuid
+  paymentAttempt   PaymentAttempt? @relation(fields: [paymentAttemptId], references: [id], onDelete: Restrict)
+  provider         String          @default("razorpay")
+  providerRefundId String?
+  amountPaise      Int
+  reason           String?
+  status           RefundStatus    @default(REQUESTED)
+  requestedById    String?         @db.Uuid
+  requestedBy      AdminUser?      @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+  operationKey     String          @unique
+  completedAt      DateTime?       @db.Timestamptz(6)
+  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime        @updatedAt @db.Timestamptz(6)
 
-  creditNotes       CreditNote[]
+  creditNotes CreditNote[]
 
   @@unique([provider, providerRefundId])
   @@index([orderId])
@@ -830,28 +846,28 @@ model Refund {
 // ────────────────────────── Shipping ────────────────────────────
 
 model Shipment {
-  id                 String    @id @default(uuid(7)) @db.Uuid
-  orderId            String    @db.Uuid
-  order              Order     @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  provider           String    @default("shiprocket")
+  id                 String   @id @default(uuid(7)) @db.Uuid
+  orderId            String   @db.Uuid
+  order              Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  provider           String   @default("shiprocket")
   providerShipmentId String?
   providerOrderId    String?
   awb                String?
   courier            String?
-  statusNormalized   String    @default("PENDING")
+  statusNormalized   String   @default("PENDING")
   statusRaw          String?
   trackingUrl        String?
-  merchantReference  String    @unique
+  merchantReference  String   @unique
   weightGrams        Int?
   lengthMm           Int?
   widthMm            Int?
   heightMm           Int?
-  createdAt          DateTime  @default(now()) @db.Timestamptz(6)
-  updatedAt          DateTime  @updatedAt @db.Timestamptz(6)
+  createdAt          DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(6)
 
-  items              ShipmentItem[]
-  events             ShipmentEvent[]
-  codRemittances     CodRemittance[]
+  items          ShipmentItem[]
+  events         ShipmentEvent[]
+  codRemittances CodRemittance[]
 
   @@unique([provider, providerShipmentId])
   @@index([awb])
@@ -860,20 +876,20 @@ model Shipment {
 }
 
 model ShipmentItem {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  shipmentId   String    @db.Uuid
-  shipment     Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  orderItemId  String    @db.Uuid
-  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
-  quantity     Int
+  id          String    @id @default(uuid(7)) @db.Uuid
+  shipmentId  String    @db.Uuid
+  shipment    Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderItemId String    @db.Uuid
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  quantity    Int
 
   @@unique([shipmentId, orderItemId])
 }
 
 model ShipmentEvent {
-  id               String   @id @default(uuid(7)) @db.Uuid
-  shipmentId       String   @db.Uuid
-  shipment         Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  id               String    @id @default(uuid(7)) @db.Uuid
+  shipmentId       String    @db.Uuid
+  shipment         Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   externalEventId  String?
   eventFingerprint String
   statusRaw        String?
@@ -887,20 +903,20 @@ model ShipmentEvent {
 }
 
 model CodRemittance {
-  id               String              @id @default(uuid(7)) @db.Uuid
-  orderId          String              @db.Uuid
-  order            Order               @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  shipmentId       String?             @db.Uuid
-  shipment         Shipment?           @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
-  expectedPaise    Int
-  collectedPaise   Int?
-  remittedPaise    Int?
+  id                String              @id @default(uuid(7)) @db.Uuid
+  orderId           String              @db.Uuid
+  order             Order               @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  shipmentId        String?             @db.Uuid
+  shipment          Shipment?           @relation(fields: [shipmentId], references: [id], onDelete: Restrict)
+  expectedPaise     Int
+  collectedPaise    Int?
+  remittedPaise     Int?
   providerReference String?
-  status           CodRemittanceStatus @default(PENDING)
-  collectedAt      DateTime?           @db.Timestamptz(6)
-  remittedAt       DateTime?           @db.Timestamptz(6)
-  createdAt        DateTime            @default(now()) @db.Timestamptz(6)
-  updatedAt        DateTime            @updatedAt @db.Timestamptz(6)
+  status            CodRemittanceStatus @default(PENDING)
+  collectedAt       DateTime?           @db.Timestamptz(6)
+  remittedAt        DateTime?           @db.Timestamptz(6)
+  createdAt         DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime            @updatedAt @db.Timestamptz(6)
 
   @@index([status, createdAt])
   @@index([orderId])
@@ -909,67 +925,67 @@ model CodRemittance {
 // ──────────────────────── Tax & invoices ────────────────────────
 
 model TaxClass {
-  id           String       @id @default(uuid(7)) @db.Uuid
-  code         String       @unique
-  name         String
-  treatment    TaxTreatment @default(STANDARD)
-  hsnCode      String?
-  isActive     Boolean      @default(true)
-  createdAt    DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime     @updatedAt @db.Timestamptz(6)
+  id        String       @id @default(uuid(7)) @db.Uuid
+  code      String       @unique
+  name      String
+  treatment TaxTreatment @default(STANDARD)
+  hsnCode   String?
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(6)
 
-  rules        TaxRule[]
-  products     Product[]
+  rules    TaxRule[]
+  products Product[]
 }
 
 model TaxRule {
-  id            String      @id @default(uuid(7)) @db.Uuid
-  taxClassId    String      @db.Uuid
-  taxClass      TaxClass    @relation(fields: [taxClassId], references: [id], onDelete: Cascade)
-  pricingMode   PricingMode @default(INCLUSIVE)
-  totalRateBps  Int         // e.g. 500 = 5%
-  cgstRateBps   Int         @default(0)
-  sgstRateBps   Int         @default(0)
-  igstRateBps   Int         @default(0)
-  appliesToShipping Boolean  @default(false)
-  effectiveFrom DateTime    @db.Timestamptz(6)
-  effectiveTo   DateTime?   @db.Timestamptz(6)
-  createdAt     DateTime    @default(now()) @db.Timestamptz(6)
+  id                String      @id @default(uuid(7)) @db.Uuid
+  taxClassId        String      @db.Uuid
+  taxClass          TaxClass    @relation(fields: [taxClassId], references: [id], onDelete: Cascade)
+  pricingMode       PricingMode @default(INCLUSIVE)
+  totalRateBps      Int // e.g. 500 = 5%
+  cgstRateBps       Int         @default(0)
+  sgstRateBps       Int         @default(0)
+  igstRateBps       Int         @default(0)
+  appliesToShipping Boolean     @default(false)
+  effectiveFrom     DateTime    @db.Timestamptz(6)
+  effectiveTo       DateTime?   @db.Timestamptz(6)
+  createdAt         DateTime    @default(now()) @db.Timestamptz(6)
 
   @@index([taxClassId, effectiveFrom])
 }
 
 model InvoiceSequence {
-  id            String @id @default(uuid(7)) @db.Uuid
+  id            String   @id @default(uuid(7)) @db.Uuid
   financialYear String // e.g. "2026-27"
-  series        String @default("A")
-  nextNumber    Int    @default(1)
+  series        String   @default("A")
+  nextNumber    Int      @default(1)
   updatedAt     DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([financialYear, series])
 }
 
 model Invoice {
-  id             String   @id @default(uuid(7)) @db.Uuid
-  orderId        String   @db.Uuid
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  financialYear  String
-  series         String   @default("A")
-  number         Int
-  issuedAt       DateTime @default(now()) @db.Timestamptz(6)
-  legalSnapshot  Json
+  id              String   @id @default(uuid(7)) @db.Uuid
+  orderId         String   @db.Uuid
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  financialYear   String
+  series          String   @default("A")
+  number          Int
+  issuedAt        DateTime @default(now()) @db.Timestamptz(6)
+  legalSnapshot   Json
   addressSnapshot Json
-  lineSnapshot   Json
-  taxSnapshot    Json
-  subtotalPaise  Int
-  discountPaise  Int      @default(0)
-  taxPaise       Int      @default(0)
-  totalPaise     Int
-  pdfBucket      String?
-  pdfPath        String?
-  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  lineSnapshot    Json
+  taxSnapshot     Json
+  subtotalPaise   Int
+  discountPaise   Int      @default(0)
+  taxPaise        Int      @default(0)
+  totalPaise      Int
+  pdfBucket       String?
+  pdfPath         String?
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
 
-  creditNotes    CreditNote[]
+  creditNotes CreditNote[]
 
   @@unique([financialYear, series, number])
   @@unique([orderId])
@@ -977,19 +993,19 @@ model Invoice {
 }
 
 model CreditNote {
-  id              String           @id @default(uuid(7)) @db.Uuid
-  invoiceId       String           @db.Uuid
-  invoice         Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  refundId        String?          @db.Uuid
-  refund          Refund?          @relation(fields: [refundId], references: [id], onDelete: Restrict)
-  number          String           @unique
-  reason          CreditNoteReason
+  id                 String           @id @default(uuid(7)) @db.Uuid
+  invoiceId          String           @db.Uuid
+  invoice            Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  refundId           String?          @db.Uuid
+  refund             Refund?          @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  number             String           @unique
+  reason             CreditNoteReason
   adjustmentSnapshot Json
-  taxSnapshot     Json
-  issuedAt        DateTime         @default(now()) @db.Timestamptz(6)
-  pdfBucket       String?
-  pdfPath         String?
-  createdAt       DateTime         @default(now()) @db.Timestamptz(6)
+  taxSnapshot        Json
+  issuedAt           DateTime         @default(now()) @db.Timestamptz(6)
+  pdfBucket          String?
+  pdfPath            String?
+  createdAt          DateTime         @default(now()) @db.Timestamptz(6)
 
   @@index([invoiceId])
 }
@@ -997,19 +1013,19 @@ model CreditNote {
 // ─────────────────────── Returns & refunds ──────────────────────
 
 model ReturnRequest {
-  id           String           @id @default(uuid(7)) @db.Uuid
-  orderId      String           @db.Uuid
-  order        Order            @relation(fields: [orderId], references: [id], onDelete: Restrict)
-  reason       String
-  status       ReturnStatus     @default(REQUESTED)
-  resolution   ReturnResolution?
-  adminNotes   String?
-  handledById  String?          @db.Uuid
-  handledBy    AdminUser?       @relation(fields: [handledById], references: [id], onDelete: Restrict)
-  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
+  id          String            @id @default(uuid(7)) @db.Uuid
+  orderId     String            @db.Uuid
+  order       Order             @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reason      String
+  status      ReturnStatus      @default(REQUESTED)
+  resolution  ReturnResolution?
+  adminNotes  String?
+  handledById String?           @db.Uuid
+  handledBy   AdminUser?        @relation(fields: [handledById], references: [id], onDelete: Restrict)
+  createdAt   DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(6)
 
-  items        ReturnItem[]
+  items ReturnItem[]
 
   @@index([orderId])
   @@index([status, createdAt])
@@ -1032,14 +1048,14 @@ model ReturnItem {
 // ─────────────────── Events, outbox, webhooks ───────────────────
 
 model OrderEvent {
-  id         String   @id @default(uuid(7)) @db.Uuid
-  orderId    String   @db.Uuid
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  type       String
-  source     String   // system | admin | provider
-  actor      String?
-  payload    Json
-  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  id        String   @id @default(uuid(7)) @db.Uuid
+  orderId   String   @db.Uuid
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String
+  source    String // system | admin | provider
+  actor     String?
+  payload   Json
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
 
   @@index([orderId, createdAt])
 }
@@ -1053,28 +1069,28 @@ model DomainEvent {
   payload       Json
   createdAt     DateTime @default(now()) @db.Timestamptz(6)
 
-  outbox        OutboxEvent?
+  outbox OutboxEvent?
 
   @@index([aggregateType, aggregateId])
   @@index([createdAt])
 }
 
 model OutboxEvent {
-  id            String       @id @default(uuid(7)) @db.Uuid
-  domainEventId String       @unique @db.Uuid
-  domainEvent   DomainEvent  @relation(fields: [domainEventId], references: [id], onDelete: Cascade)
-  payloadVersion Int         @default(1)
-  aggregateType String
-  aggregateId   String       @db.Uuid
-  status        OutboxStatus @default(PENDING)
-  attempts      Int          @default(0)
-  availableAt   DateTime     @default(now()) @db.Timestamptz(6)
-  leaseOwner    String?
-  leaseExpiresAt DateTime?   @db.Timestamptz(6)
-  lastError     String?
-  dispatchedAt  DateTime?    @db.Timestamptz(6)
-  createdAt     DateTime     @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime     @updatedAt @db.Timestamptz(6)
+  id             String       @id @default(uuid(7)) @db.Uuid
+  domainEventId  String       @unique @db.Uuid
+  domainEvent    DomainEvent  @relation(fields: [domainEventId], references: [id], onDelete: Cascade)
+  payloadVersion Int          @default(1)
+  aggregateType  String
+  aggregateId    String       @db.Uuid
+  status         OutboxStatus @default(PENDING)
+  attempts       Int          @default(0)
+  availableAt    DateTime     @default(now()) @db.Timestamptz(6)
+  leaseOwner     String?
+  leaseExpiresAt DateTime?    @db.Timestamptz(6)
+  lastError      String?
+  dispatchedAt   DateTime?    @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @db.Timestamptz(6)
 
   @@index([status, availableAt])
   @@index([leaseExpiresAt])
@@ -1098,16 +1114,16 @@ model WebhookEvent {
 }
 
 model SideEffectExecution {
-  id            String           @id @default(uuid(7)) @db.Uuid
-  eventId       String           @db.Uuid
-  handlerName   String
-  executionKey  String           @unique
-  status        SideEffectStatus @default(PENDING)
-  providerRef   String?
-  attempts      Int              @default(0)
-  lastError     String?
-  createdAt     DateTime         @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime         @updatedAt @db.Timestamptz(6)
+  id           String           @id @default(uuid(7)) @db.Uuid
+  eventId      String           @db.Uuid
+  handlerName  String
+  executionKey String           @unique
+  status       SideEffectStatus @default(PENDING)
+  providerRef  String?
+  attempts     Int              @default(0)
+  lastError    String?
+  createdAt    DateTime         @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(6)
 
   @@index([eventId])
   @@index([status, updatedAt])
@@ -1116,79 +1132,79 @@ model SideEffectExecution {
 // ────────────────────── Notifications & ops ─────────────────────
 
 model NotificationTemplate {
-  id                String             @id @default(uuid(7)) @db.Uuid
-  key               String
-  channel           NotificationChannel
-  version           Int                @default(1)
-  language          String             @default("en")
-  isEnabled         Boolean            @default(true)
+  id                 String              @id @default(uuid(7)) @db.Uuid
+  key                String
+  channel            NotificationChannel
+  version            Int                 @default(1)
+  language           String              @default("en")
+  isEnabled          Boolean             @default(true)
   providerTemplateId String?
-  variableSchema    Json
-  createdAt         DateTime           @default(now()) @db.Timestamptz(6)
-  updatedAt         DateTime           @updatedAt @db.Timestamptz(6)
+  variableSchema     Json
+  createdAt          DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @db.Timestamptz(6)
 
   @@unique([key, channel, version, language])
 }
 
 model NotificationDelivery {
-  id                String             @id @default(uuid(7)) @db.Uuid
-  deliveryKey       String             @unique // event:recipient:channel:template:version
-  domainEventId     String?            @db.Uuid
-  orderId           String?            @db.Uuid
-  order             Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  customerId        String?            @db.Uuid
-  customer          Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  id                String              @id @default(uuid(7)) @db.Uuid
+  deliveryKey       String              @unique // event:recipient:channel:template:version
+  domainEventId     String?             @db.Uuid
+  orderId           String?             @db.Uuid
+  order             Order?              @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  customerId        String?             @db.Uuid
+  customer          Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
   channel           NotificationChannel
   recipient         String
   templateKey       String
   templateVersion   Int
   providerMessageId String?
-  status            NotificationStatus @default(QUEUED)
-  attempts          Int                @default(0)
+  status            NotificationStatus  @default(QUEUED)
+  attempts          Int                 @default(0)
   lastError         String?
-  queuedAt          DateTime           @default(now()) @db.Timestamptz(6)
-  sentAt            DateTime?          @db.Timestamptz(6)
-  deliveredAt       DateTime?          @db.Timestamptz(6)
-  readAt            DateTime?          @db.Timestamptz(6)
+  queuedAt          DateTime            @default(now()) @db.Timestamptz(6)
+  sentAt            DateTime?           @db.Timestamptz(6)
+  deliveredAt       DateTime?           @db.Timestamptz(6)
+  readAt            DateTime?           @db.Timestamptz(6)
 
   @@index([status, queuedAt])
   @@index([orderId])
 }
 
 model AdminNotification {
-  id         String   @id @default(uuid(7)) @db.Uuid
+  id         String    @id @default(uuid(7)) @db.Uuid
   entityType String
   entityId   String
   type       String
   title      String
   message    String
-  priority   Int      @default(0)
+  priority   Int       @default(0)
   readAt     DateTime? @db.Timestamptz(6)
-  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([readAt, createdAt])
 }
 
 model OperationalTask {
-  id           String                @id @default(uuid(7)) @db.Uuid
-  dedupeKey    String                @unique
-  type         OperationalTaskType
-  entityType   String?
-  entityId     String?
-  priority     Int                   @default(0)
-  status       OperationalTaskStatus @default(OPEN)
-  reason       String?
-  resolvedAt   DateTime?             @db.Timestamptz(6)
-  createdAt    DateTime              @default(now()) @db.Timestamptz(6)
-  updatedAt    DateTime              @updatedAt @db.Timestamptz(6)
+  id         String                @id @default(uuid(7)) @db.Uuid
+  dedupeKey  String                @unique
+  type       OperationalTaskType
+  entityType String?
+  entityId   String?
+  priority   Int                   @default(0)
+  status     OperationalTaskStatus @default(OPEN)
+  reason     String?
+  resolvedAt DateTime?             @db.Timestamptz(6)
+  createdAt  DateTime              @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime              @updatedAt @db.Timestamptz(6)
 
   @@index([status, priority, createdAt])
   @@index([status, type])
 }
 
 model AdminActivityLog {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  adminUserId String   @db.Uuid
+  id          String    @id @default(uuid(7)) @db.Uuid
+  adminUserId String    @db.Uuid
   adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Restrict)
   action      String
   entityType  String
@@ -1196,20 +1212,20 @@ model AdminActivityLog {
   before      Json?
   after       Json?
   reason      String?
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([entityType, entityId])
   @@index([adminUserId, createdAt])
 }
 
 model CustomerNote {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  customerId  String    @db.Uuid
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  authorId    String    @db.Uuid
-  author      AdminUser @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  body        String
-  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  id         String    @id @default(uuid(7)) @db.Uuid
+  customerId String    @db.Uuid
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  authorId   String    @db.Uuid
+  author     AdminUser @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  body       String
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
 
   @@index([customerId, createdAt])
 }
@@ -1249,6 +1265,61 @@ model StylingEnquiry {
   updatedAt   DateTime             @updatedAt @db.Timestamptz(6)
 
   @@index([status, createdAt])
+}
+
+/// A client review for Personal Styling or the editing studio. Pooja approves
+/// every row before it shows; email and phone are private and never public.
+model Review {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  site           ReviewSite
+  /// Service the client used, free text copied at submit time.
+  service        String
+  /// 1 to 5, optional.
+  rating         Int?
+  text           String
+  /// The name shown with the review (first name, or whatever the client chose).
+  displayName    String
+  /// Instagram handle without the @, optional.
+  instagram      String?
+  /// The client agreed to show their Instagram handle with the review.
+  showInstagram  Boolean       @default(false)
+  /// Private. Never in a public response.
+  email          String
+  /// Private. WhatsApp number as typed.
+  phone          String?
+  consentPublish Boolean
+  consentContact Boolean       @default(false)
+  status         ReviewStatus  @default(PENDING)
+  source         ReviewSource  @default(OPEN)
+  inviteId       String?       @db.Uuid
+  invite         ReviewInvite? @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+  /// Owner's private note.
+  note           String?
+  /// Salted hash of the submitter's IP, for rate limiting only.
+  ipHash         String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  createdAt      DateTime      @default(now()) @db.Timestamptz(6)
+  approvedAt     DateTime?     @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(6)
+
+  @@index([site, status, approvedAt])
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
+}
+
+/// A one-time link Pooja sends a client so their review is marked verified.
+model ReviewInvite {
+  id         String     @id @default(uuid(7)) @db.Uuid
+  token      String     @unique
+  clientName String
+  site       ReviewSite
+  service    String
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+  expiresAt  DateTime?  @db.Timestamptz(6)
+  usedAt     DateTime?  @db.Timestamptz(6)
+  reviews    Review[]
 }
 
 /// A "Shop this Reel" page at /looks/<slug> (D-163): a cover, a caption, an
