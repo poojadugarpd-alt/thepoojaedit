@@ -585,3 +585,11 @@ Everything below is live on `main` (Vercel auto-deploys). Re-check against
 - Chrome automation: use the Pooja profile (deviceId
   `7204aef4-3ebe-4986-914a-1453181cc4a2`); the other connected profile cannot
   see this GSC property.
+
+## 14. Update 2026-11-02 (SEO content round + reviews)
+Read `docs/keyword-demand-2026-11-02.md`, `docs/keyword-questions-2026-11-02.md`, `docs/review-system-plan-2026-11-02.md`, and D-180 / D-181 in `docs/decisions.md`.
+- **Live (store):** `/styling/wedding-shopping-delhi`; new FAQs; home title; wedding timing "three to four months"; the review system (store `/review` returns 200, `/api/reviews` returns `{"ok":true,"reviews":[]}`, Admin → Reviews exists). Migration `20261102120000_reviews` applied by the Vercel build.
+- **Live (studio):** `/fashion-creators`, `/how-to-become-a-ugc-creator`, "from" prices, `/reels` title. **NOT yet deployed:** the studio `/review` page, `ReviewsBlock` and footer link (studio `/review` was 404 on 2 Nov night). The owner runs `cd studio && npm run cf:deploy` (agent deploys are blocked by the permission classifier).
+- **Open (review system):** deploy studio, then submit a test review, approve it, check both sites, delete it; add a line about reviews to the privacy policy; create Cloudflare Turnstile keys (optional, code is in); view the Admin screens in a browser (never seen on screen); local dev DB in `.env.local` is unreachable ("tenant not found"), use `npm run db:dev` + `npm run test:integration`.
+- **Open (SEO):** 9-10 Nov check indexing of the two creator pages and the Delhi guide and compare Search Console with the 19-31 Oct baseline (10 clicks, 350 impressions, position 7.3); about 30 Nov repeat the keyword search (prompt: `~/Documents/Keyword-to-Content-Prompt.md`) and the Perplexity checks; off-site listing leads reviewed in artifact ShYzKTuGGQmaoTckj8jktY (owner to choose); five styling additions already built and live. Owner owes: Business Profile video verification, 4 photos, client story, certification and Reddit answers.
+- **Gotchas:** GSC "Request indexing" accepted 9 requests in one day without refusal; Bing URL Submission is the only way to ping the studio (no IndexNow key). `fakeTransports(db)` in tests returns the transports directly.

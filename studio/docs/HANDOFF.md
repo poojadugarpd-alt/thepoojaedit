@@ -213,3 +213,9 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 | `8c3b718` | Moved from Vercel to Cloudflare Workers (OpenNext, KV cache) |
 | `1eaf20f` | Live at studio.thepoojaedit.in via forwarder Worker in Pooja's CF account |
 | `e832c4c` | Favicon = The Pooja Edit's 'P' monogram (copied from PoojaEdit `src/app/` icon files) |
+
+## 2026-11-02 update
+- **New pages** (`lib/creator-pages.tsx`, rendered by `components/CreatorPage.tsx`, CSS classes `cp-*` in `app/globals.css`): `/fashion-creators` and `/how-to-become-a-ugc-creator`. Copy is owner-approved: 40k+ followers, 18 named brands, her Instagram, her answers. Do not add numbers or brand names she has not given. Hero shows 3 real reels from `getShowcase()`.
+- **Prices** read "from ₹200" everywhere except the bag (the bag charges the listed price). `/reels` title leads with "Reel Editor".
+- **Reviews:** `components/ReviewForm.tsx` + `app/review/page.tsx` (noindex) post to the store API `https://thepoojaedit.in/api/reviews`; `components/ReviewsBlock.tsx` reads approved reviews (`lib/reviews.ts`, revalidate 300) and renders nothing when there are none. Added to home, `/pricing`, `/ugc`, creator pages and the footer. **Deploy pending** (owner runs `npm run cf:deploy`). Optional Turnstile: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` at build.
+- Bing: submit changed studio URLs in Bing Webmaster URL Submission (no IndexNow key here).
