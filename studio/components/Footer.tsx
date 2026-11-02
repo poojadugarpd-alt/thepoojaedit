@@ -29,6 +29,7 @@ export function Footer() {
           <a href="/#process">how it works</a>
           <a href="/#faq">faq</a>
           <a href="/pricing">pricing</a>
+          <a href="/review">leave a review</a>
           <a href="/how-to-become-a-ugc-creator">how to become a ugc creator</a>
           <a href="/#chat">contact us</a>
         </div>

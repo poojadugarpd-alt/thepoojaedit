@@ -13,6 +13,7 @@ import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
 import { faqPageJsonLd, stylingServicesJsonLd } from "@/lib/styling-jsonld";
 import { isSignedInAdmin } from "@/server/auth/require-admin";
+import { approvedStylingTestimonials } from "@/server/reviews";
 import {
   getStylingContent,
   serviceOptions,
@@ -44,7 +45,10 @@ export default async function StylingPage() {
   const c = await getStylingContent(prisma);
   // Not published: a 404 for shoppers; Pooja sees the draft to check it.
   if (!c.published && !(await isSignedInAdmin())) notFound();
-  const testimonials = visibleTestimonials(c);
+  const testimonials = [
+    ...visibleTestimonials(c),
+    ...(await approvedStylingTestimonials(prisma)),
+  ];
 
   const base = publicEnv.NEXT_PUBLIC_SITE_URL;
 

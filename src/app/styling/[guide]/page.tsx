@@ -15,6 +15,7 @@ import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
 import { stylingGuideJsonLd } from "@/lib/styling-jsonld";
 import { isSignedInAdmin } from "@/server/auth/require-admin";
+import { approvedStylingTestimonials } from "@/server/reviews";
 import {
   getStylingContent,
   visibleTestimonials,
@@ -47,9 +48,17 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function StylingGuidePage({ params }: Params) {
   const g = getGuide((await params).guide);
   if (!g) notFound();
-  const c = await getStylingContent(prisma);
+  const stored = await getStylingContent(prisma);
+  // Approved client reviews join the hand-entered testimonials.
+  const c = {
+    ...stored,
+    testimonials: [
+      ...stored.testimonials,
+      ...(await approvedStylingTestimonials(prisma)),
+    ],
+  };
   // Same rule as /styling: a 404 for shoppers until Pooja publishes it.
-  if (!c.published && !(await isSignedInAdmin())) notFound();
+  if (!stored.published && !(await isSignedInAdmin())) notFound();
 
   const base = publicEnv.NEXT_PUBLIC_SITE_URL;
   const whatsapp = stylingWhatsAppUrl(

@@ -1,10 +1,15 @@
 import { getShowcase } from "@/lib/content";
 import { site, waLink } from "@/lib/site";
 import { personJsonLd } from "@/lib/schema";
-import { creatorBrands, type CreatorPageData, type CreatorSection } from "@/lib/creator-pages";
+import {
+  creatorBrands,
+  type CreatorPageData,
+  type CreatorSection,
+} from "@/lib/creator-pages";
 import { Footer } from "@/components/Footer";
 import { PageHeader } from "@/components/PageHeader";
 import { ModalProvider } from "@/components/Media";
+import { ReviewsBlock } from "@/components/ReviewsBlock";
 import { WhatsAppIcon } from "@/components/icons";
 
 /** Shared layout for the creator pages: split hero with real reels, proof band, plain sections. */
@@ -12,8 +17,13 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
   const data = await getShowcase();
   // Three real posts for the hero: brand and UGC reels first, then any other real reel.
   const real = data.reels.filter((r) => !r.sample && r.thumbnailUrl);
-  const preferred = real.filter((r) => r.brand || r.category === "brand" || r.category === "ugc");
-  const heroReels = [...preferred, ...real.filter((r) => !preferred.includes(r))].slice(0, 3);
+  const preferred = real.filter(
+    (r) => r.brand || r.category === "brand" || r.category === "ugc",
+  );
+  const heroReels = [...preferred, ...real.filter((r) => !preferred.includes(r))].slice(
+    0,
+    3,
+  );
 
   const url = `${site.url}${pg.path}`;
   const main =
@@ -75,10 +85,20 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
             </h1>
             <p className="cp-sub">{pg.heroSub}</p>
             <div className="cp-btns">
-              <a className="btn btn-wa" href={waLink(pg.whatsappMessage)} target="_blank" rel="noopener">
+              <a
+                className="btn btn-wa"
+                href={waLink(pg.whatsappMessage)}
+                target="_blank"
+                rel="noopener"
+              >
                 <WhatsAppIcon size={18} /> talk on whatsapp
               </a>
-              <a className="btn btn-ghost" href={site.instagramUrl} target="_blank" rel="noopener">
+              <a
+                className="btn btn-ghost"
+                href={site.instagramUrl}
+                target="_blank"
+                rel="noopener"
+              >
                 see {site.instagramHandle}
               </a>
             </div>
@@ -118,7 +138,12 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
               <p className="cp-big">40k+</p>
               <p className="cp-big-cap">
                 followers on{" "}
-                <a className="text-link" href={site.instagramUrl} target="_blank" rel="noopener">
+                <a
+                  className="text-link"
+                  href={site.instagramUrl}
+                  target="_blank"
+                  rel="noopener"
+                >
                   {site.instagramHandle}
                 </a>
               </p>
@@ -138,6 +163,8 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
           <Section key={s.id} s={s} />
         ))}
 
+        <ReviewsBlock tone="blush" />
+
         <section className="cp-sec" aria-labelledby="faq-title">
           <div className="cp-in">
             <h2 id="faq-title" className="cp-title">
@@ -156,7 +183,12 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
 
         <section className="cp-cta" aria-label="contact">
           <p className="display display-sm">have footage in your camera roll?</p>
-          <a className="btn btn-wa" href={waLink(pg.whatsappMessage)} target="_blank" rel="noopener">
+          <a
+            className="btn btn-wa"
+            href={waLink(pg.whatsappMessage)}
+            target="_blank"
+            rel="noopener"
+          >
             <WhatsAppIcon size={18} /> chat on whatsapp
           </a>
         </section>
@@ -164,7 +196,10 @@ export async function CreatorPage({ pg }: { pg: CreatorPageData }) {
 
       <Footer />
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     </ModalProvider>
   );
 }
@@ -197,11 +232,12 @@ function Section({ s }: { s: CreatorSection }) {
         <h2 id={`${s.id}-title`} className="cp-title">
           {s.heading}
         </h2>
-        {s.kind === "text" && s.paras.map((para, i) => (
-          <p key={i} className="cp-text">
-            {para}
-          </p>
-        ))}
+        {s.kind === "text" &&
+          s.paras.map((para, i) => (
+            <p key={i} className="cp-text">
+              {para}
+            </p>
+          ))}
         {s.kind === "list" && (
           <ul className="cp-list">
             {s.items.map((i) => (

@@ -18,7 +18,7 @@ import { auditLog } from "@/server/admin/audit";
 import { assertActiveAdmin } from "@/server/admin/guards";
 import { sendNotification, type Transports } from "@/server/notifications/service";
 import { getTransports, siteUrl } from "@/server/notifications/transports";
-import { getStylingContent } from "@/server/styling/content";
+import { getStylingContent, type StylingTestimonial } from "@/server/styling/content";
 
 /**
  * Client reviews for Personal Styling and the editing studio.
@@ -387,4 +387,18 @@ export async function getReviewInvite(
   if (!found || found.usedAt) return null;
   if (found.expiresAt && found.expiresAt <= new Date()) return null;
   return found;
+}
+
+/** Approved styling reviews shaped like the hand-entered "Kind words" entries. */
+export async function approvedStylingTestimonials(
+  db: PrismaClient,
+): Promise<StylingTestimonial[]> {
+  const rows = await listApprovedReviews(db, "STYLING");
+  return rows.map((r) => ({
+    id: `review-${r.id}`,
+    name: r.instagram ? `${r.displayName} (@${r.instagram})` : r.displayName,
+    detail: r.service,
+    quote: r.text,
+    photos: [],
+  }));
 }

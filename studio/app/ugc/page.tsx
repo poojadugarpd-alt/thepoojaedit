@@ -4,6 +4,7 @@ import { site, waLink } from "@/lib/site";
 import { ugcPage as pg } from "@/lib/pages";
 import { personJsonLd } from "@/lib/schema";
 import { Footer } from "@/components/Footer";
+import { ReviewsBlock } from "@/components/ReviewsBlock";
 import { PageHeader } from "@/components/PageHeader";
 import { InstagramCard, ModalProvider } from "@/components/Media";
 import { WhatsAppIcon } from "@/components/icons";
@@ -30,17 +31,23 @@ const message = "Hi Pooja! I'd like to talk about brand / UGC videos.";
 
 /** "a, b and c" */
 function listOf(names: string[]) {
-  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return names.length < 2
+    ? names.join("")
+    : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
 export default async function UgcPage() {
   const data = await getShowcase();
   // Brand, UGC and tagged-brand Reels: the work brands care about.
   const reels = data.reels.filter(
-    (r) => !r.sample && r.thumbnailUrl && (r.brand || r.category === "brand" || r.category === "ugc"),
+    (r) =>
+      !r.sample &&
+      r.thumbnailUrl &&
+      (r.brand || r.category === "brand" || r.category === "ugc"),
   );
   const brands = [...new Set(reels.flatMap((r) => (r.brand ? [r.brand] : [])))];
-  const answer = brands.length > 0 ? `${pg.answer} i've edited for ${listOf(brands)}.` : pg.answer;
+  const answer =
+    brands.length > 0 ? `${pg.answer} i've edited for ${listOf(brands)}.` : pg.answer;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -66,7 +73,12 @@ export default async function UgcPage() {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: site.studio, item: site.url },
-          { "@type": "ListItem", position: 2, name: "ugc and brand videos", item: `${site.url}/ugc` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "ugc and brand videos",
+            item: `${site.url}/ugc`,
+          },
         ],
       },
       personJsonLd(),
@@ -90,7 +102,12 @@ export default async function UgcPage() {
                 <li key={e}>{e}</li>
               ))}
             </ul>
-            <a className="btn btn-wa" href={waLink(message)} target="_blank" rel="noopener">
+            <a
+              className="btn btn-wa"
+              href={waLink(message)}
+              target="_blank"
+              rel="noopener"
+            >
               <WhatsAppIcon size={18} /> talk on whatsapp
             </a>
           </div>
@@ -128,6 +145,8 @@ export default async function UgcPage() {
           </p>
         </section>
 
+        <ReviewsBlock />
+
         <section className="block blush" aria-labelledby="faq-title">
           <h2 id="faq-title" className="section-title">
             questions
@@ -145,7 +164,10 @@ export default async function UgcPage() {
 
       <Footer />
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     </ModalProvider>
   );
 }

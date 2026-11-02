@@ -3,6 +3,7 @@ import { pricing, site, waLink } from "@/lib/site";
 import { priceRows, pricingPage as pg } from "@/lib/pages";
 import { personJsonLd } from "@/lib/schema";
 import { Footer } from "@/components/Footer";
+import { ReviewsBlock } from "@/components/ReviewsBlock";
 import { PageHeader } from "@/components/PageHeader";
 import { WhatsAppIcon } from "@/components/icons";
 
@@ -39,7 +40,12 @@ export default function PricingPage() {
         "@type": "BreadcrumbList",
         itemListElement: [
           { "@type": "ListItem", position: 1, name: site.studio, item: site.url },
-          { "@type": "ListItem", position: 2, name: "pricing", item: `${site.url}/pricing` },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "pricing",
+            item: `${site.url}/pricing`,
+          },
         ],
       },
       personJsonLd(),
@@ -58,7 +64,12 @@ export default function PricingPage() {
               {pg.h1}
             </h1>
             <p className="service-answer">{pg.answer}</p>
-            <a className="btn btn-wa" href={waLink(message)} target="_blank" rel="noopener">
+            <a
+              className="btn btn-wa"
+              href={waLink(message)}
+              target="_blank"
+              rel="noopener"
+            >
               <WhatsAppIcon size={18} /> ask on whatsapp
             </a>
           </div>
@@ -94,7 +105,9 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
-          <p className="service-answer page-note">every order includes 1–2 revisions.</p>
+          <p className="service-answer page-note">
+            every order includes 1–2 revisions.
+          </p>
         </section>
 
         <section className="block" aria-labelledby="drivers-title">
@@ -127,6 +140,8 @@ export default function PricingPage() {
           </p>
         </section>
 
+        <ReviewsBlock tone="blush" />
+
         <section className="block" aria-labelledby="faq-title">
           <h2 id="faq-title" className="section-title">
             questions
@@ -155,7 +170,10 @@ export default function PricingPage() {
 
       <Footer />
 
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     </>
   );
 }

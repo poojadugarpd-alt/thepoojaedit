@@ -7,6 +7,7 @@ import { BagProvider } from "@/components/Bag";
 import { ModalProvider } from "@/components/Media";
 import { ProductGrid, ReelsLove, ShopNow, type LoveItem } from "@/components/Shop";
 import { Footer } from "@/components/Footer";
+import { ReviewsBlock } from "@/components/ReviewsBlock";
 import { WhatsAppIcon } from "@/components/icons";
 import { commonFaqs } from "@/lib/services";
 
@@ -65,14 +66,18 @@ export default async function Home() {
     reels: igReels[0] ? [igReels[0].thumbnailUrl!] : s[0] ? [hq(s[0].id)] : [],
     youtube: lf[0] ? [maxres(lf[0].id)] : [],
     // Instagram-only imagery for Instagram products; YouTube thumbnails stay on YouTube/graphics.
-    carousels: (igReels.length >= 3 ? igReels.slice(3, 6).map((r) => r.thumbnailUrl!) : []),
+    carousels:
+      igReels.length >= 3 ? igReels.slice(3, 6).map((r) => r.thumbnailUrl!) : [],
     graphics: lf[1] ? [maxres(lf[1].id)] : [],
   };
   // Brands tagged in the Reels shown on this page (public on Instagram), most-featured first.
   const brandCounts = new Map<string, number>();
-  for (const r of igReels) if (r.brand) brandCounts.set(r.brand, (brandCounts.get(r.brand) ?? 0) + 1);
+  for (const r of igReels)
+    if (r.brand) brandCounts.set(r.brand, (brandCounts.get(r.brand) ?? 0) + 1);
   const brands = [...brandCounts].sort((a, b) => b[1] - a[1]).map(([b]) => b);
-  const heroShots = igReels.slice(1, 4).map((r) => ({ id: r.id, src: r.thumbnailUrl! }));
+  const heroShots = igReels
+    .slice(1, 4)
+    .map((r) => ({ id: r.id, src: r.thumbnailUrl! }));
   const ytFeature = lf.find((v) => /story|tour/i.test(v.title)) ?? lf[0];
 
   return (
@@ -89,11 +94,17 @@ export default async function Home() {
                 cinematic edits for creators
               </h1>
               <p className="banner-text">
-                instagram reels, youtube videos, shorts, carousels & graphics for fashion and lifestyle creators and
-                brands — edited to capture attention and drive action.
+                instagram reels, youtube videos, shorts, carousels & graphics for
+                fashion and lifestyle creators and brands — edited to capture attention
+                and drive action.
               </p>
               <div className="banner-ctas">
-                <a className="btn btn-wa" href={waLink()} target="_blank" rel="noopener">
+                <a
+                  className="btn btn-wa"
+                  href={waLink()}
+                  target="_blank"
+                  rel="noopener"
+                >
                   <WhatsAppIcon size={18} /> chat on whatsapp
                 </a>
                 <a className="btn btn-white" href="#shop">
@@ -122,8 +133,9 @@ export default async function Home() {
             </h2>
             <ProductGrid images={productImages} />
             <p className="fine">
-              ₹200 reels are starter edits. premium reels with advanced motion graphics, sound design, colour grading
-              and stronger hook editing are quoted separately.
+              ₹200 reels are starter edits. premium reels with advanced motion graphics,
+              sound design, colour grading and stronger hook editing are quoted
+              separately.
             </p>
           </section>
 
@@ -136,7 +148,11 @@ export default async function Home() {
               <ul className="brands-list">
                 {brands.map((b) => (
                   <li key={b}>
-                    <a href={`https://www.instagram.com/${b.replace(/^@/, "")}/`} target="_blank" rel="noopener">
+                    <a
+                      href={`https://www.instagram.com/${b.replace(/^@/, "")}/`}
+                      target="_blank"
+                      rel="noopener"
+                    >
                       {b}
                     </a>
                   </li>
@@ -159,7 +175,12 @@ export default async function Home() {
           {ytFeature && (
             <section className="split" aria-labelledby="yt-title">
               <a className="split-media" href="#youtube" aria-label="See YouTube work">
-                <img src={maxres(ytFeature.id)} alt="" loading="lazy" decoding="async" />
+                <img
+                  src={maxres(ytFeature.id)}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
               </a>
               <div className="split-copy">
                 <p className="kicker">shorts + thumbnail included</p>
@@ -167,8 +188,8 @@ export default async function Home() {
                   youtube long-form
                 </h2>
                 <p className="banner-text">
-                  retention-focused edits for your channel — every video comes with a custom thumbnail and shorts
-                  clippings.
+                  retention-focused edits for your channel — every video comes with a
+                  custom thumbnail and shorts clippings.
                 </p>
                 <p className="split-price">from ₹1,000 per video</p>
                 <ShopNow id="youtube" label="add to bag" />
@@ -217,9 +238,10 @@ export default async function Home() {
                 who edits your videos
               </h2>
               <p>
-                i&rsquo;m pooja dugar, a fashion and lifestyle creator on instagram ({site.instagramHandle}) and
-                youtube ({site.youtubeHandle}). i edit my own reels and youtube videos, and brand reels, affiliate
-                content and ugc for the brands i work with.
+                i&rsquo;m pooja dugar, a fashion and lifestyle creator on instagram (
+                {site.instagramHandle}) and youtube ({site.youtubeHandle}). i edit my
+                own reels and youtube videos, and brand reels, affiliate content and ugc
+                for the brands i work with.
               </p>
               <p>
                 i also run{" "}
@@ -235,6 +257,8 @@ export default async function Home() {
           </section>
 
           {/* ── FAQ ── */}
+          <ReviewsBlock />
+
           <section className="block blush" id="faq" aria-labelledby="faq-title">
             <h2 id="faq-title" className="section-title">
               questions
@@ -252,31 +276,39 @@ export default async function Home() {
           {/* ── Reviews: hidden until there are real (non-placeholder) testimonials ── */}
           {reviews.length > 0 && (
             <section className="block" aria-labelledby="reviews-title">
-            <h2 id="reviews-title" className="section-title">
-              reviews
-            </h2>
-            <p className="center-sub">edited for creators, brands, and lifestyle content</p>
-            <div className="reviews">
-              {reviews.map((t, i) => (
-                <Reveal as="figure" key={i} className="review" delay={i * 80}>
-                  <p className="stars" aria-label="5 out of 5 stars">
-                    ★★★★★
-                  </p>
-                  <blockquote>{t.quote}</blockquote>
-                  <figcaption>
-                    {t.name} · {t.role}
-                    {t.sample && <span className="tag tag-inline">placeholder</span>}
-                  </figcaption>
-                </Reveal>
-              ))}
-            </div>
+              <h2 id="reviews-title" className="section-title">
+                reviews
+              </h2>
+              <p className="center-sub">
+                edited for creators, brands, and lifestyle content
+              </p>
+              <div className="reviews">
+                {reviews.map((t, i) => (
+                  <Reveal as="figure" key={i} className="review" delay={i * 80}>
+                    <p className="stars" aria-label="5 out of 5 stars">
+                      ★★★★★
+                    </p>
+                    <blockquote>{t.quote}</blockquote>
+                    <figcaption>
+                      {t.name} · {t.role}
+                      {t.sample && <span className="tag tag-inline">placeholder</span>}
+                    </figcaption>
+                  </Reveal>
+                ))}
+              </div>
             </section>
           )}
         </main>
 
         <Footer />
 
-        <a className="wa-fab" href={waLink()} target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <a
+          className="wa-fab"
+          href={waLink()}
+          target="_blank"
+          rel="noopener"
+          aria-label="Chat on WhatsApp"
+        >
           <WhatsAppIcon size={26} />
         </a>
       </ModalProvider>
