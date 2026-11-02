@@ -11,9 +11,9 @@ export const priceRows: PriceKey[] = ["reels", "youtube", "carousels", "graphics
 
 export const pricingPage = {
   seoTitle: `Reel Editing Cost in India: From ${p.reels.amount} a Reel | Pooja Dugar`,
-  seoDescription: `What Instagram Reel, YouTube and carousel editing cost in India in 2026, what changes the price, and Pooja Dugar's fixed rates: Reels from ${p.reels.amount}.`,
+  seoDescription: `What Instagram Reel, YouTube and carousel editing cost in India in 2026, what changes the price, and Pooja Dugar's rates: Reels from ${p.reels.amount}.`,
   h1: "how much does reel editing cost in india?",
-  answer: `in india, a reel edit usually costs anywhere from a few hundred rupees to ₹8,000, depending on who edits it and how much work goes into it. a youtube video usually costs a few thousand rupees or more. my rates are fixed: ${p.reels.amount} ${p.reels.unit}, ${p.youtube.amount} per youtube video, ${p.carousels.amount} ${p.carousels.unit} and ${p.graphics.amount} ${p.graphics.unit}, with 1–2 revisions included.`,
+  answer: `in india, a reel edit usually costs anywhere from a few hundred rupees to ₹8,000, depending on who edits it and how much work goes into it. a youtube video usually costs a few thousand rupees or more. my rates start at ${p.reels.amount} ${p.reels.unit}, ${p.youtube.amount} per youtube video, ${p.carousels.amount} ${p.carousels.unit} and ${p.graphics.amount} ${p.graphics.unit}. the final price depends on footage, style and turnaround, and we agree it before i start. 1–2 revisions are included.`,
   drivers: [
     "footage: a 30-second reel from three clips is quicker than one cut from an hour of raw footage.",
     "style: simple cuts and captions cost less than heavy motion graphics.",
@@ -26,7 +26,7 @@ export const pricingPage = {
     "posting several reels a week? monthly and bulk work is priced to what you need. message me on whatsapp and we'll work it out.",
   faqs: [
     {
-      q: `what's included in ${p.reels.amount}?`,
+      q: `what's included in the ${p.reels.amount} starting price?`,
       a: "editing, captions, sound design, transitions and a file ready to post.",
     },
     {
@@ -35,6 +35,10 @@ export const pricingPage = {
     },
     { q: "can you edit from raw footage?", a: "yes." },
     { q: "do you work with brands?", a: "yes. i shoot and edit ugc and brand videos too." },
+    {
+      q: "do you shoot the reel as well as edit it?",
+      a: `yes. i shoot and edit ugc, product videos and reels. editing starts at ${p.reels.amount} ${p.reels.unit}, and shoots are quoted on request, so message me on whatsapp.`,
+    },
   ] satisfies Faq[],
 };
 

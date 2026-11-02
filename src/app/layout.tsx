@@ -21,7 +21,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL),
   title: {
-    default: "The Pooja Edit | Clothes & Personal Styling by Pooja Dugar",
+    default: "Pooja Dugar | The Pooja Edit: Clothes & Styling",
     template: "%s · The Pooja Edit",
   },
   description:

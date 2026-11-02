@@ -168,6 +168,7 @@ export const guides: Guide[] = [
       {
         q: "What is an NRI personal shopper?",
         a: "A personal shopper in India who shops and styles for people who live abroad. I shop on a video call or send photos, have pieces altered, and courier everything to you.",
+        link: SHOPPER_GUIDE,
       },
       {
         q: "Do you style me, or only shop for me?",
@@ -453,6 +454,11 @@ export const guides: Guide[] = [
       },
       { q: "Can I shop with you in person?", a: "Yes, in Gurugram, Delhi and Noida." },
       {
+        q: "Can you shop for me if I live in Mumbai or another city?",
+        a: "Yes. I'm based in Delhi NCR, so I shop here and we choose together on a video call or from photos on WhatsApp. I courier the pieces to you in Mumbai or anywhere in India, and you pay the courier.",
+        link: ONLINE_GUIDE,
+      },
+      {
         q: "Do you shop for weddings?",
         a: "Yes, including trousseau and outfits for the family. Start two to three months before.",
         link: WEDDING_GUIDE,
@@ -604,6 +610,7 @@ export const stylingFaqs: Faq[] = [
   {
     q: "What's the difference between a stylist, a personal shopper and an image consultant?",
     a: "A stylist works out what suits you and puts outfits together. A personal shopper buys for you or with you. An image consultant also covers colours, grooming and how you come across. I do the first two, and as a designer I can make pieces for you too.",
+    link: SHOPPER_GUIDE,
   },
   { q: "Do you style men?", a: "Yes, quote on request." },
   { q: "Can we do it online?", a: "Yes, over a video call.", link: ONLINE_GUIDE },

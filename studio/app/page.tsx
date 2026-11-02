@@ -170,7 +170,7 @@ export default async function Home() {
                   retention-focused edits for your channel — every video comes with a custom thumbnail and shorts
                   clippings.
                 </p>
-                <p className="split-price">₹1,000 per video</p>
+                <p className="split-price">from ₹1,000 per video</p>
                 <ShopNow id="youtube" label="add to bag" />
               </div>
             </section>

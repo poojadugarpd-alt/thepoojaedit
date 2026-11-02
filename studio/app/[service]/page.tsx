@@ -46,7 +46,7 @@ export default async function ServicePage({ params }: Params) {
   const price = pricing[service];
   const data = await getShowcase();
   const faqs = [...s.faqs, ...commonFaqs];
-  const message = `Hi Pooja! I'd like to book ${price.service.toLowerCase()} (${price.amount} ${price.unit}).`;
+  const message = `Hi Pooja! I'd like to book ${price.service.toLowerCase()} (from ${price.amount} ${price.unit}).`;
 
   const reels = data.reels.filter((r) => !r.sample && r.thumbnailUrl);
   const carousels = data.carousels.filter((c) => !c.sample);
@@ -66,7 +66,7 @@ export default async function ServicePage({ params }: Params) {
           "@type": "Offer",
           price: Number(price.amount.replace(/[^\d]/g, "")),
           priceCurrency: "INR",
-          description: `${price.amount} ${price.unit}, ready in ${price.turnaround}`,
+          description: `from ${price.amount} ${price.unit}, ready in ${price.turnaround}`,
         },
       },
       {
@@ -101,7 +101,7 @@ export default async function ServicePage({ params }: Params) {
             </h1>
             <p className="service-answer">{s.answer}</p>
             <p className="split-price">
-              {price.amount} {price.unit}
+              from {price.amount} {price.unit}
             </p>
             <ul className="service-includes">
               {s.includes.map((i) => (

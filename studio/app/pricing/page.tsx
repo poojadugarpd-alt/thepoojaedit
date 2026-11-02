@@ -86,7 +86,7 @@ export default function PricingPage() {
                       </a>
                     </th>
                     <td>
-                      {pricing[k].amount} {pricing[k].unit}
+                      from {pricing[k].amount} {pricing[k].unit}
                     </td>
                     <td>{pricing[k].turnaround}</td>
                   </tr>
