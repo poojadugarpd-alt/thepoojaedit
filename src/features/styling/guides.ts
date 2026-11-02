@@ -59,6 +59,10 @@ export const WEDDING_GUIDE: GuideLink = {
   href: "/styling/wedding-shopping",
   label: "Wedding and trousseau shopping",
 };
+export const DELHI_WEDDING_GUIDE: GuideLink = {
+  href: "/styling/wedding-shopping-delhi",
+  label: "Wedding shopping in Delhi: where to buy what",
+};
 export const ONLINE_GUIDE: GuideLink = {
   href: "/styling/online",
   label: "Online personal styling",
@@ -280,6 +284,7 @@ export const guides: Guide[] = [
         paras: [
           "Designer studios and boutiques, the wedding markets of Chandni Chowk, Karol Bagh, Shahpur Jat and Mehrauli, Lajpat Nagar, and malls like DLF Emporio, Select Citywalk and Ambience Mall.",
         ],
+        link: DELHI_WEDDING_GUIDE,
       },
       {
         kind: "text",
@@ -302,6 +307,90 @@ export const guides: Guide[] = [
       {
         q: "What does it cost?",
         a: "My fees are on the cost page, and we agree yours before anything starts.",
+        link: COST_GUIDE,
+      },
+    ],
+  },
+  {
+    slug: "wedding-shopping-delhi",
+    title: "Wedding Shopping in Delhi: Where to Buy What | Pooja Dugar",
+    description:
+      "Where to shop for a wedding in Delhi: Chandni Chowk, Karol Bagh, Lajpat Nagar, Mehrauli and designer studios, and what each is best for.",
+    name: "Wedding shopping in Delhi",
+    eyebrow: "Weddings in Delhi",
+    h1: "Wedding shopping in Delhi: where to buy what",
+    answer:
+      "For a wedding in Delhi, Chandni Chowk is best for bridal lehengas, sarees, fabric and accessories, Karol Bagh for ready-to-wear festive wear and outfits for the family, Lajpat Nagar for dupattas and affordable festive wear, and designer studios and malls for designer bridal wear and custom pieces. I shop in all of them for brides and families, so this is how I plan it.",
+    service: { name: "Wedding shopping in Delhi", areaServed: "ncr" },
+    sections: [
+      {
+        kind: "text",
+        heading: "Chandni Chowk",
+        paras: [
+          "Best for bridal lehengas, sarees and fabric, jewellery and accessories, and non-bridal lehengas. It also has the best prices of the markets I use.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "Karol Bagh",
+        paras: [
+          "Best for ready-to-wear festive wear, bridal lehengas, outfits for the family and the groom, and accessories.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "Lajpat Nagar",
+        paras: [
+          "Best for dupattas and accessories, affordable festive wear, and outfits for the pre-wedding functions.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "Mehrauli",
+        paras: ["Best for boutiques and designer studios."],
+      },
+      {
+        kind: "text",
+        heading: "Designer studios and malls: Shahpur Jat, Select Citywalk, DLF Emporio",
+        paras: [
+          "Best for designer bridal wear, modern and western looks, and custom designer pieces. You can try things on in comfort.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "How I plan a wedding shop",
+        paras: [
+          "Start three to four months before the wedding, so there is time for fittings and alterations. We list every function and the dress code first. In the markets, start early in the day.",
+        ],
+      },
+      {
+        kind: "text",
+        heading: "Shopping for a Delhi wedding from abroad?",
+        paras: ["I plan it on video calls and shop for you."],
+        link: WEDDING_GUIDE,
+      },
+    ],
+    faqs: [
+      {
+        q: "Which is the best market for wedding shopping in Delhi?",
+        a: "It depends on what you are buying. Chandni Chowk for bridal lehengas, sarees, fabric and accessories, Karol Bagh for festive wear and family outfits, Lajpat Nagar for dupattas and affordable festive wear, and the studios in Shahpur Jat and Mehrauli for designer pieces.",
+      },
+      {
+        q: "Where can I buy a bridal lehenga in Delhi?",
+        a: "Chandni Chowk and Karol Bagh for bridal lehengas, and designer studios if you want a designer label or a custom piece.",
+      },
+      {
+        q: "Where do I buy outfits for the groom and family?",
+        a: "Karol Bagh is best for family and groom outfits.",
+      },
+      {
+        q: "Where do I buy dupattas, jewellery and accessories?",
+        a: "Chandni Chowk and Lajpat Nagar.",
+      },
+      { q: "How early should I start?", a: "Three to four months before the wedding." },
+      {
+        q: "Can you shop with me?",
+        a: "Yes, in person in Delhi, or on video if you are abroad. My fees are on the cost page.",
         link: COST_GUIDE,
       },
     ],
@@ -437,6 +526,10 @@ export const guides: Guide[] = [
       {
         q: "What does a personal shopper do?",
         a: "A personal shopper finds and buys clothes for you or with you. I also style, so we look at how the pieces work together, and I can have things altered.",
+      },
+      {
+        q: "Is a personal shopper worth it?",
+        a: "It usually is if you are shopping for a big event or keep buying things you do not wear. We start with what you own and shop only for what is missing.",
       },
       {
         q: "How much does personal shopping cost?",
@@ -585,6 +678,7 @@ export const WHERE_I_WORK =
 export const STYLING_LINKS: GuideLink[] = [
   NRI_GUIDE,
   WEDDING_GUIDE,
+  DELHI_WEDDING_GUIDE,
   ONLINE_GUIDE,
   SHOPPER_GUIDE,
   ABROAD_GUIDE,
@@ -602,6 +696,10 @@ export const stylingFaqs: Faq[] = [
     q: "Can you shop for me if I live abroad?",
     a: "Yes. Most of my clients live abroad. I shop over a video call or send photo shortlists on WhatsApp, have pieces altered here, and courier them to you.",
     link: NRI_GUIDE,
+  },
+  {
+    q: "What does a personal stylist do?",
+    a: "A personal stylist works out what suits you and puts outfits together. With me we start with what you own, agree what is missing, then shop for it.",
   },
   {
     q: "What happens in a styling session?",

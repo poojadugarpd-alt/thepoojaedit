@@ -34,6 +34,9 @@
   sends them by courier: `/styling/nri`.
 - Wedding, trousseau and festive shopping for brides and families:
   `/styling/wedding-shopping`.
+- Where to shop for a wedding in Delhi (Chandni Chowk, Karol Bagh, Lajpat
+  Nagar, Mehrauli, designer studios and malls) and what each is best for:
+  `/styling/wedding-shopping-delhi`.
 - What personal styling costs in Delhi NCR and how her fees work (no
   commission; clothes are paid for separately): `/styling/personal-stylist-cost`.
 
@@ -63,6 +66,7 @@
 - Personal styling: /styling
 - Shopping from abroad: /styling/nri
 - Wedding shopping: /styling/wedding-shopping
+- Wedding shopping in Delhi: /styling/wedding-shopping-delhi
 - Styling fees: /styling/personal-stylist-cost
 - About: /about
 - Size guide: /size-guide

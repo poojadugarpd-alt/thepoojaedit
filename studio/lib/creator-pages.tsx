@@ -79,6 +79,14 @@ export const ugcGuidePage: CreatorPageData = {
   sections: [
     {
       kind: "text",
+      id: "what",
+      heading: "what is ugc?",
+      paras: [
+        "ugc means user-generated content: videos, photos or posts made by a customer or a creator instead of the brand's own team. when a brand pays a creator to make a video of its product in an everyday style, that is usually called ugc. brands use it on their own pages and in their ads because it looks like a recommendation from a real person.",
+      ],
+    },
+    {
+      kind: "text",
       id: "who",
       heading: "who this comes from",
       paras: [
