@@ -44,7 +44,7 @@ export const commonFaqs: Faq[] = [
 export const services: Record<PriceKey, Service> = {
   reels: {
     id: "reels",
-    seoTitle: "Instagram Reel Editing Service from ₹200 | Pooja Dugar",
+    seoTitle: "Reel Editor for Instagram Reels from ₹200 | Pooja Dugar",
     seoDescription: `Instagram Reels edited for fashion and lifestyle creators and brands: captions, sound design and transitions. From ${p.reels.amount} ${p.reels.unit}, ready in ${p.reels.turnaround}.`,
     h1: "instagram reel editing",
     answer: `i edit instagram reels and shorts for fashion and lifestyle creators and brands, including brand reels, affiliate content and ugc. starter edits are ${p.reels.amount} ${p.reels.unit} and ready in ${p.reels.turnaround}.`,

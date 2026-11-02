@@ -251,6 +251,10 @@ export const fashionCreatorsPage: CreatorPageData = {
   ],
   faqs: [
     {
+      q: "are you an editor or an editing app?",
+      a: "i'm an editor. i cut your footage myself, so you don't have to learn an app or pay for one. send the clips and i send back a file ready to post.",
+    },
+    {
       q: "do you edit affiliate reels?",
       a: "yes. brand and affiliate videos are part of the reel service.",
     },

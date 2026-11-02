@@ -269,6 +269,13 @@ export const guides: Guide[] = [
         ],
       },
       {
+        kind: "text",
+        heading: "Outfits for parents, siblings and relatives",
+        paras: [
+          "NRI clients often start with the family's outfits. We list who needs what for which function, then I shop for each person. If someone isn't here to try things on, you send me the measurements of a garment that fits them well. I check every outfit before it ships.",
+        ],
+      },
+      {
         kind: "steps",
         heading: "How we plan it",
         items: [
@@ -290,19 +297,36 @@ export const guides: Guide[] = [
         kind: "text",
         heading: "Shopping from abroad for a wedding in India?",
         paras: [
-          "Start two or three months before. We plan on calls, I shop and shortlist for you, and pieces are altered and either couriered to you or ready when you land.",
+          "Start three to four months before. We plan on calls, I shop and shortlist for you, and pieces are altered and either couriered to you or ready when you land.",
         ],
         link: NRI_GUIDE,
       },
     ],
     faqs: [
-      { q: "How early should I start?", a: "Two to three months before the wedding." },
+      { q: "How early should I start?", a: "Three to four months before the wedding." },
       {
         q: "Can you plan an NRI wedding wardrobe from abroad?",
-        a: "Yes. We plan on calls, I shop and shortlist for you, pieces are altered here, and everything is couriered to you or ready when you land. Start two to three months before.",
+        a: "Yes. We plan on calls, I shop and shortlist for you, pieces are altered here, and everything is couriered to you or ready when you land. Start three to four months before.",
         link: NRI_GUIDE,
       },
       { q: "Do you shop for the whole family?", a: "Yes, quote on request." },
+      {
+        q: "What do NRI families usually ask for first?",
+        a: "The family's outfits: parents, siblings and relatives. I list what each person needs for each function, then shop for them one by one.",
+      },
+      {
+        q: "Which markets do you use for wedding shopping?",
+        a: "Chandni Chowk, Lajpat Nagar and Karol Bagh for wedding and festive wear, plus designer studios and malls. The mix depends on your budget and the look you want.",
+        link: DELHI_WEDDING_GUIDE,
+      },
+      {
+        q: "How do you size family members who aren't here?",
+        a: "You send me the measurements of a garment that fits them well and I shop from those numbers. If a piece needs altering, I get it done here before it ships.",
+      },
+      {
+        q: "What goes into a bridal trousseau?",
+        a: "Sarees and suits for after the wedding, lehengas for the functions, jewellery and accessories, and gifts and outfits for the in-laws. We list what you need for each function first.",
+      },
       { q: "Can you make my outfit?", a: "Yes, custom pieces are quoted separately." },
       {
         q: "What does it cost?",
@@ -528,6 +552,10 @@ export const guides: Guide[] = [
         a: "A personal shopper finds and buys clothes for you or with you. I also style, so we look at how the pieces work together, and I can have things altered.",
       },
       {
+        q: "Can you find an outfit I saw in a reel or photo?",
+        a: "Yes, and it is part of my fee. Send me the picture and your budget, and I'll look for the same piece or the closest one. Tell me your size and where you live so I can plan the delivery.",
+      },
+      {
         q: "Is a personal shopper worth it?",
         a: "It usually is if you are shopping for a big event or keep buying things you do not wear. We start with what you own and shop only for what is missing.",
       },
@@ -553,7 +581,7 @@ export const guides: Guide[] = [
       },
       {
         q: "Do you shop for weddings?",
-        a: "Yes, including trousseau and outfits for the family. Start two to three months before.",
+        a: "Yes, including trousseau and outfits for the family. Start three to four months before.",
         link: WEDDING_GUIDE,
       },
     ],
@@ -612,7 +640,7 @@ export const guides: Guide[] = [
         kind: "text",
         heading: "When to start",
         paras: [
-          "For a wedding, start two to three months before so there is time for shopping, alterations and shipping. For festivals and other events, start as early as you can, because custom pieces and alterations add time. If you aren't sure how long yours will take, ask me and we agree the timeline on our first call.",
+          "For a wedding, start three to four months before so there is time for shopping, alterations and shipping. For festivals and other events, start as early as you can, because custom pieces and alterations add time. If you aren't sure how long yours will take, ask me and we agree the timeline on our first call.",
         ],
         link: WEDDING_GUIDE,
       },
