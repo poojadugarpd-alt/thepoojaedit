@@ -138,6 +138,7 @@ function PanelHead({ title, sub, priceKey }: { title: string; sub: string; price
       </div>
       <div className="price-block">
         <p className="price-amount">
+          <span>from</span>
           <strong>{p.amount}</strong>
           <span>{p.unit}</span>
         </p>
@@ -146,7 +147,7 @@ function PanelHead({ title, sub, priceKey }: { title: string; sub: string; price
           <AddToBag id={priceKey} />
           <a
             className="btn btn-wa"
-            href={waLink(`Hi Pooja! I'd like to book ${p.service} (${p.amount} ${p.unit}).`)}
+            href={waLink(`Hi Pooja! I'd like to book ${p.service} (from ${p.amount} ${p.unit}).`)}
             target="_blank"
             rel="noopener"
           >

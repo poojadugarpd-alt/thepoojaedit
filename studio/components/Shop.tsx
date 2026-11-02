@@ -31,7 +31,7 @@ export function ProductGrid({ images }: { images: Partial<Record<PriceKey, strin
               <h3 className="product-name">{p.name}</h3>
               <p className="product-tagline">{p.tagline}</p>
               <p className="product-price">
-                <strong>{inr(p.price)}</strong> <span>{p.unit}</span>
+                <span>from</span> <strong>{inr(p.price)}</strong> <span>{p.unit}</span>
               </p>
               <p className="product-meta">ready in {p.turnaround}</p>
             </div>
