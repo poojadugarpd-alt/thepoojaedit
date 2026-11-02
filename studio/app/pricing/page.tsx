@@ -114,7 +114,17 @@ export default function PricingPage() {
           </h2>
           <p className="service-answer">{pg.why}</p>
           <h2 className="section-title page-subhead">monthly work</h2>
-          <p className="service-answer">{pg.monthly}</p>
+          <p className="service-answer">
+            {pg.monthly}{" "}
+            <a className="text-link" href="/fashion-creators">
+              reel editing for fashion creators
+            </a>
+            . new to ugc?{" "}
+            <a className="text-link" href="/how-to-become-a-ugc-creator">
+              how to become a ugc creator
+            </a>
+            .
+          </p>
         </section>
 
         <section className="block" aria-labelledby="faq-title">

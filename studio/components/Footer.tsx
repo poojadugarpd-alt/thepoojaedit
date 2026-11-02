@@ -22,12 +22,14 @@ export function Footer() {
           <a href="/carousels">instagram carousels</a>
           <a href="/graphics">graphic design</a>
           <a href="/ugc">ugc &amp; brand videos</a>
+          <a href="/fashion-creators">reel editing for fashion creators</a>
         </div>
         <div>
           <p className="footer-head">help</p>
           <a href="/#process">how it works</a>
           <a href="/#faq">faq</a>
           <a href="/pricing">pricing</a>
+          <a href="/how-to-become-a-ugc-creator">how to become a ugc creator</a>
           <a href="/#chat">contact us</a>
         </div>
         <div>

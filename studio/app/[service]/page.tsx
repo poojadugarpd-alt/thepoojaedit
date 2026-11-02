@@ -160,6 +160,15 @@ export default async function ServicePage({ params }: Params) {
               </div>
             ))}
           </dl>
+          {service === "reels" && (
+            <p className="service-answer page-note">
+              fashion creator?{" "}
+              <a className="text-link" href="/fashion-creators">
+                see reel editing for fashion creators
+              </a>
+              .
+            </p>
+          )}
         </section>
       </main>
 

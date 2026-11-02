@@ -120,6 +120,10 @@ export default async function UgcPage() {
             <a className="text-link" href="/pricing">
               all prices
             </a>
+            . starting out as a creator?{" "}
+            <a className="text-link" href="/how-to-become-a-ugc-creator">
+              here&rsquo;s how to become a ugc creator
+            </a>
             .
           </p>
         </section>

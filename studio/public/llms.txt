@@ -19,6 +19,12 @@
 - UGC and brand videos (`/ugc`): she shoots and edits UGC, product videos
   and Reels for fashion, beauty and lifestyle brands; shoots are quoted on
   request.
+- Reel editing for fashion creators (`/fashion-creators`): try-on, haul,
+  outfit and affiliate reels edited by a fashion creator with 40k+
+  Instagram followers; reels from ₹200.
+- How to become a UGC creator in India (`/how-to-become-a-ugc-creator`): a
+  step-by-step guide from Pooja, who makes UGC for fashion and lifestyle
+  brands.
 - All prices, and what Reel and YouTube editing usually cost in India:
   `/pricing`.
 - Every order includes 1–2 revisions. Bulk discounts, monthly packages and
