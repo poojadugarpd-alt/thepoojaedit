@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { fashionCreatorsPage as pg } from "@/lib/creator-pages";
 import { CreatorPage } from "@/components/CreatorPage";
 
+// Same hourly refresh as the home page, so the hero reels stay current.
+export const revalidate = 3600;
+
 export const metadata: Metadata = {
   title: { absolute: pg.seoTitle },
   description: pg.seoDescription,
@@ -17,6 +20,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
   return <CreatorPage pg={pg} />;
 }

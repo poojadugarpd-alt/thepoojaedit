@@ -30,15 +30,12 @@ export const creatorBrands = [
   "amazon",
 ];
 
-export const brandList = `${creatorBrands.slice(0, -1).join(", ")} and ${creatorBrands.at(-1)}`;
-
-export type CreatorSection = {
-  id: string;
-  heading: string;
-  /** "blush" shades the band, to alternate with plain ones. */
-  tone?: "blush";
-  body: ReactNode;
-};
+export type CreatorSection =
+  | { kind: "text"; id: string; heading: string; paras: ReactNode[] }
+  | { kind: "list"; id: string; heading: string; items: string[] }
+  | { kind: "cards"; id: string; heading: string; items: ReactNode[] }
+  | { kind: "numbered"; id: string; heading: string; items: ReactNode[] }
+  | { kind: "price"; id: string; from: string; unit: string; points: string[]; after?: ReactNode };
 
 export type CreatorPageData = {
   path: string;
@@ -46,6 +43,8 @@ export type CreatorPageData = {
   seoTitle: string;
   seoDescription: string;
   h1: string;
+  /** Short line under the headline. The full quotable summary is `answer`. */
+  heroSub: string;
   answer: string;
   crumb: string;
   schemaType: "Article" | "Service";
@@ -69,6 +68,7 @@ export const ugcGuidePage: CreatorPageData = {
   seoDescription:
     "How to become a UGC creator in India: what to film, how to build a portfolio, how to pitch brands and why a clean edit helps you get hired.",
   h1: "how to become a ugc creator in india",
+  heroSub: "what to film, how to pitch brands and why the edit matters. from a creator who makes ugc for brands.",
   answer:
     "a ugc creator makes videos of a product that a brand then uses on its own page or in its ads. to start, pick one niche, film three sample videos with products you already own, edit them so they look finished, and send them to small brands. i have 40k+ followers on instagram and make ugc for fashion and lifestyle brands, so this is what i'd do if i were starting today.",
   crumb: "how to become a ugc creator",
@@ -78,80 +78,58 @@ export const ugcGuidePage: CreatorPageData = {
   updated: "2026-11-02",
   sections: [
     {
+      kind: "text",
       id: "who",
       heading: "who this comes from",
-      tone: "blush",
-      body: (
-        <p className="service-answer">
-          i&rsquo;m pooja dugar, a fashion creator ({IG}, 40k+ followers). i earn from affiliate sales,
-          brand deals and ugc, and my first brand work started when a brand messaged me after seeing my
-          reels. i&rsquo;ve made videos for {brandList}.
-        </p>
-      ),
+      paras: [
+        <>
+          i&rsquo;m pooja dugar, a fashion creator ({IG}). i earn from affiliate sales, brand deals and ugc,
+          and my first brand work started when a brand messaged me after seeing my reels.
+        </>,
+      ],
     },
     {
+      kind: "text",
       id: "paying",
       heading: "what brands are paying for",
-      body: (
-        <p className="service-answer">
-          a brand hires a ugc creator for a clip it can run as an ad. the footage has to be usable: clear
-          light, steady framing, clean sound and a length that fits the platform. brands look at your
-          audience and at your video, and in my experience they weigh both about equally, so work on both.
-        </p>
-      ),
+      paras: [
+        "a brand hires a ugc creator for a clip it can run as an ad. the footage has to be usable: clear light, steady framing, clean sound and a length that fits the platform. brands look at your audience and at your video, and in my experience they weigh both about equally, so work on both.",
+      ],
     },
     {
+      kind: "numbered",
       id: "steps",
       heading: "the steps",
-      tone: "blush",
-      body: (
-        <ol className="page-list">
-          <li>pick one niche you can talk about without notes, like fashion, skincare or home.</li>
-          <li>
-            film three samples with things you own: a try-on or unboxing, how you actually use the product,
-            and a close-up of the detail that sells it. use natural light as much as you can. morning light
-            shows the true colour of a fabric.
-          </li>
-          <li>
-            edit them. add captions, cut the dead air and fix the sound. a clip that looks finished is
-            easier for a brand to say yes to.
-          </li>
-          <li>
-            put the samples in one place, such as an instagram highlight or a folder link, so a brand can
-            open everything from one message.
-          </li>
-          <li>
-            pitch small brands directly. keep the message short, attach your best sample, and say your
-            videos are product focused. that wording works well with brands.
-          </li>
-          <li>
-            when a brand replies, ask about the product and what they want from the video before you talk
-            price. then quote per video and say what&rsquo;s included: how many revisions, and where the
-            brand can use the clip.
-          </li>
-        </ol>
-      ),
+      items: [
+        "pick one niche you can talk about without notes, like fashion, skincare or home.",
+        "film three samples with things you own: a try-on or unboxing, how you actually use the product, and a close-up of the detail that sells it. use natural light as much as you can. morning light shows the true colour of a fabric.",
+        "edit them. add captions, cut the dead air and fix the sound. a clip that looks finished is easier for a brand to say yes to.",
+        "put the samples in one place, such as an instagram highlight or a folder link, so a brand can open everything from one message.",
+        "pitch small brands directly. keep the message short, attach your best sample, and say your videos are product focused. that wording works well with brands.",
+        "when a brand replies, ask about the product and what they want from the video before you talk price. then quote per video and say what's included: how many revisions, and where the brand can use the clip.",
+      ],
     },
     {
+      kind: "text",
       id: "mistake",
       heading: "the mistake i see most",
-      body: (
-        <p className="service-answer">
-          poor light and sound. a good idea shot in a dim room with an echo is hard to save in editing, so
-          fix those two first.
-        </p>
-      ),
+      paras: [
+        "poor light and sound. a good idea shot in a dim room with an echo is hard to save in editing, so fix those two first.",
+      ],
     },
     {
+      kind: "text",
       id: "help",
       heading: "how i can help with the edit",
-      tone: "blush",
-      body: (
-        <p className="service-answer">
+      paras: [
+        <>
           send me your raw clips and i&rsquo;ll cut them into reels, shorts or ads in 9:16, 4:5 or square.
           reels start at {p.reels.amount} and take {p.reels.turnaround}, with 1&ndash;2 revisions included.
           i also do discounted packages that depend on the type of work and the volume. message me on
-          whatsapp with your footage and what you want it to look like. see{" "}
+          whatsapp with your footage and what you want it to look like.
+        </>,
+        <>
+          see{" "}
           <a className="text-link" href="/fashion-creators">
             reel editing for fashion creators
           </a>{" "}
@@ -160,8 +138,8 @@ export const ugcGuidePage: CreatorPageData = {
             all prices
           </a>
           .
-        </p>
-      ),
+        </>,
+      ],
     },
   ],
   faqs: [
@@ -187,10 +165,11 @@ export const ugcGuidePage: CreatorPageData = {
 
 export const fashionCreatorsPage: CreatorPageData = {
   path: "/fashion-creators",
-  kicker: "for fashion creators · reels",
+  kicker: "for fashion creators",
   seoTitle: "Reel Editor for Fashion Creators in India | Pooja Dugar",
   seoDescription: `A fashion creator with 40k+ followers edits your reels: try-ons, hauls, outfit videos and affiliate content. Reels from ${p.reels.amount}, ready in 24 to 48 hours.`,
   h1: "reel editing for fashion creators",
+  heroSub: `i edit try-ons, hauls and outfit reels. from ${p.reels.amount}, back in 24 to 48 hours.`,
   answer: `i'm a fashion creator who edits reels for other fashion and lifestyle creators. send me raw try-on, haul, outfit or affiliate footage and i'll cut it with captions, sound and transitions. reels start at ${p.reels.amount} and are ready in ${p.reels.turnaround}.`,
   crumb: "reel editing for fashion creators",
   schemaType: "Service",
@@ -199,73 +178,57 @@ export const fashionCreatorsPage: CreatorPageData = {
   updated: "2026-11-02",
   sections: [
     {
-      id: "work",
-      heading: "see the work",
-      tone: "blush",
-      body: (
-        <p className="service-answer">
-          my own reels are on {IG} (40k+ followers). i&rsquo;ve made videos for {brandList}.
-        </p>
-      ),
-    },
-    {
+      kind: "list",
       id: "edit",
       heading: "what i edit",
-      body: (
-        <p className="service-answer">
-          try-on and haul reels, outfit of the day, get ready with me, styling reels, affiliate and brand
-          collaboration videos, and the carousels and graphics that go with them. i&rsquo;m flexible on the
-          type of work and the fabric.
-        </p>
-      ),
+      items: [
+        "try-on and haul reels",
+        "outfit of the day",
+        "get ready with me",
+        "styling reels",
+        "affiliate and brand collaboration videos",
+        "carousels and graphics to go with them",
+      ],
     },
     {
+      kind: "text",
       id: "why",
       heading: "why a fashion creator edits better fashion videos",
-      tone: "blush",
-      body: (
-        <p className="service-answer">
-          i make fashion content for my own instagram. a try-on reel works when the fit is shown clearly,
-          the fabric gets a close-up and the first two seconds hold attention. i cut for that.
-        </p>
-      ),
+      paras: [
+        "i make fashion content for my own instagram. a try-on reel works when the fit is shown clearly, the fabric gets a close-up and the first two seconds hold attention. i cut for that. i'm flexible on the type of work and the fabric.",
+      ],
     },
     {
+      kind: "cards",
       id: "how",
       heading: "how it works",
-      body: (
-        <ol className="page-list">
-          <li>
-            message me on whatsapp with your raw clips, a few reels you like, your captions and the music
-            you want. a clear brief saves the most time.
-          </li>
-          <li>i confirm the plan and the price before i start.</li>
-          <li>the edit comes back in {p.reels.turnaround} for standard reels.</li>
-          <li>1&ndash;2 rounds of changes are included.</li>
-        </ol>
-      ),
+      items: [
+        "message me on whatsapp with your raw clips, a few reels you like, your captions and the music you want. a clear brief saves the most time.",
+        "i confirm the plan and the price before i start.",
+        `the edit comes back in ${p.reels.turnaround} for standard reels.`,
+        "1–2 rounds of changes are included.",
+      ],
     },
     {
+      kind: "text",
       id: "refs",
       heading: "references and timing",
-      tone: "blush",
-      body: (
-        <p className="service-answer">
-          references can be recreated but not replicated. i&rsquo;ll match the pacing and the captions of
-          reels you like, in my own edit. creativity takes time, so leave enough of it in hand, especially
-          for heavier edits.
-        </p>
-      ),
+      paras: [
+        "references can be recreated but not replicated. i'll match the pacing and the captions of reels you like, in my own edit. creativity takes time, so leave enough of it in hand, especially for heavier edits.",
+      ],
     },
     {
+      kind: "price",
       id: "price",
-      heading: "price",
-      body: (
-        <p className="service-answer">
-          reels start at {p.reels.amount} for simple cuts and captions. the price changes with the design
-          and the work involved. heavier motion graphics, colour grading and stronger hook editing are
-          quoted per project. i also do discounted packages that depend on the type of work and the volume,
-          so message me for a monthly plan.{" "}
+      from: p.reels.amount,
+      unit: p.reels.unit,
+      points: [
+        "simple cuts and captions. the price changes with the design and the work involved.",
+        "heavier motion graphics, colour grading and stronger hook editing are quoted per project.",
+        "discounted packages that depend on the type of work and the volume. message me for a monthly plan.",
+      ],
+      after: (
+        <>
           <a className="text-link" href="/pricing">
             all prices
           </a>
@@ -274,7 +237,7 @@ export const fashionCreatorsPage: CreatorPageData = {
             here&rsquo;s how to become a ugc creator
           </a>
           .
-        </p>
+        </>
       ),
     },
   ],
