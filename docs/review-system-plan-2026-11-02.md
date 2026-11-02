@@ -49,3 +49,12 @@ Privacy (India DPDP Act): form shows a short notice (what is collected, who sees
 3. Public name: the client chooses (first name only, or name plus Instagram).
 4. Approved styling reviews appear in "Kind words" automatically.
 Status: plan approved, build not started. Open issue: dev database unreachable; use the local test database (npm run test:e2e:local) for tests.
+
+## Build status (2 Nov night)
+Built and committed locally (816ca81, 5ee821a, 5232f68), NOT pushed or deployed:
+- Phase 1: Review + ReviewInvite models, migration 20261102120000_reviews, src/server/reviews, /api/reviews (POST, GET, CORS for thepoojaedit.in and studio.thepoojaedit.in), 13 integration tests, 4 route tests.
+- Phase 2: Admin > Reviews (list, detail with edit/approve/hide/delete, invite links), email + in-app notification.
+- Phase 3: /review form on the store and on the studio (studio posts to the store API). Turnstile code is in; it only activates when NEXT_PUBLIC_TURNSTILE_SITE_KEY (both sites) and TURNSTILE_SECRET_KEY (store) are set.
+- Phase 4: approved styling reviews join Kind words on /styling and the guides; studio shows a "what clients say" block on home, pricing, ugc and both creator pages (hidden until there is one approved review); footer link to /review.
+Not done: privacy policy line about reviews; Turnstile keys; seeing Admin screens in a browser; deploy.
+Deploy order: store first (migration applies, API goes live), then studio (owner runs cf:deploy). Then submit a test review, approve it, check both sites, delete it.
