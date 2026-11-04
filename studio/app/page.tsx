@@ -139,6 +139,32 @@ export default async function Home() {
             </p>
           </section>
 
+          {/* ── Reviews: hidden until there are real (non-placeholder) testimonials ── */}
+          {reviews.length > 0 && (
+            <section className="block" aria-labelledby="reviews-title">
+              <h2 id="reviews-title" className="section-title">
+                reviews
+              </h2>
+              <p className="center-sub">
+                edited for creators, brands, and lifestyle content
+              </p>
+              <div className="reviews">
+                {reviews.map((t, i) => (
+                  <Reveal as="figure" key={i} className="review" delay={i * 80}>
+                    <p className="stars" aria-label="5 out of 5 stars">
+                      ★★★★★
+                    </p>
+                    <blockquote>{t.quote}</blockquote>
+                    <figcaption>
+                      {t.name} · {t.role}
+                      {t.sample && <span className="tag tag-inline">placeholder</span>}
+                    </figcaption>
+                  </Reveal>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* ── Brands ── */}
           {brands.length > 0 && (
             <section className="brands" aria-labelledby="brands-title">
@@ -273,31 +299,6 @@ export default async function Home() {
             </dl>
           </section>
 
-          {/* ── Reviews: hidden until there are real (non-placeholder) testimonials ── */}
-          {reviews.length > 0 && (
-            <section className="block" aria-labelledby="reviews-title">
-              <h2 id="reviews-title" className="section-title">
-                reviews
-              </h2>
-              <p className="center-sub">
-                edited for creators, brands, and lifestyle content
-              </p>
-              <div className="reviews">
-                {reviews.map((t, i) => (
-                  <Reveal as="figure" key={i} className="review" delay={i * 80}>
-                    <p className="stars" aria-label="5 out of 5 stars">
-                      ★★★★★
-                    </p>
-                    <blockquote>{t.quote}</blockquote>
-                    <figcaption>
-                      {t.name} · {t.role}
-                      {t.sample && <span className="tag tag-inline">placeholder</span>}
-                    </figcaption>
-                  </Reveal>
-                ))}
-              </div>
-            </section>
-          )}
         </main>
 
         <Footer />
