@@ -198,7 +198,7 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 ## Open items / next steps
 1. **Reel mp4s** for hover-play (export from IG or originals; compress; ffmpeg isn't installed on this Mac).
 2. ~~Real carousels and graphics~~ done via Canva links (2026-10-19).
-3. **Real testimonials**: add to `content/testimonials.json` without `sample` and the Reviews section reappears.
+3. ~~Real testimonials~~ first one added 2026-11-04 (see below). Add more to `content/testimonials.json` without `sample`.
 4. Confirm the "best seller" / "new" badges in `lib/products.ts` are true.
 5. Optional: link the two sites (a "content editing services" link in the store footer and a link back);
    Workers Builds for auto-deploy; Instagram token; YouTube API key.
@@ -219,3 +219,10 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - **Prices** read "from ₹200" everywhere except the bag (the bag charges the listed price). `/reels` title leads with "Reel Editor".
 - **Reviews:** `components/ReviewForm.tsx` + `app/review/page.tsx` (noindex) post to the store API `https://thepoojaedit.in/api/reviews`; `components/ReviewsBlock.tsx` reads approved reviews (`lib/reviews.ts`, revalidate 300) and renders nothing when there are none. Added to home, `/pricing`, `/ugc`, creator pages and the footer. **Deploy pending** (owner runs `npm run cf:deploy`). Optional Turnstile: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` at build.
 - Bing: submit changed studio URLs in Bing Webmaster URL Submission (no IndexNow key here).
+
+## 2026-11-04 update
+- **First client work + testimonial LIVE.** Reel `DfPQvhFMjjg` (client @urboyranjjj, edited by Pooja) is first in `content/instagram.json`, cover at `public/reels/DfPQvhFMjjg.jpg`. Caption is made up from the on-screen title ("Is This Thing Recording?"); the real IG caption was not readable without login. Client's review is first in `content/testimonials.json`, credited "@urboyranjjj, Content creator" (handle, not a real name; change if the client wants).
+- **New category `client`** (`ReelCategory` in `lib/types.ts`, "Client" filter in `components/Showcase.tsx`, badge label in `components/Media.tsx`). Use `"category": "client"` for any future client-work reel. Client reels with a `brand` tag still also show on `/ugc`.
+- **Reviews section moved** directly under Best sellers on the home page (`app/page.tsx`). It stays hidden when there are no real (non-`sample`) testimonials.
+- Commits `d9d0b57`, `f20851b`, then the reviews move. Studio deployed from this Mac (last version `07f4347b`). This deploy also shipped the earlier 2 Nov review-system code (`/review`, `ReviewsBlock`), so the "deploy pending" note above is now done; the end-to-end test review (submit, approve in Admin, check both sites, delete) is still to do.
+- Build prints "YouTube RSS 404" warnings; site falls back to saved data. Not investigated.
