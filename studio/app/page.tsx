@@ -73,7 +73,7 @@ export default async function Home() {
   // Brands tagged in the Reels shown on this page (public on Instagram), most-featured first.
   const brandCounts = new Map<string, number>();
   for (const r of igReels)
-    if (r.brand) brandCounts.set(r.brand, (brandCounts.get(r.brand) ?? 0) + 1);
+    if (r.brand && r.category !== "client") brandCounts.set(r.brand, (brandCounts.get(r.brand) ?? 0) + 1);
   const brands = [...brandCounts].sort((a, b) => b[1] - a[1]).map(([b]) => b);
   const heroShots = igReels
     .slice(1, 4)

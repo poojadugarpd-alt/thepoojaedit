@@ -1,14 +1,6 @@
 [
   {
     "kind": "reel",
-    "permalink": "https://www.instagram.com/reel/DfPQvhFMjjg/",
-    "caption": "Is This Thing Recording? | Edited for @urboyranjjj",
-    "category": "client",
-    "thumbnailUrl": "/reels/DfPQvhFMjjg.jpg",
-    "brand": "@urboyranjjj"
-  },
-  {
-    "kind": "reel",
     "permalink": "https://www.instagram.com/reel/DeUaqHOvldm/",
     "caption": "Pooja & Jenn ✨ | @hues__studio 🤍 The ultimate fall brown suede shoulder bag 🤎🍂",
     "category": "brand",
@@ -95,6 +87,14 @@
     "caption": "You cannot miss this. Comment “link” or share this reel with me for links ❤️",
     "category": "affiliate",
     "thumbnailUrl": "/reels/DSpP7Xmkp1Q.jpg"
+  },
+  {
+    "kind": "reel",
+    "permalink": "https://www.instagram.com/reel/DfPQvhFMjjg/",
+    "caption": "Is This Thing Recording? | Edited for @urboyranjjj",
+    "category": "client",
+    "thumbnailUrl": "/reels/DfPQvhFMjjg.jpg",
+    "brand": "@urboyranjjj"
   },
   {
     "kind": "carousel",
