@@ -1,4 +1,4 @@
-export type ReelCategory = "brand" | "affiliate" | "ugc" | "carousel";
+export type ReelCategory = "brand" | "affiliate" | "ugc" | "client" | "carousel";
 
 export type InstagramItem = {
   id: string;

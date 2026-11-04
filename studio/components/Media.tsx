@@ -195,6 +195,7 @@ const CATEGORY_LABEL: Record<InstagramItem["category"], string> = {
   brand: "Brand Reel",
   affiliate: "Affiliate",
   ugc: "UGC",
+  client: "Client",
   carousel: "Carousel",
 };
 

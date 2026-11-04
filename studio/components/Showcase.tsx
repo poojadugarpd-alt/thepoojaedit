@@ -200,7 +200,7 @@ function SourceNote({ sample }: { sample: boolean }) {
 
 /* ───────────────────────── Tab 1: Reels ───────────────────────── */
 
-type ReelFilter = "all" | "brand" | "carousel" | "affiliate" | "ugc";
+type ReelFilter = "all" | "brand" | "carousel" | "affiliate" | "ugc" | "client";
 
 function ReelsPanel({ reels, carousels }: { reels: InstagramItem[]; carousels: InstagramItem[] }) {
   const [filter, setFilter] = useState<ReelFilter>("all");
@@ -213,6 +213,7 @@ function ReelsPanel({ reels, carousels }: { reels: InstagramItem[]; carousels: I
     { id: "carousel", label: "Carousels", count: carousels.length },
     { id: "affiliate", label: "Affiliate", count: by("affiliate").length },
     { id: "ugc", label: "UGC", count: by("ugc").length },
+    { id: "client", label: "Client", count: by("client").length },
   ];
   const items = filter === "all" ? reels : filter === "carousel" ? carousels : by(filter);
 
@@ -220,7 +221,7 @@ function ReelsPanel({ reels, carousels }: { reels: InstagramItem[]; carousels: I
     <>
       <PanelHead
         title="Instagram Reels Editing"
-        sub="Scroll-stopping Reels, branded edits, affiliate content, and UGC."
+        sub="Scroll-stopping Reels, branded edits, affiliate content, UGC, and client work."
         priceKey="reels"
       />
       <Filters label="Filter Reels" options={options} value={filter} onChange={setFilter} />
