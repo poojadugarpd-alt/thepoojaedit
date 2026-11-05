@@ -231,4 +231,4 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 ## 2026-11-05 update (Hub-and-Spoke SEO / International AEO)
 - **Studio Schema (`lib/schema.ts`):** Upgraded `studioJsonLd` to target international creators (`areaServed` expanded from `"IN"` to United States, United Kingdom, Australia, Canada, India) and added `serviceType: "Video Editing and Post-Production"` and `serviceType: "Video Editing"` on offers for Answer Engine discovery (Gemini/Perplexity).
 - **Domain Hygiene & Separation:** Verified top navigation on fashion store keeps video editing out of main B2C navigation (footer link only).
-- **Studio deploy:** Not deployed in this session (per rule: deploy only when owner explicitly asks). Open items: end-to-end review test still pending from 4 Nov.
+- **Studio deploy:** Deployed on owner request via `npm run cf:deploy` (Current Version ID: `5c4be426-cf9d-4782-8099-7c13d20a970d`). Global creator schema (`areaServed: US, GB, AU, CA, IN`) is now live on Cloudflare Workers. Open items: end-to-end review test still pending from 4 Nov.

@@ -391,6 +391,7 @@ Full detail in `docs/decisions.md`.
 | 11-02 | D-180 | SEO content round: `/styling/wedding-shopping-delhi`, new FAQs, studio `/fashion-creators`, `/how-to-become-a-ugc-creator` |
 | 11-02 | D-181 | Client reviews for styling and studio: `Review` + `ReviewInvite` models, `/api/reviews`, `/review` pages, Admin Reviews |
 | 11-05 | D-182 | Hub-and-Spoke SEO/AEO: Home styling section enabled, `/styling/usa` and `/styling/uk` geo-guides, `/virtual-styling` rewrites, international Service schema, studio global creator targeting |
+| 11-05 | D-183 | Category SEO metadata (`/label`, `/closet`), studio deployed to Cloudflare Workers (`5c4be426`), IndexNow ping sent (HTTP 200) |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -605,4 +606,5 @@ Read `docs/decisions.md` (D-182) and `seo-aeo-hub-spoke-plan.md`.
 - **Vanity URL Rewrites:** Added `/virtual-styling` -> `/styling` and `/virtual-styling/:slug*` -> `/styling/:slug*` in `next.config.ts`.
 - **International Structured Data:** Updated `stylingServicesJsonLd` with international `areaServed` (US, GB, AU, CA, AE, IN) and virtual video consultation channels. Updated studio `studioJsonLd` with global creator service targeting.
 - **Conversational RAG Seeding:** Added conversational Q&As on USA/UK virtual styling and purchasing Label clothing during styling sessions.
-- **Studio Deploy:** Not deployed (only deploy studio on owner request). Studio typecheck verified passing.
+- **Studio Deploy:** Deployed to Cloudflare Workers on owner request (Version ID `5c4be426-cf9d-4782-8099-7c13d20a970d`). Global creator schema (`areaServed: US, GB, AU, CA, IN`) is live.
+- **Track 1 Category Metadata & IndexNow (D-183):** `/label` and `/closet` updated with commercial intent titles and descriptions. IndexNow pinged with HTTP 200 for 8 primary URLs.

@@ -6,11 +6,16 @@ import {
 } from "@/features/catalog/catalog-listing";
 
 export const metadata: Metadata = {
-  title: "The Label",
+  title: { absolute: "Designer Kurtis, Co-ords & Linen | The Pooja Edit" },
   description:
-    "The Label is Pooja Dugar's own designs — kurtis, co-ord sets and linen, made in real sizes and small runs.",
+    "Shop designer kurtis, contemporary co-ord sets, and everyday linen designed by Pooja Dugar. Tailored in small runs with real-size fits. Delivered across India.",
   alternates: { canonical: "/label" },
-  openGraph: { title: "The Label", url: "/label" },
+  openGraph: {
+    title: "Designer Kurtis, Co-ords & Linen | The Pooja Edit",
+    description:
+      "Shop designer kurtis, contemporary co-ord sets, and everyday linen designed by Pooja Dugar. Tailored in small runs with real-size fits.",
+    url: "/label",
+  },
 };
 
 export default async function LabelPage({

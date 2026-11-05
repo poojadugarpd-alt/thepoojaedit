@@ -6,11 +6,16 @@ import {
 } from "@/features/catalog/catalog-listing";
 
 export const metadata: Metadata = {
-  title: "The Closet",
+  title: { absolute: "Curated Thrift Store & Pre-Loved Fashion | Pooja's Closet" },
   description:
-    "The Closet is Pooja Dugar's own wardrobe, passed on. Pre-loved, one-of-one pieces — each listed as-is with its own measurements.",
+    "Shop 1-of-1 pre-loved fashion, vintage tops, dresses, and thrifted apparel from Pooja Dugar's wardrobe. Verified condition with individual garment measurements.",
   alternates: { canonical: "/closet" },
-  openGraph: { title: "The Closet", url: "/closet" },
+  openGraph: {
+    title: "Curated Thrift Store & Pre-Loved Fashion | Pooja's Closet",
+    description:
+      "Shop 1-of-1 pre-loved fashion, vintage tops, dresses, and thrifted apparel from Pooja Dugar's wardrobe. Verified condition with individual garment measurements.",
+    url: "/closet",
+  },
 };
 
 export default async function ClosetPage({
