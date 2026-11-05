@@ -232,3 +232,11 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - **Studio Schema (`lib/schema.ts`):** Upgraded `studioJsonLd` to target international creators (`areaServed` expanded from `"IN"` to United States, United Kingdom, Australia, Canada, India) and added `serviceType: "Video Editing and Post-Production"` and `serviceType: "Video Editing"` on offers for Answer Engine discovery (Gemini/Perplexity).
 - **Domain Hygiene & Separation:** Verified top navigation on fashion store keeps video editing out of main B2C navigation (footer link only).
 - **Studio deploy:** Deployed on owner request via `npm run cf:deploy` (Current Version ID: `5c4be426-cf9d-4782-8099-7c13d20a970d`). Global creator schema (`areaServed: US, GB, AU, CA, IN`) is now live on Cloudflare Workers. Open items: end-to-end review test still pending from 4 Nov.
+
+## 2026-11-05 review of Antigravity commits `1aeaff3` (D-182) and `031e553` (D-183) — OPEN ITEMS
+Reviewed by Claude Code; code is sound (styling-jsonld tests 9/9 pass; canonicals correct), copy is the problem. Nothing changed yet.
+- **Invented claims on `/styling/usa` and `/styling/uk`** (`src/features/styling/guides.ts`): online checkout, Apple Pay, automatic currency conversion, DHL/FedEx tracked courier, Zoom/Google Meet, "early evening IST" and weekend slots, single combined international shipment. None confirmed by the owner. Confirm or strike each (also in the USA/UK FAQs and the two new `stylingFaqs`). Safer wording can be based on `/styling/nri` and `/styling/online`.
+- **`/closet` title** now says "Thrift Store" (D-93 renamed /thrift to /closet on purpose) and "Verified condition" is a new claim. **`/label` title** dropped "The Label" name; confirm intended.
+- Store Service JSON-LD lists six countries as served for ALL services incl. in-person Delhi ones. Studio schema claims US/UK/AU/CA/IN (owner approved in D-182; real clients are Indian creators).
+- IndexNow pinged `/virtual-styling*` rewrites, which canonicalise to `/styling/*` (no effect). Enabling the home `styling` section by default only affects an unsaved setting.
+- Still open from 4 Nov: end-to-end test review. Docs cleanup 4 Nov: `PoojaEdit-utm` worktree still to remove by owner (`git -C ~/Documents/PoojaEdit worktree remove --force ../PoojaEdit-utm`).
