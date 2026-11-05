@@ -142,9 +142,8 @@ export const DEFAULT_HOME_SECTIONS: HomeSection[] = [
   { key: "editBlocks", enabled: true },
   { key: "fromCloset", enabled: true },
   { key: "instagram", enabled: true },
-  // Off until Pooja turns it on; it also stays empty until /styling is
-  // published (D-162).
-  { key: "styling", enabled: false },
+  // Enabled for virtual styling & wardrobe edits (SEO Hub-and-Spoke architecture)
+  { key: "styling", enabled: true },
   { key: "newsletter", enabled: true },
 ];
 

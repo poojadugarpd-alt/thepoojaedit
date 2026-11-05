@@ -227,3 +227,8 @@ npm run cf:preview         # build + run locally in the Workers runtime (wrangle
 - Commits `d9d0b57`, `f20851b`, then the reviews move. Studio deployed from this Mac (last version `07f4347b`). This deploy also shipped the earlier 2 Nov review-system code (`/review`, `ReviewsBlock`), so the "deploy pending" note above is now done; the end-to-end test review (submit, approve in Admin, check both sites, delete) is still to do.
 - Build prints "YouTube RSS 404" warnings; site falls back to saved data. Not investigated.
 - **Order matters in `content/instagram.json`:** homepage product images, hero shots and the reels row are picked by position (first reel = Reels product image). Add new reels at the END of the real entries, never the top. Client reels are excluded from the brands strip (`app/page.tsx`). Fixed in `ae385838` after the client reel was first inserted at the top.
+
+## 2026-11-05 update (Hub-and-Spoke SEO / International AEO)
+- **Studio Schema (`lib/schema.ts`):** Upgraded `studioJsonLd` to target international creators (`areaServed` expanded from `"IN"` to United States, United Kingdom, Australia, Canada, India) and added `serviceType: "Video Editing and Post-Production"` and `serviceType: "Video Editing"` on offers for Answer Engine discovery (Gemini/Perplexity).
+- **Domain Hygiene & Separation:** Verified top navigation on fashion store keeps video editing out of main B2C navigation (footer link only).
+- **Studio deploy:** Not deployed in this session (per rule: deploy only when owner explicitly asks). Open items: end-to-end review test still pending from 4 Nov.

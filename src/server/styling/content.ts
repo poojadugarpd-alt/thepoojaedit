@@ -102,9 +102,9 @@ export const DEFAULT_STYLING_CONTENT: StylingContent = {
   portrait: null,
   enquiryEmail: "",
   homeBlock: {
-    heading: "Personal styling",
-    body: "Wardrobe edits and personal shopping with Pooja, in person or online.",
-    cta: "How it works",
+    heading: "Virtual Styling & Wardrobe Edits",
+    body: "Personal styling, virtual wardrobe audits, and curated event shopping with Pooja Dugar — tailored for clients across India, the US, UK, and worldwide.",
+    cta: "Book a Virtual Consultation",
   },
   seoDescription:
     "Personal styling and shopping with Pooja Dugar: wardrobe edits, personal shopping and online styling, in India and for clients abroad.",

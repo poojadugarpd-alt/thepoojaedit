@@ -55,6 +55,14 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // SEO Hub-and-Spoke architecture: /virtual-styling vanity aliases to /styling.
+  async rewrites() {
+    return [
+      { source: "/virtual-styling", destination: "/styling" },
+      { source: "/virtual-styling/:slug*", destination: "/styling/:slug*" },
+    ];
+  },
+
   // Storefront rename (D-93): /the-pooja-edit -> /label, /thrift -> /closet.
   // Permanent so search engines and old links update; :path* covers PDPs and
   // /collections/[slug] under each catalog.

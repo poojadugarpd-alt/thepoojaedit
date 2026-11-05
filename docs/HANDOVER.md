@@ -388,6 +388,9 @@ Full detail in `docs/decisions.md`.
 | 10-22 | D-178 | "Notify me" pieces: email sign-up instead of Add to cart, waiting list in Admin |
 | 10-21 | D-177 | IndexNow: Bing is pinged when a product is published/changed (key file in `public/`) |
 | 10-21 | D-176 | Store and studio on Next.js 16.4.2 (Next 15 left support); 7 react-hooks lint warnings to rework; `middleware.ts` → `proxy.ts` still to do |
+| 11-02 | D-180 | SEO content round: `/styling/wedding-shopping-delhi`, new FAQs, studio `/fashion-creators`, `/how-to-become-a-ugc-creator` |
+| 11-02 | D-181 | Client reviews for styling and studio: `Review` + `ReviewInvite` models, `/api/reviews`, `/review` pages, Admin Reviews |
+| 11-05 | D-182 | Hub-and-Spoke SEO/AEO: Home styling section enabled, `/styling/usa` and `/styling/uk` geo-guides, `/virtual-styling` rewrites, international Service schema, studio global creator targeting |
 
 Note on history: the other Mac pushed a backfill of D-131–D-133
 (`186fbab`) that guessed D-131 = redirects only and D-132 = unknown. The
@@ -593,3 +596,13 @@ Read `docs/keyword-demand-2026-11-02.md`, `docs/keyword-questions-2026-11-02.md`
 - **Open (review system):** deploy studio, then submit a test review, approve it, check both sites, delete it; add a line about reviews to the privacy policy; create Cloudflare Turnstile keys (optional, code is in); view the Admin screens in a browser (never seen on screen); local dev DB in `.env.local` is unreachable ("tenant not found"), use `npm run db:dev` + `npm run test:integration`.
 - **Open (SEO):** 9-10 Nov check indexing of the two creator pages and the Delhi guide and compare Search Console with the 19-31 Oct baseline (10 clicks, 350 impressions, position 7.3); about 30 Nov repeat the keyword search (prompt: `~/Documents/Keyword-to-Content-Prompt.md`) and the Perplexity checks; off-site listing leads reviewed in artifact ShYzKTuGGQmaoTckj8jktY (owner to choose); five styling additions already built and live. Owner owes: Business Profile video verification, 4 photos, client story, certification and Reddit answers.
 - **Gotchas:** GSC "Request indexing" accepted 9 requests in one day without refusal; Bing URL Submission is the only way to ping the studio (no IndexNow key). `fakeTransports(db)` in tests returns the transports directly.
+
+## 15. Update 2026-11-05 (Hub-and-Spoke SEO / International AEO, D-182)
+Read `docs/decisions.md` (D-182) and `seo-aeo-hub-spoke-plan.md`.
+- **Topical Authority Architecture:** Enforced clean B2C Fashion Hub (thepoojaedit.in) vs B2B Creator Hub (studio.thepoojaedit.in). Main top navigation strictly keeps video editing out of fashion navigation (footer link only).
+- **Homepage Semantic Weight:** Enabled `styling` section by default in `DEFAULT_HOME_SECTIONS` with targeted H2 "Virtual Styling & Wardrobe Edits" and international copy.
+- **Geo-targeted Styling Guides:** Added `/styling/usa` (closet cleanout, pants, sneakers, jewelry, EST/CST/PST scheduling, USD payment notes) and `/styling/uk` (wardrobe edit, trousers, trainers, jewellery, GMT/BST scheduling, GBP payment notes). Both auto-included in `sitemap.ts`.
+- **Vanity URL Rewrites:** Added `/virtual-styling` -> `/styling` and `/virtual-styling/:slug*` -> `/styling/:slug*` in `next.config.ts`.
+- **International Structured Data:** Updated `stylingServicesJsonLd` with international `areaServed` (US, GB, AU, CA, AE, IN) and virtual video consultation channels. Updated studio `studioJsonLd` with global creator service targeting.
+- **Conversational RAG Seeding:** Added conversational Q&As on USA/UK virtual styling and purchasing Label clothing during styling sessions.
+- **Studio Deploy:** Not deployed (only deploy studio on owner request). Studio typecheck verified passing.

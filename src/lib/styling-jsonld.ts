@@ -63,12 +63,28 @@ export function stylingServicesJsonLd(
       areaServed: [
         { "@type": "City", name: "Gurugram" },
         { "@type": "AdministrativeArea", name: "Delhi NCR" },
+        { "@type": "Country", name: "United States", identifier: "US" },
+        { "@type": "Country", name: "United Kingdom", identifier: "GB" },
+        { "@type": "Country", name: "Australia", identifier: "AU" },
+        { "@type": "Country", name: "Canada", identifier: "CA" },
+        { "@type": "Country", name: "United Arab Emirates", identifier: "AE" },
+        { "@type": "Country", name: "India", identifier: "IN" },
       ],
-      availableChannel: {
-        "@type": "ServiceChannel",
-        serviceUrl: `${base}/styling`,
-        name: "In person in Delhi NCR, or online over video call",
-      },
+      availableChannel: [
+        {
+          "@type": "ServiceChannel",
+          serviceUrl: `${base}/styling`,
+          name: "Virtual video consultations worldwide (EST, CST, PST, GMT, AEST, IST)",
+        },
+        {
+          "@type": "ServiceChannel",
+          serviceLocation: {
+            "@type": "Place",
+            name: "Delhi NCR / Gurugram",
+          },
+          name: "In person in Delhi NCR and Gurugram",
+        },
+      ],
       offers: priceOf(o.fee),
     })),
   };
@@ -91,12 +107,44 @@ export function faqPageJsonLd(faqs: Question[]) {
   };
 }
 
+export type StylingAreaServed = "worldwide" | "ncr" | "usa" | "uk";
+
 interface GuideMeta {
   slug: string;
   name: string;
   answer: string;
   faqs: Question[];
-  service?: { name: string; areaServed: "worldwide" | "ncr" };
+  service?: { name: string; areaServed: StylingAreaServed };
+}
+
+function resolveGuideAreaServed(areaServed: StylingAreaServed) {
+  switch (areaServed) {
+    case "usa":
+      return [
+        { "@type": "Country", name: "United States", identifier: "US" },
+        { "@type": "Country", name: "Canada", identifier: "CA" },
+      ];
+    case "uk":
+      return [
+        { "@type": "Country", name: "United Kingdom", identifier: "GB" },
+        { "@type": "Country", name: "Ireland", identifier: "IE" },
+      ];
+    case "worldwide":
+      return [
+        { "@type": "Country", name: "United States", identifier: "US" },
+        { "@type": "Country", name: "United Kingdom", identifier: "GB" },
+        { "@type": "Country", name: "Australia", identifier: "AU" },
+        { "@type": "Country", name: "Canada", identifier: "CA" },
+        { "@type": "Country", name: "United Arab Emirates", identifier: "AE" },
+        { "@type": "Country", name: "India", identifier: "IN" },
+      ];
+    case "ncr":
+    default:
+      return [
+        { "@type": "City", name: "Gurugram" },
+        { "@type": "AdministrativeArea", name: "Delhi NCR" },
+      ];
+  }
 }
 
 /** A /styling/<slug> guide: breadcrumb, its questions and, for a service page, the Service. */
@@ -125,20 +173,7 @@ export function stylingGuideJsonLd(g: GuideMeta, base: string, providerId: strin
       serviceType: "Personal styling and shopping",
       provider: { "@id": providerId },
       url,
-      areaServed:
-        g.service.areaServed === "worldwide"
-          ? [
-              { "@type": "Country", name: "Australia" },
-              { "@type": "Country", name: "United Kingdom" },
-              { "@type": "Country", name: "United States" },
-              { "@type": "Country", name: "Canada" },
-              { "@type": "Country", name: "United Arab Emirates" },
-              { "@type": "Country", name: "India" },
-            ]
-          : [
-              { "@type": "City", name: "Gurugram" },
-              { "@type": "AdministrativeArea", name: "Delhi NCR" },
-            ],
+      areaServed: resolveGuideAreaServed(g.service.areaServed),
     });
   }
   return { "@context": "https://schema.org", "@graph": graph };

@@ -79,9 +79,35 @@ describe("stylingGuideJsonLd", () => {
       "@type": string;
       url: string;
       provider: object;
+      areaServed: { name: string; identifier?: string }[];
     };
     expect(service["@type"]).toBe("Service");
     expect(service.url).toBe("https://x.test/styling/nri");
     expect(service.provider).toEqual({ "@id": "https://x.test#p" });
+    expect(service.areaServed.map((a) => a.identifier || a.name)).toContain("US");
+  });
+
+  it("targets USA specifically for usa service pages", () => {
+    const ld = stylingGuideJsonLd(
+      { ...g, slug: "usa", service: { name: "Virtual styling USA", areaServed: "usa" } },
+      "https://x.test",
+      "https://x.test#p",
+    );
+    const service = ld["@graph"][2] as {
+      areaServed: { name: string; identifier?: string }[];
+    };
+    expect(service.areaServed.map((a) => a.identifier)).toEqual(["US", "CA"]);
+  });
+
+  it("targets UK specifically for uk service pages", () => {
+    const ld = stylingGuideJsonLd(
+      { ...g, slug: "uk", service: { name: "Virtual styling UK", areaServed: "uk" } },
+      "https://x.test",
+      "https://x.test#p",
+    );
+    const service = ld["@graph"][2] as {
+      areaServed: { name: string; identifier?: string }[];
+    };
+    expect(service.areaServed.map((a) => a.identifier)).toEqual(["GB", "IE"]);
   });
 });

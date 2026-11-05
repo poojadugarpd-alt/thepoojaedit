@@ -41,7 +41,7 @@ export interface Guide {
   sections: GuideSection[];
   faqs: Faq[];
   /** Adds Service JSON-LD for pages that describe a service. */
-  service?: { name: string; areaServed: "worldwide" | "ncr" };
+  service?: { name: string; areaServed: "worldwide" | "ncr" | "usa" | "uk" };
 }
 
 const PLACES =
@@ -66,6 +66,14 @@ export const DELHI_WEDDING_GUIDE: GuideLink = {
 export const ONLINE_GUIDE: GuideLink = {
   href: "/styling/online",
   label: "Online personal styling",
+};
+export const USA_GUIDE: GuideLink = {
+  href: "/styling/usa",
+  label: "Virtual styling & closet cleanout for USA",
+};
+export const UK_GUIDE: GuideLink = {
+  href: "/styling/uk",
+  label: "Virtual styling & wardrobe edit for UK",
 };
 export const SHOPPER_GUIDE: GuideLink = {
   href: "/styling/personal-shopper-india",
@@ -693,6 +701,136 @@ export const guides: Guide[] = [
       },
     ],
   },
+  {
+    slug: "usa",
+    title: "Virtual Personal Stylist USA | Pooja Dugar",
+    description:
+      "Virtual personal styling, online closet cleanouts and Indian wear shopping for US clients. EST/PST friendly hours and international doorstep delivery.",
+    name: "Virtual styling (USA)",
+    eyebrow: "USA & Canada",
+    h1: "Virtual Personal Styling & Closet Cleanout for the USA",
+    answer:
+      "Online personal styling, virtual closet cleanouts and Indian wear shopping for clients across the United States. Designed for real life, work, vacations and weddings — scheduled conveniently around EST, CST and PST time zones with door-to-door courier delivery.",
+    service: {
+      name: "Virtual personal styling and shopping (USA)",
+      areaServed: "usa",
+    },
+    sections: [
+      {
+        kind: "steps",
+        heading: "How virtual styling works across US time zones",
+        items: [
+          "Send an enquiry with your styling goals, wardrobe challenges, your sizes and a few reference pictures.",
+          "We connect on a video call scheduled comfortably in your timezone (EST, CST or PST), including weekend slots.",
+          "We audit your closet, evaluate what fits your lifestyle and curate fresh outfit combinations from what you own.",
+          "I build a targeted shopping list for missing essentials or source authentic Indian designer pieces directly in Delhi.",
+          "Custom alterations and measurements are handled in India, followed by express door-to-door courier delivery.",
+        ],
+      },
+      {
+        kind: "list",
+        heading: "What we cover in virtual styling",
+        items: [
+          "Virtual closet cleanout: decluttering, reorganising and identifying your key wardrobe gaps",
+          "Outfit pairing: fresh combinations using your current pants, tops, blazers, sneakers and jewelry",
+          "Indian festive and wedding shopping: lehengas, sarees, suits and custom blouses sourced from Delhi",
+          "Vacation and capsule wardrobe planning for travel and seasonal transitions",
+          "Curated styling with small-batch pieces from The Label at The Pooja Edit",
+        ],
+      },
+      {
+        kind: "fees",
+        heading: "Consultation fees and booking",
+        extra:
+          "Fees are billed transparently in INR via secure online checkout. Major US cards, Apple Pay and international payments are supported with automatic currency conversion by your bank.",
+      },
+      { kind: "testimonials", heading: "Kind words from clients" },
+    ],
+    faqs: [
+      {
+        q: "How does virtual styling work for clients in the USA?",
+        a: "We connect over video calls (Zoom or Google Meet) at times convenient for Eastern, Central or Pacific time. You show me your closet, or we review photos and shortlists on WhatsApp.",
+      },
+      {
+        q: "How do you handle time zone differences for wardrobe edits?",
+        a: "Appointments are scheduled during evening IST hours that match US mornings (EST/CST), or on weekends to comfortably fit West Coast (PST) clients.",
+      },
+      {
+        q: "Can a virtual styling consultation include sourcing Indian clothes and shipping to the US?",
+        a: "Yes. I shop the Delhi designer stores for you, oversee custom alterations to your measurements, and send everything via tracked courier (DHL/FedEx).",
+        link: WEDDING_GUIDE,
+      },
+      {
+        q: "Can I buy pieces from The Pooja Edit during a styling session?",
+        a: "Yes. Many US clients combine virtual consultations with pieces from The Label or pre-loved Closet, consolidating everything into a single international shipment.",
+      },
+    ],
+  },
+  {
+    slug: "uk",
+    title: "Virtual Personal Stylist UK | Pooja Dugar",
+    description:
+      "Virtual personal styling, online wardrobe edits and Indian wedding shopping for UK clients. GMT/BST appointment hours and international courier delivery.",
+    name: "Virtual styling (UK)",
+    eyebrow: "UK & Europe",
+    h1: "Virtual Personal Styling & Wardrobe Edits for the UK",
+    answer:
+      "Online styling consultations, virtual wardrobe edits and Indian wedding shopping for clients in the UK and Europe. Practical, tailored styling advice scheduled around GMT and BST hours, with custom garments and shopping couriered directly to you.",
+    service: {
+      name: "Virtual personal styling and shopping (UK)",
+      areaServed: "uk",
+    },
+    sections: [
+      {
+        kind: "steps",
+        heading: "How online styling works for UK clients",
+        items: [
+          "Send an enquiry outlining your style goals, upcoming events, sizes and preferences.",
+          "We meet on a 1-on-1 virtual consultation during convenient UK daytime or evening hours (GMT/BST).",
+          "We conduct a thorough wardrobe edit: categorising what works, what needs tailoring and what essentials are missing.",
+          "I build a style guide with outfit combinations (incorporating your jackets, trousers, knitwear and trainers) plus targeted shopping picks.",
+          "For Indian ethnic and bridal wear, I shop Delhi's markets and boutiques, oversee fittings and dispatch to the UK.",
+        ],
+      },
+      {
+        kind: "list",
+        heading: "Services for UK & European clients",
+        items: [
+          "Virtual wardrobe edit: sorting seasonal pieces, tailoring priorities and everyday essentials",
+          "Workwear and smart-casual styling: chic outfits with tailored trousers, dresses, knitwear and layers",
+          "Indian wedding and festive shopping: bespoke lehengas, sarees, shararas and jewellery from India",
+          "Holiday wardrobe edits: effortless packing lists for European getaways and destination weddings",
+          "Styling with exclusive small-batch designs from The Label at The Pooja Edit",
+        ],
+      },
+      {
+        kind: "fees",
+        heading: "Fees and booking",
+        extra:
+          "Fees are billed in INR via secure online checkout. Major UK debit/credit cards and international payments are supported with automatic currency conversion to GBP.",
+      },
+      { kind: "testimonials", heading: "Kind words from clients" },
+    ],
+    faqs: [
+      {
+        q: "How does virtual styling work for clients in the UK?",
+        a: "Consultations take place over video call during UK-friendly hours. We evaluate your wardrobe, discuss your personal aesthetic and curate outfits from your clothes plus targeted additions.",
+      },
+      {
+        q: "How do time zones work between India and the UK?",
+        a: "India is only 4.5 to 5.5 hours ahead of the UK (depending on BST/GMT). Afternoon and evening UK slots align comfortably with my Indian studio hours.",
+      },
+      {
+        q: "Can you help shop for Indian weddings from London or elsewhere in the UK?",
+        a: "Yes. I act as your personal shopper on the ground in Delhi, managing measurements and fittings, and sending your outfits via express courier.",
+        link: WEDDING_GUIDE,
+      },
+      {
+        q: "Can I purchase Label pieces and styling services together?",
+        a: "Yes. You can book styling and purchase Label kurtis or sets in the same workflow, saving on consolidated international shipping.",
+      },
+    ],
+  },
 ];
 
 export function getGuide(slug: string): Guide | undefined {
@@ -705,6 +843,8 @@ export const WHERE_I_WORK =
 
 export const STYLING_LINKS: GuideLink[] = [
   NRI_GUIDE,
+  USA_GUIDE,
+  UK_GUIDE,
   WEDDING_GUIDE,
   DELHI_WEDDING_GUIDE,
   ONLINE_GUIDE,
@@ -724,6 +864,20 @@ export const stylingFaqs: Faq[] = [
     q: "Can you shop for me if I live abroad?",
     a: "Yes. Most of my clients live abroad. I shop over a video call or send photo shortlists on WhatsApp, have pieces altered here, and courier them to you.",
     link: NRI_GUIDE,
+  },
+  {
+    q: "How does virtual styling work for clients in the USA or Canada?",
+    a: "We connect over video calls (Zoom or Google Meet) at hours that fit your schedule in Eastern, Central or Pacific time. We review your closet or shortlist outfits on WhatsApp.",
+    link: USA_GUIDE,
+  },
+  {
+    q: "How do you handle time zone differences for US (EST/PST) and UK (GMT) clients?",
+    a: "My consultation calendar includes early evening IST slots that match US mornings (EST/CST) and UK afternoons/evenings (GMT/BST), plus weekend options.",
+    link: UK_GUIDE,
+  },
+  {
+    q: "Can I book virtual styling and purchase clothes from The Pooja Edit together?",
+    a: "Yes. Many international clients combine virtual consultations with pieces from The Label or pre-loved Closet, packing everything into a single international shipment.",
   },
   {
     q: "What does a personal stylist do?",
