@@ -201,7 +201,7 @@ export const guides: Guide[] = [
     slug: "personal-stylist-cost",
     title: "Personal Stylist Cost in Delhi NCR (₹5,000–₹50,000)",
     description:
-      "How much does a personal or fashion stylist cost in Delhi NCR? Online sessions start near ₹1,000; shopping in person is ₹10,000–₹50,000. See what's included.",
+      "How much does a personal stylist cost in Delhi NCR? My fees: ₹5,000–₹10,000 for a new wardrobe, ₹10,000–₹50,000 for shopping in person.",
     name: "What it costs",
     eyebrow: "Fees",
     h1: "How much does a personal stylist cost in Delhi NCR?",
