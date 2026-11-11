@@ -20,6 +20,8 @@ export default function robots(): MetadataRoute.Robots {
         "/legacy-media/",
         "/order/",
         "/track-order",
+        "/preview",
+        "/preview/",
       ],
     },
     sitemap: `${base}/sitemap.xml`,
