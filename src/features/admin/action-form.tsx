@@ -10,23 +10,27 @@ function Submit({
   label,
   holdToSubmit = false,
   holdDescription,
+  actionVerb,
   compact = false,
 }: {
   label: string;
   holdToSubmit?: boolean;
   holdDescription?: string;
+  actionVerb?: "delete" | "cancel" | string;
   compact?: boolean;
 }) {
   const { pending } = useFormStatus();
 
   if (holdToSubmit) {
+    const verbLabel = label.toLowerCase().replace(/^hold to /, "");
     return (
       <HoldToDelete
         isSubmit
         label={label}
-        holdingLabel={`Holding to ${label.toLowerCase()}…`}
+        holdingLabel={`Holding to ${verbLabel}…`}
         completedLabel="Confirmed"
         itemDescription={holdDescription || "item"}
+        actionVerb={actionVerb}
         compact={compact}
         disabled={pending}
       />
@@ -53,6 +57,7 @@ export function ActionForm({
   reloadOnSuccess = false,
   holdToSubmit = false,
   holdDescription,
+  actionVerb,
 }: {
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   submitLabel?: string;
@@ -69,6 +74,8 @@ export function ActionForm({
   holdToSubmit?: boolean;
   /** Descriptive item name for accessibility and screen readers */
   holdDescription?: string;
+  /** Action verb for accessibility announcements (e.g. "delete" | "cancel") */
+  actionVerb?: "delete" | "cancel" | string;
 }) {
   const [state, formAction] = useActionState(action, { ok: false });
   useEffect(() => {
@@ -85,13 +92,18 @@ export function ActionForm({
   };
 
   return (
-    <form action={formAction} onKeyDown={handleKeyDown} className={`space-y-3 ${className}`}>
+    <form
+      action={formAction}
+      onKeyDown={handleKeyDown}
+      className={`space-y-3 ${className}`}
+    >
       {children}
       <div className={`flex items-center gap-3 ${compact ? "" : "pt-1"}`}>
         <Submit
           label={submitLabel}
           holdToSubmit={holdToSubmit}
           holdDescription={holdDescription}
+          actionVerb={actionVerb}
           compact={compact}
         />
         {state.message && (

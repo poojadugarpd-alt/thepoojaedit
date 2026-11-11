@@ -47,6 +47,7 @@ export function DeleteProductConfirm({
           submitLabel="Hold to delete permanently"
           compact
           holdToSubmit
+          actionVerb="delete"
           holdDescription={productTitle}
         >
           <span />

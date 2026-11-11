@@ -508,6 +508,7 @@ export function ProductEditor({
                         submitLabel="Hold to delete"
                         compact
                         holdToSubmit
+                        actionVerb="delete"
                         holdDescription={`photo ${i + 1}`}
                       >
                         <input type="hidden" name="imageId" value={im.id} />

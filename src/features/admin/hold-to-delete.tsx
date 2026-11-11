@@ -26,6 +26,8 @@ export interface HoldToDeleteProps {
   itemDescription?: string;
   /** When true, completing the hold triggers HTML5 form submission (form.requestSubmit()) */
   isSubmit?: boolean;
+  /** Action verb for accessibility announcements (defaults to "cancel" if label contains cancel, else "delete") */
+  actionVerb?: "delete" | "cancel" | string;
 }
 
 export function HoldToDelete({
@@ -40,15 +42,24 @@ export function HoldToDelete({
   forcedState,
   itemDescription = "item",
   isSubmit = false,
+  actionVerb,
 }: HoldToDeleteProps) {
   const [state, setState] = useState<HoldState>("idle");
   const [progress, setProgress] = useState(0); // 0 to 100
   const buttonRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
   const isHoldingKeyRef = useRef(false);
   const wasDisabledRef = useRef(disabled);
+
+  // Derive action verb for screen reader clarity
+  const verb =
+    actionVerb ?? (label.toLowerCase().includes("cancel") ? "cancel" : "delete");
+  const pastTense =
+    verb === "delete" ? "deleted" : verb === "cancel" ? "cancelled" : `${verb}ed`;
+  const capitalizedVerb = verb.charAt(0).toUpperCase() + verb.slice(1);
 
   // If disabled transitions from true (pending action) back to false (idle), reset completed state
   useEffect(() => {
@@ -74,15 +85,19 @@ export function HoldToDelete({
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
     isHoldingKeyRef.current = false;
 
     if (state === "holding") {
       setState("cancelled");
       setProgress(0);
-      const resetTimer = setTimeout(() => {
+      resetTimerRef.current = setTimeout(() => {
         setState("idle");
+        resetTimerRef.current = null;
       }, 1200);
-      return () => clearTimeout(resetTimer);
     } else if (state !== "completed") {
       setState("idle");
       setProgress(0);
@@ -101,6 +116,10 @@ export function HoldToDelete({
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
     if (isSubmit && buttonRef.current?.form) {
       buttonRef.current.form.requestSubmit();
     } else {
@@ -111,25 +130,30 @@ export function HoldToDelete({
   const startHold = useCallback(() => {
     if (disabled || state === "completed") return;
 
-    // If user prefers reduced motion, skip the animation
-    if (prefersReducedMotion()) {
-      triggerCompletion();
-      return;
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
     }
 
     setState("holding");
     startTimeRef.current = Date.now();
 
-    const updateLoop = () => {
-      const elapsed = Date.now() - startTimeRef.current;
-      const pct = Math.min(100, (elapsed / holdDurationMs) * 100);
-      setProgress(pct);
+    // Respect reduced-motion: skip continuous frame animation, but KEEP the full hold duration
+    const isReduced = prefersReducedMotion();
+    if (!isReduced) {
+      const updateLoop = () => {
+        const elapsed = Date.now() - startTimeRef.current;
+        const pct = Math.min(100, (elapsed / holdDurationMs) * 100);
+        setProgress(pct);
 
-      if (elapsed < holdDurationMs) {
-        animFrameRef.current = requestAnimationFrame(updateLoop);
-      }
-    };
-    animFrameRef.current = requestAnimationFrame(updateLoop);
+        if (elapsed < holdDurationMs) {
+          animFrameRef.current = requestAnimationFrame(updateLoop);
+        }
+      };
+      animFrameRef.current = requestAnimationFrame(updateLoop);
+    } else {
+      setProgress(0);
+    }
 
     timerRef.current = setTimeout(() => {
       triggerCompletion();
@@ -141,6 +165,7 @@ export function HoldToDelete({
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     };
   }, []);
 
@@ -239,7 +264,7 @@ export function HoldToDelete({
         data-testid="hold-to-delete-button"
         data-hold-state={effectiveState}
         data-hold-progress={Math.round(effectiveProgress)}
-        aria-label={`Hold for 1 second to delete ${itemDescription}`}
+        aria-label={`Hold for 1 second to ${verb} ${itemDescription}`}
         className={`group relative overflow-hidden select-none rounded border font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-strong active:scale-[0.99] touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${heightClass} ${
           effectiveState === "completed"
             ? "border-stop bg-stop text-ground"
@@ -257,7 +282,7 @@ export function HoldToDelete({
         {/* Layer 2: Clip-path progress fill with perfectly aligned white text */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 flex items-center justify-center bg-stop text-ground font-semibold transition-[clip-path] ease-linear"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center bg-stop text-ground font-semibold transition-[clip-path] ease-linear motion-reduce:transition-none"
           style={{
             clipPath: `inset(0 ${100 - effectiveProgress}% 0 0)`,
             transitionDuration:
@@ -271,12 +296,12 @@ export function HoldToDelete({
       {/* Screen reader live region for keyboard & assistive technology users */}
       <div className="sr-only" aria-live="polite" role="status">
         {effectiveState === "holding"
-          ? "Holding to delete… keep holding for 1 second."
+          ? `Holding to ${verb}… keep holding for 1 second.`
           : effectiveState === "completed"
-            ? `${itemDescription} deleted.`
+            ? `${itemDescription} ${pastTense}.`
             : effectiveState === "cancelled"
-              ? "Delete action cancelled."
-              : `Press and hold Space or Enter for 1 second to delete ${itemDescription}.`}
+              ? `${capitalizedVerb} action cancelled.`
+              : `Press and hold Space or Enter for 1 second to ${verb} ${itemDescription}.`}
       </div>
     </div>
   );

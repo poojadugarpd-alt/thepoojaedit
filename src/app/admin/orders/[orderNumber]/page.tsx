@@ -244,6 +244,7 @@ export default async function AdminOrderDetail({
                     action={cancelOrderAction}
                     submitLabel="Hold to cancel order"
                     holdToSubmit
+                    actionVerb="cancel"
                     holdDescription={`order ${order.orderNumber}`}
                   >
                     {hidden}
