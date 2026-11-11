@@ -108,17 +108,24 @@ function ThriftDetailsBlock({
   const flaws = Array.isArray(thrift.flaws)
     ? (thrift.flaws as { description?: string }[])
     : [];
+  // Imported pieces carry a placeholder note and an unverified default grade;
+  // show Condition only when someone actually recorded it.
+  const conditionRecorded = !/not recorded in the source listing/i.test(
+    thrift.conditionNotes ?? "",
+  );
   return (
     <section className="mt-16 border-t border-line pt-10">
       <h2 className="u-label">The details</h2>
       <dl className="mt-6 grid gap-6 text-[0.95rem] text-ink sm:grid-cols-2">
-        <div>
-          <dt className="u-label">Condition</dt>
-          <dd className="mt-1">
-            {CONDITION_LABEL[thrift.conditionGrade] ?? thrift.conditionGrade}
-            {thrift.conditionNotes ? ` — ${thrift.conditionNotes}` : ""}
-          </dd>
-        </div>
+        {conditionRecorded && (
+          <div>
+            <dt className="u-label">Condition</dt>
+            <dd className="mt-1">
+              {CONDITION_LABEL[thrift.conditionGrade] ?? thrift.conditionGrade}
+              {thrift.conditionNotes ? ` — ${thrift.conditionNotes}` : ""}
+            </dd>
+          </div>
+        )}
         {thrift.originalBrand && (
           <div>
             <dt className="u-label">Original brand</dt>
