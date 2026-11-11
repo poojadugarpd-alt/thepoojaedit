@@ -505,8 +505,10 @@ export function ProductEditor({
                       )}
                       <ActionForm
                         action={deleteImageAction.bind(null, productId!)}
-                        submitLabel="Delete"
+                        submitLabel="Hold to delete"
                         compact
+                        holdToSubmit
+                        holdDescription={`photo ${i + 1}`}
                       >
                         <input type="hidden" name="imageId" value={im.id} />
                       </ActionForm>

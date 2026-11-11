@@ -16,7 +16,7 @@ export interface ReceiptItem {
 
 export interface ReceiptData {
   orderNumber: string;
-  placedAt: string | Date;
+  placedAt: string | Date | null;
   items: ReceiptItem[];
   subtotalPaise: number;
   discountPaise?: number;
@@ -25,7 +25,15 @@ export interface ReceiptData {
   taxPaise: number;
   totalPaise: number;
   paymentMethod: "PREPAID_RAZORPAY" | "COD";
-  paymentStatus: "PAID" | "UNPAID" | "PENDING" | "FAILED" | "REFUNDED";
+  paymentStatus:
+    | "PAID"
+    | "UNPAID"
+    | "PENDING"
+    | "AUTHORIZED"
+    | "COD_PENDING"
+    | "FAILED"
+    | "REFUNDED"
+    | string;
   customerName?: string | null;
   city?: string | null;
 }
@@ -95,8 +103,11 @@ export function Receipt({
         ? "max-h-[360px] opacity-100 scale-[0.995]"
         : "max-h-[850px] opacity-100 scale-100";
 
-  const dateObj =
-    typeof data.placedAt === "string" ? new Date(data.placedAt) : data.placedAt;
+  const dateObj = data.placedAt
+    ? typeof data.placedAt === "string"
+      ? new Date(data.placedAt)
+      : data.placedAt
+    : new Date();
   const formattedDate = dateObj.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",

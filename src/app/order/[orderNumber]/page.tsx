@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatPaiseINR } from "@/lib/money";
 import { CATALOG_LABEL } from "@/lib/catalog-routes";
 import { ResumePayment } from "@/features/checkout/resume-payment";
+import { Receipt } from "@/features/checkout/receipt";
 import { getCurrentCustomer } from "@/server/auth/current-customer";
 import { ResourceNotFoundError } from "@/server/auth/errors";
 import { getViewableOrderForCustomer, getViewableOrderForGuest } from "@/server/orders";
@@ -74,6 +75,13 @@ export default async function OrderPage({ params, searchParams }: Params) {
         ? "Payment received — your order is confirmed."
         : null;
 
+  // Receipt prints only on confirmed paid orders (D-149 / D-150 / D-154):
+  // Suppressed if awaiting payment, on hold for review, failed, cancelled, or refunded.
+  const isConfirmedPaid =
+    (order.orderStatus === "CONFIRMED" || order.orderStatus === "COMPLETED") &&
+    order.paymentStatus === "PAID" &&
+    !review;
+
   return (
     <div className="u-page max-w-2xl py-14 sm:py-20">
       <h1 className="u-h2">Order {order.orderNumber}</h1>
@@ -85,6 +93,36 @@ export default async function OrderPage({ params, searchParams }: Params) {
         >
           {banner}
         </p>
+      )}
+
+      {isConfirmedPaid && (
+        <section aria-label="Order receipt" className="my-8 flex justify-center">
+          <Receipt
+            data={{
+              orderNumber: order.orderNumber,
+              placedAt: order.placedAt,
+              items: order.items.map((i) => ({
+                id: i.id,
+                title: i.title,
+                size: i.size,
+                quantity: i.quantity,
+                catalog: i.catalog,
+                unitPricePaise: i.unitPricePaise,
+                totalPaise: i.totalPaise,
+              })),
+              subtotalPaise: order.subtotalPaise,
+              discountPaise: order.discountPaise,
+              discountCode: order.discountCode,
+              shippingPaise: order.shippingPaise,
+              taxPaise: order.taxPaise,
+              totalPaise: order.totalPaise,
+              paymentMethod: order.paymentMethod,
+              paymentStatus: order.paymentStatus,
+              customerName: shipping?.name ?? billing?.name ?? null,
+              city: shipping?.city ?? billing?.city ?? null,
+            }}
+          />
+        </section>
       )}
 
       {awaitingPrepaid && (

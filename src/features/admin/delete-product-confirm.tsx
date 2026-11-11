@@ -42,7 +42,13 @@ export function DeleteProductConfirm({
         storage too. This cannot be undone.
       </p>
       <div className="flex flex-wrap items-center gap-3">
-        <ActionForm action={deleteAction} submitLabel="Yes, delete permanently" compact>
+        <ActionForm
+          action={deleteAction}
+          submitLabel="Hold to delete permanently"
+          compact
+          holdToSubmit
+          holdDescription={productTitle}
+        >
           <span />
         </ActionForm>
         <button
