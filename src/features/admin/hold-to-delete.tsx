@@ -12,7 +12,7 @@ import {
 export type HoldState = "idle" | "holding" | "completed" | "cancelled";
 
 export interface HoldToDeleteProps {
-  onTrigger: () => void | Promise<void>;
+  onTrigger?: () => void | Promise<void>;
   label?: string;
   holdingLabel?: string;
   completedLabel?: string;
@@ -24,6 +24,8 @@ export interface HoldToDeleteProps {
   forcedState?: "rest" | "mid" | "completed" | "cancelled";
   /** Descriptive item name for accessibility (e.g. "Closet piece", "order", "photo") */
   itemDescription?: string;
+  /** When true, completing the hold triggers HTML5 form submission (form.requestSubmit()) */
+  isSubmit?: boolean;
 }
 
 export function HoldToDelete({
@@ -37,13 +39,25 @@ export function HoldToDelete({
   compact = false,
   forcedState,
   itemDescription = "item",
+  isSubmit = false,
 }: HoldToDeleteProps) {
   const [state, setState] = useState<HoldState>("idle");
   const [progress, setProgress] = useState(0); // 0 to 100
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
   const isHoldingKeyRef = useRef(false);
+  const wasDisabledRef = useRef(disabled);
+
+  // If disabled transitions from true (pending action) back to false (idle), reset completed state
+  useEffect(() => {
+    if (wasDisabledRef.current && !disabled && state === "completed") {
+      setState("idle");
+      setProgress(0);
+    }
+    wasDisabledRef.current = disabled;
+  }, [disabled, state]);
 
   // Check prefers-reduced-motion
   const prefersReducedMotion = useCallback(() => {
@@ -87,8 +101,12 @@ export function HoldToDelete({
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
-    void onTrigger();
-  }, [onTrigger]);
+    if (isSubmit && buttonRef.current?.form) {
+      buttonRef.current.form.requestSubmit();
+    } else {
+      void onTrigger?.();
+    }
+  }, [isSubmit, onTrigger]);
 
   const startHold = useCallback(() => {
     if (disabled || state === "completed") return;
@@ -209,6 +227,7 @@ export function HoldToDelete({
   return (
     <div className="inline-flex flex-col items-start gap-1">
       <button
+        ref={buttonRef}
         type="button"
         disabled={disabled || effectiveState === "completed"}
         onPointerDown={handlePointerDown}

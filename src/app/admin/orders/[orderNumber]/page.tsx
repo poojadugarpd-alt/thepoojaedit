@@ -240,7 +240,12 @@ export default async function AdminOrderDetail({
               {!["CANCELLED", "COMPLETED"].includes(order.orderStatus) &&
                 (order.fulfillmentStatus === "UNFULFILLED" ||
                   order.fulfillmentStatus === "PROCESSING") && (
-                  <ActionForm action={cancelOrderAction} submitLabel="Cancel order">
+                  <ActionForm
+                    action={cancelOrderAction}
+                    submitLabel="Hold to cancel order"
+                    holdToSubmit
+                    holdDescription={`order ${order.orderNumber}`}
+                  >
                     {hidden}
                     {order.fulfillmentStatus === "PROCESSING" &&
                       (shipment?.provider === MANUAL_PROVIDER ? (

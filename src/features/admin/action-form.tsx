@@ -4,9 +4,35 @@ import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 
 import type { ActionState } from "@/app/admin/products/actions";
+import { HoldToDelete } from "@/features/admin/hold-to-delete";
 
-function Submit({ label }: { label: string }) {
+function Submit({
+  label,
+  holdToSubmit = false,
+  holdDescription,
+  compact = false,
+}: {
+  label: string;
+  holdToSubmit?: boolean;
+  holdDescription?: string;
+  compact?: boolean;
+}) {
   const { pending } = useFormStatus();
+
+  if (holdToSubmit) {
+    return (
+      <HoldToDelete
+        isSubmit
+        label={label}
+        holdingLabel={`Holding to ${label.toLowerCase()}…`}
+        completedLabel="Confirmed"
+        itemDescription={holdDescription || "item"}
+        compact={compact}
+        disabled={pending}
+      />
+    );
+  }
+
   return (
     <button
       type="submit"
@@ -25,6 +51,8 @@ export function ActionForm({
   className = "",
   compact = false,
   reloadOnSuccess = false,
+  holdToSubmit = false,
+  holdDescription,
 }: {
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   submitLabel?: string;
@@ -37,16 +65,35 @@ export function ActionForm({
    *  revalidated action data, or router.refresh() alike (no error; blank page
    *  or stale list). A reload always shows the server's current state (D-155). */
   reloadOnSuccess?: boolean;
+  /** When true, the submit button requires holding for ~1s before executing */
+  holdToSubmit?: boolean;
+  /** Descriptive item name for accessibility and screen readers */
+  holdDescription?: string;
 }) {
   const [state, formAction] = useActionState(action, { ok: false });
   useEffect(() => {
     if (reloadOnSuccess && state.ok) window.location.reload();
   }, [reloadOnSuccess, state]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (holdToSubmit && e.key === "Enter") {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        e.preventDefault();
+      }
+    }
+  };
+
   return (
-    <form action={formAction} className={`space-y-3 ${className}`}>
+    <form action={formAction} onKeyDown={handleKeyDown} className={`space-y-3 ${className}`}>
       {children}
       <div className={`flex items-center gap-3 ${compact ? "" : "pt-1"}`}>
-        <Submit label={submitLabel} />
+        <Submit
+          label={submitLabel}
+          holdToSubmit={holdToSubmit}
+          holdDescription={holdDescription}
+          compact={compact}
+        />
         {state.message && (
           <span className={`text-sm ${state.ok ? "text-ok" : "text-stop"}`}>
             {state.message}
