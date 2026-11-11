@@ -40,7 +40,9 @@ describe("Receipt component", () => {
   };
 
   it("renders order header, order number, and customer city", () => {
-    const html = renderToStaticMarkup(<Receipt data={sampleData} animationState="final" />);
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
 
     expect(html).toContain("The Pooja Edit");
     expect(html).toContain("thepoojaedit.in");
@@ -49,7 +51,9 @@ describe("Receipt component", () => {
   });
 
   it("renders line items with quantities, sizes, and catalog tags", () => {
-    const html = renderToStaticMarkup(<Receipt data={sampleData} animationState="final" />);
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
 
     expect(html).toContain("Raw Silk Kurta Set");
     expect(html).toContain("The Label · M");
@@ -58,7 +62,9 @@ describe("Receipt component", () => {
   });
 
   it("renders accurate pricing calculations with Indian rupee formatting", () => {
-    const html = renderToStaticMarkup(<Receipt data={sampleData} animationState="final" />);
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
 
     // Subtotal: ₹18,300
     expect(html).toContain("₹18,300");
@@ -72,7 +78,9 @@ describe("Receipt component", () => {
   });
 
   it("includes accessible markup, role, and screenshot cues", () => {
-    const html = renderToStaticMarkup(<Receipt data={sampleData} animationState="final" />);
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
 
     expect(html).toContain('role="region"');
     expect(html).toContain('aria-label="Official receipt for order PE-261111-8K92F1"');
@@ -81,9 +89,29 @@ describe("Receipt component", () => {
   });
 
   it("renders serrated physical tear-off bottom edge", () => {
-    const html = renderToStaticMarkup(<Receipt data={sampleData} animationState="final" />);
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
 
     expect(html).toContain("<svg");
     expect(html).toContain("M0,0");
+  });
+
+  it("initializes consistently to start state on initial/server render to prevent hydration mismatch", () => {
+    // When animationState is 'auto', server must render 'start' state
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="auto" />,
+    );
+    expect(html).toContain('data-receipt-state="start"');
+    expect(html).toContain("max-h-[155px]");
+  });
+
+  it("renders final full-height extrusion when final animationState is specified", () => {
+    const html = renderToStaticMarkup(
+      <Receipt data={sampleData} animationState="final" />,
+    );
+    expect(html).toContain('data-receipt-state="final"');
+    expect(html).toContain("max-h-[850px]");
+    expect(html).toContain("opacity-100");
   });
 });

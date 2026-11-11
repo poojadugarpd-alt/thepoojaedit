@@ -54,15 +54,11 @@ export function Receipt({
   onPrintComplete,
   className = "",
 }: ReceiptProps) {
-  const [internalState, setInternalState] = useState<"start" | "mid" | "final">(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return "final";
-    }
-    return "start";
-  });
+  // Always initialize to "start" on both server and client to prevent React hydration mismatch.
+  // If reduced-motion is detected, useEffect will transition to "final" immediately after mount.
+  const [internalState, setInternalState] = useState<"start" | "mid" | "final">(
+    "start",
+  );
 
   useEffect(() => {
     if (animationState !== "auto") return;
@@ -71,8 +67,11 @@ export function Receipt({
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
-      onPrintComplete?.();
-      return;
+      const reducedTimer = setTimeout(() => {
+        setInternalState("final");
+        onPrintComplete?.();
+      }, 0);
+      return () => clearTimeout(reducedTimer);
     }
 
     const midTimer = setTimeout(() => {
@@ -250,9 +249,7 @@ export function Receipt({
 
               {data.discountPaise && data.discountPaise > 0 ? (
                 <div className="flex justify-between text-ok">
-                  <dt>
-                    Discount {data.discountCode ? `(${data.discountCode})` : ""}
-                  </dt>
+                  <dt>Discount {data.discountCode ? `(${data.discountCode})` : ""}</dt>
                   <dd>-{formatPaiseINR(data.discountPaise)}</dd>
                 </div>
               ) : null}
@@ -302,7 +299,9 @@ export function Receipt({
                 >
                   <polyline points="3.5 8.5 6.5 11.5 12.5 5.5" />
                 </svg>
-                {data.paymentStatus === "PAID" ? "Payment Received" : data.paymentStatus}
+                {data.paymentStatus === "PAID"
+                  ? "Payment Received"
+                  : data.paymentStatus}
               </span>
             </div>
 
@@ -313,7 +312,10 @@ export function Receipt({
           </div>
 
           {/* Jagged Sawtooth Tear-off Edge (Physical receipt perforation) */}
-          <div className="relative h-2 w-full overflow-hidden leading-none" aria-hidden="true">
+          <div
+            className="relative h-2 w-full overflow-hidden leading-none"
+            aria-hidden="true"
+          >
             <svg
               className="w-full h-2 block fill-ground"
               viewBox="0 0 320 8"
