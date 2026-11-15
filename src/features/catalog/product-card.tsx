@@ -47,8 +47,10 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
         {tag && <span className="u-card-tag">{tag}</span>}
       </div>
 
-      <div className="mt-3.5 flex items-baseline gap-3">
-        <h3 className="u-label min-w-0 flex-1 truncate">{product.title}</h3>
+      {/* Phones: name on its own line(s) with the price below it, so the whole
+          name is readable. From the sm breakpoint the price sits beside it. */}
+      <div className="mt-3.5 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+        <h3 className="u-card-title min-w-0 sm:flex-1">{product.title}</h3>
         <Price
           pricePaise={product.fromPricePaise}
           compareAtPaise={product.compareAtPaise}
@@ -57,7 +59,9 @@ export function ProductCard({ product }: { product: PublicProductCard }) {
         />
       </div>
       {product.brand && (
-        <p className="mt-1 truncate text-[0.85rem] text-ink-soft">{product.brand}</p>
+        <p className="mt-1 text-[0.85rem] text-ink-soft [overflow-wrap:anywhere]">
+          {product.brand}
+        </p>
       )}
     </Link>
   );

@@ -195,6 +195,24 @@ body {
   color: var(--ink-soft);
   font-weight: 700;
 }
+/* Product-card name: same look as .u-label, but the FULL name always shows
+   (wraps, never truncates) and is a touch smaller on phones, where two cards
+   share the row. */
+.u-card-title {
+  font-weight: 700;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 639px) {
+  .u-card-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.035em;
+  }
+}
 .u-eyebrow {
   display: inline-block;
   font-weight: 700;
