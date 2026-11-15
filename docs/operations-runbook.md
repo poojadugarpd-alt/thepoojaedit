@@ -35,6 +35,14 @@ Required recurring work (master §8): reservation expiry sweep · outbox dispatc
 
 Wiring: `src/inngest/functions.ts` (job definitions) served at `src/app/api/inngest/route.ts` (`GET/POST/PUT`, `runtime = "nodejs"`, request-signature verified when `INNGEST_SIGNING_KEY` is set). Job bodies are plain, testable functions in `src/server/events/` and `src/server/inventory/` — the Inngest function is only a scheduler + retry wrapper. Register the deployment's `/api/inngest` URL in the Inngest dashboard (or run `npx inngest-cli dev` locally) for the crons to fire.
 
+> **UPDATE 2026-11-15 — the table below is SUPERSEDED for every row except the photo jobs.** The free Inngest plan (50,000 executions/month; a run and each `step.run` count separately) ran out around 8 Nov and Inngest then stopped starting all jobs, so no order emails, admin alerts, phone push, invoices or refund completion went out. New arrangement (`src/server/outbox-inline.ts`, `src/inngest/functions.ts`):
+>
+> - **Time-critical work runs inside the app.** `appendOrderTimeline` calls `after()` (Next) to run `dispatchInline()` once the response has gone out: notifications (email, admin in-app + phone push), invoice + PDF, shipment, late-capture refund. All consumers are idempotent (`runOnce` / delivery dedupe keys). A failing consumer is retried by the dispatcher's normal backoff.
+> - **One Inngest job remains: `housekeeping`, `*/15 * * * *`, no `step.run`** = 96 runs/day ≈ 2,900/month. It runs the same dispatcher as a safety net, then reservation sweep, cancel-unpaid, outbox health, payment/refund/shipment reconcile, and (first run of each hour) archive-sold-closet.
+> - Admin-started photo jobs (`compress-product-photos`, `move-photos-to-r2`, `list-/delete-supabase-photos`) are unchanged.
+> - **Budget rule:** do not add crons or per-event Inngest functions without redoing the arithmetic. Check usage at app.inngest.com → Billing → Usage.
+> - While Inngest is paused (until the monthly reset) only the in-app path runs; sweep/cancel-unpaid/reconcile wait for the reset.
+
 | Job (Inngest id) | Schedule | Body | Concurrency | Retry / lease | Thresholds |
 | --- | --- | --- | --- | --- | --- |
 | `dispatch-outbox` | `* * * * *` (every 1 min) | `dispatchPending(prisma, { transport: inngestTransport, owner: "cron:dispatch-outbox" })` | 1 (no overlap) | Per outbox event: **8** attempts (`DEFAULTS.maxAttempts`), full-jitter exponential backoff `base 2 s · 2^(n-1)`, capped **5 min**. Claim lease **30 s** (`DEFAULTS.leaseMs`); batch **50** (`DEFAULTS.batchLimit`, hard cap 200). On attempt 8 → outbox `FAILED` + one `OperationalTask` `outbox:<id>` (`JOB_FAILURE`, priority 1). | — |
