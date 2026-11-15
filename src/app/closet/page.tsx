@@ -4,6 +4,7 @@ import {
   CatalogListing,
   type CatalogSearchParams,
 } from "@/features/catalog/catalog-listing";
+import { ShippingBanner } from "@/features/catalog/shipping-banner";
 
 export const metadata: Metadata = {
   title: { absolute: "Curated Thrift Store & Pre-Loved Fashion | Pooja's Closet" },
@@ -23,5 +24,12 @@ export default async function ClosetPage({
 }: {
   searchParams: Promise<CatalogSearchParams>;
 }) {
-  return <CatalogListing catalog="THRIFT" searchParams={await searchParams} />;
+  return (
+    <>
+      <div className="u-page pt-4">
+        <ShippingBanner />
+      </div>
+      <CatalogListing catalog="THRIFT" searchParams={await searchParams} />
+    </>
+  );
 }

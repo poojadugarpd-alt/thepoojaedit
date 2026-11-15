@@ -195,6 +195,53 @@ body {
   color: var(--ink-soft);
   font-weight: 700;
 }
+/* Moving announcement bar (Closet shipping banner). The track holds the same
+   message repeated; it slides left by half its width, so the loop is seamless
+   when the content is two identical halves. Static for reduced motion. */
+.u-marquee {
+  overflow: hidden;
+  background: var(--ink-strong);
+  color: var(--white, #fff);
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+}
+.u-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: u-marquee-slide 28s linear infinite;
+}
+.u-marquee__item {
+  flex: none;
+  padding: 0.6rem 2.25rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.u-marquee__item::after {
+  content: "·";
+  margin-left: 2.25rem;
+  opacity: 0.6;
+}
+@keyframes u-marquee-slide {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .u-marquee__track {
+    animation: none;
+    width: 100%;
+    justify-content: center;
+  }
+  .u-marquee__item:not(:first-child) {
+    display: none;
+  }
+  .u-marquee__item::after {
+    content: none;
+  }
+}
 /* Product-card name: same look as .u-label, but the FULL name always shows
    (wraps, never truncates) and is a touch smaller on phones, where two cards
    share the row. */

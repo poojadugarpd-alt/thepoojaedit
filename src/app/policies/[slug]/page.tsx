@@ -34,12 +34,16 @@ const SHIPPING_FAQ: { q: string; a: string }[] = [
     a: "The Closet (pre-loved) pieces are dispatched within about 2 working days of your order; delivery time then depends on your location.",
   },
   {
+    q: "How much is shipping?",
+    a: "Shipping is a flat ₹100 per order, and free when your cart is ₹3,000 or more (after any discount code).",
+  },
+  {
     q: "What payment methods do you accept?",
     a: "We currently accept online payment only (UPI / card / netbanking) — cash on delivery isn't offered.",
   },
   {
     q: "How can I track my order?",
-    a: "Tracking is via Shadowfax. Shipping charges and serviceable pincodes are shown at checkout.",
+    a: "Tracking is via Shadowfax. Serviceable pincodes and your exact shipping charge are shown at checkout.",
   },
 ];
 

@@ -214,7 +214,7 @@ describe("server-authoritative pricing (AC-06/11)", () => {
   });
 });
 
-describe("shipping fee: Label free, ₹100 once with any Closet item (D-137)", () => {
+describe("shipping fee: flat ₹100, free from ₹3,000 (owner, 2026-11-15)", () => {
   const quoteFor = (lines: { variantId: string; quantity: number }[]) =>
     computeQuote(db, {
       lines,
@@ -222,40 +222,49 @@ describe("shipping fee: Label free, ₹100 once with any Closet item (D-137)", (
       destination: { stateCode: "08", postcode: "302001" },
     });
 
-  it("charges nothing on a Label-only cart", async () => {
-    const label = await makeVariant({ onHand: 5 });
-    const q = await quoteFor([{ variantId: label, quantity: 2 }]);
-    expect(q.shippingPaise).toBe(0);
-  });
-
-  it("charges ₹100 once for Closet items, alone or mixed with Label", async () => {
-    const closetA = await makeVariant({ onHand: 1, oneOfOne: true });
-    const closetB = await makeVariant({ onHand: 1, oneOfOne: true });
-    const label = await makeVariant({ onHand: 5 });
-    const closetOnly = await quoteFor([
-      { variantId: closetA, quantity: 1 },
-      { variantId: closetB, quantity: 1 },
-    ]);
-    expect(closetOnly.shippingPaise).toBe(10_000);
-    const mixed = await quoteFor([
-      { variantId: closetA, quantity: 1 },
-      { variantId: label, quantity: 3 },
-    ]);
-    expect(mixed.shippingPaise).toBe(10_000);
-  });
-
-  it("takes the amounts from the shipping.rules setting", async () => {
-    await db.storeSettings.create({
-      data: { key: "shipping.rules", value: { fees: { labelOnlyPaise: 5_000 } } },
-    });
+  it("charges ₹100 once on any cart under ₹3,000 — Label, Closet or mixed", async () => {
     const label = await makeVariant({ onHand: 5 });
     const closet = await makeVariant({ onHand: 1, oneOfOne: true });
     expect((await quoteFor([{ variantId: label, quantity: 1 }])).shippingPaise).toBe(
-      5_000,
+      10_000,
     );
     expect((await quoteFor([{ variantId: closet, quantity: 1 }])).shippingPaise).toBe(
       10_000,
     );
+    const mixed = await quoteFor([
+      { variantId: closet, quantity: 1 },
+      { variantId: label, quantity: 1 },
+    ]);
+    expect(mixed.shippingPaise).toBe(10_000); // ₹2,998 — just under
+  });
+
+  it("is free once the items reach ₹3,000, exactly or above", async () => {
+    const exact = await makeVariant({ onHand: 5, pricePaise: 150_000 });
+    expect((await quoteFor([{ variantId: exact, quantity: 2 }])).shippingPaise).toBe(0); // ₹3,000
+    const label = await makeVariant({ onHand: 5 });
+    expect((await quoteFor([{ variantId: label, quantity: 3 }])).shippingPaise).toBe(0); // ₹4,497
+  });
+
+  it("still charges just under ₹3,000", async () => {
+    const v = await makeVariant({ onHand: 5, pricePaise: 149_900 });
+    expect((await quoteFor([{ variantId: v, quantity: 2 }])).shippingPaise).toBe(10_000); // ₹2,998
+  });
+
+  it("takes the amounts from the shipping.rules setting", async () => {
+    await db.storeSettings.create({
+      data: { key: "shipping.rules", value: { fees: { flatPaise: 5_000, freeAtPaise: 400_000 } } },
+    });
+    const label = await makeVariant({ onHand: 5 });
+    expect((await quoteFor([{ variantId: label, quantity: 1 }])).shippingPaise).toBe(5_000);
+    expect((await quoteFor([{ variantId: label, quantity: 3 }])).shippingPaise).toBe(0); // ₹4,497 ≥ ₹4,000
+  });
+
+  it("ignores a saved row that only has the old keys", async () => {
+    await db.storeSettings.create({
+      data: { key: "shipping.rules", value: { fees: { labelOnlyPaise: 0, withClosetPaise: 99 } } },
+    });
+    const label = await makeVariant({ onHand: 5 });
+    expect((await quoteFor([{ variantId: label, quantity: 1 }])).shippingPaise).toBe(10_000);
   });
 });
 

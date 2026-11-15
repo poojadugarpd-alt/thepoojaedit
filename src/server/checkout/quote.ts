@@ -285,11 +285,8 @@ export async function computeQuote(
     throw new QuoteError("Cash on delivery is not available for this order.");
   }
 
-  // The provider only answers serviceability/COD; the fee is the store's own
-  // rule — ₹100 once if any Closet piece is in the cart, else free (D-137).
-  const shippingPaise = base.some((l) => l.catalog === "THRIFT")
-    ? shippingRules.fees.withClosetPaise
-    : shippingRules.fees.labelOnlyPaise;
+  // The provider only answers serviceability/COD; the shipping fee is the
+  // store's own rule, applied below once any discount code is known.
 
   // Discount code (D-140): validated against live uses, then spread over the
   // lines it applies to as each line's pre-tax reduction.
@@ -324,6 +321,14 @@ export async function computeQuote(
       throw e;
     }
   }
+
+  // Shipping (owner, 2026-11-15): flat ₹100 per order, free once the items are
+  // worth ₹3,000 or more after any discount code. Same rule for Label and Closet.
+  const itemValueAfterDiscountPaise = orderValueEstimate - discountGrossPaise;
+  const shippingPaise =
+    itemValueAfterDiscountPaise >= shippingRules.fees.freeAtPaise
+      ? 0
+      : shippingRules.fees.flatPaise;
 
   const tax = computeOrderTax({
     lines: taxLines,
