@@ -608,3 +608,13 @@ Read `docs/decisions.md` (D-182) and `seo-aeo-hub-spoke-plan.md`.
 - **Conversational RAG Seeding:** Added conversational Q&As on USA/UK virtual styling and purchasing Label clothing during styling sessions.
 - **Studio Deploy:** Deployed to Cloudflare Workers on owner request (Version ID `5c4be426-cf9d-4782-8099-7c13d20a970d`). Global creator schema (`areaServed: US, GB, AU, CA, IN`) is live.
 - **Track 1 Category Metadata & IndexNow (D-183):** `/label` and `/closet` updated with commercial intent titles and descriptions. IndexNow pinged with HTTP 200 for 8 primary URLs.
+
+## 16. Update 2026-11-15 (checkout fixes, Inngest, Closet drop 2, favicons)
+Read D-184 and D-185 in `docs/decisions.md` and `docs/operations-runbook.md` §3.
+- **Notifications were dead because Inngest Hobby hit its 50k limit (~8 Nov, resets ~1 Dec).** Order emails, admin alert, push, invoice and Shadowfax booking now run in-app (`src/server/outbox-inline.ts`, commit 61eb4ac). Only one Inngest job is left (housekeeping, every 15 min). Until the reset: reconcile jobs and auto-archive of sold Closet pieces are paused. Do not add crons or per-event Inngest functions without redoing the budget arithmetic.
+- **Verified live:** full paid test (PE-261115-ECSFC2, ₹101) passed end to end. A ₹1 paid order books a real Shadowfax pickup and an invoice; cancel the pickup afterwards. Owner still has to refund the ₹101 in Razorpay.
+- **Also shipped:** cart clears when Razorpay is dismissed; flat ₹100 shipping, free from ₹3,000 (D-184); abandoned holds released in-app (D-185); Needs Attention bulk resolve fix (1e1c86c); mobile card names on their own line.
+- **Closet:** 15 Glam21 makeup pieces at 60% off, then drop 2: 17 of 18 knitwear/tops published (₹250-500, no compare-at). Item 10 (grey cable knit) unlisted, owner owes price and bust. 17 Instagram posts rendered, not posted. Workflow and files: `~/Documents/PoojaEdit-archive/PoojaEdit-closet-uploads/README.md`.
+- **Favicons:** store icon (maroon square, beige P) is used on every page, including /styling (c7bb0e2). The studio has its own rose icon (aafcb59, deployed). Chrome's choice between `favicon.ico` and `icon.svg` was not confirmed on a 1x display.
+- **Open:** Google Business Profile "Get verified" (owner); styling page mobile polish, trust/testimonials, Search Console check; confirm Mattitude tube mapping and the Tint It / Whip / Ultra HD shade guesses; the 60% OFF hero post is unposted.
+- **Known:** `tests/integration/settings.itest.ts` "respects a saved order and hidden sections" fails and is unrelated. Locally use `next build --webpack` and system Chrome for Playwright.
