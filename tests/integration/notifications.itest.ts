@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { PrismaClient } from "../../src/generated/prisma";
 import { openOperationalTask } from "../../src/server/events/operational-tasks";
+import { resolveTaskChecked, TaskStillActiveError } from "../../src/server/admin";
 import {
   getNotificationPreference,
   isPushConfigured,
@@ -156,6 +157,46 @@ describe("dedup + failure observability (AC-07/10/14)", () => {
         where: { dedupeKey: `notification:${d.id}`, status: "OPEN" },
       }),
     ).toBe(1);
+  });
+
+  it("a task for an undeliverable email only clears with the override (e.g. a fake test address)", async () => {
+    const t = fakeTransports(db);
+    t.email.failNext = true;
+    await sendNotification(db, t, {
+      eventType: "e",
+      dedupeSeed: "s",
+      channel: "EMAIL",
+      templateKey: "order_confirmation_prepaid",
+      recipient: "test-buyer@example.com",
+      variables: orderVars("PE-1"),
+    });
+    const d = await db.notificationDelivery.findFirstOrThrow();
+    const task = await db.operationalTask.findFirstOrThrow({
+      where: { dedupeKey: `notification:${d.id}` },
+    });
+    const admin = await db.adminUser.create({
+      data: { authUserId: randomUUID(), email: `${randomUUID()}@x.com`, role: "OWNER" },
+    });
+
+    // Without the override the failed email keeps the task open.
+    await expect(
+      resolveTaskChecked(db, { taskId: task.id, adminUserId: admin.id, reason: "test" }),
+    ).rejects.toBeInstanceOf(TaskStillActiveError);
+    expect((await db.operationalTask.findUniqueOrThrow({ where: { id: task.id } })).status).toBe(
+      "OPEN",
+    );
+
+    // With it, the task clears and the override is audited.
+    await resolveTaskChecked(db, {
+      taskId: task.id,
+      adminUserId: admin.id,
+      reason: "fake test address",
+      force: true,
+    });
+    expect((await db.operationalTask.findUniqueOrThrow({ where: { id: task.id } })).status).toBe(
+      "RESOLVED",
+    );
+    expect(await db.adminActivityLog.count({ where: { action: "task.resolve" } })).toBe(1);
   });
 
   it("bad template variables throw TemplateVariableError", async () => {

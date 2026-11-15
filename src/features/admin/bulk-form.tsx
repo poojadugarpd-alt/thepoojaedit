@@ -29,11 +29,14 @@ export function BulkForm({
   items,
   fieldName = "taskIds",
   submitLabel = "Apply to selected",
+  extra,
 }: {
   action: (prev: ActionState, form: FormData) => Promise<ActionState>;
   items: { id: string; node: React.ReactNode }[];
   fieldName?: string;
   submitLabel?: string;
+  /** Extra controls shown in the sticky bar next to the button (e.g. an override tick). */
+  extra?: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(action, { ok: false });
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -63,6 +66,24 @@ export function BulkForm({
           />
           <Submit label={submitLabel} disabled={selected.size === 0} />
         </div>
+        {extra}
+        {/* The result sits right under the button, not at the bottom of a long
+            list where it was never seen. */}
+        {state.message && (
+          <p
+            role="status"
+            className={`text-xs font-medium ${state.ok ? "text-ok" : "text-wait"}`}
+          >
+            {state.message}
+          </p>
+        )}
+        {state.errors && state.errors.length > 0 && (
+          <ul className="max-h-28 list-inside list-disc overflow-y-auto text-xs text-stop">
+            {state.errors.map((e, i) => (
+              <li key={i}>{e}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <ul className="divide-y divide-line text-sm">
@@ -90,18 +111,6 @@ export function BulkForm({
         ))}
       </ul>
 
-      {state.message && (
-        <p className={`text-xs ${state.ok ? "text-ok" : "text-wait"}`}>
-          {state.message}
-        </p>
-      )}
-      {state.errors && state.errors.length > 0 && (
-        <ul className="list-inside list-disc text-xs text-stop">
-          {state.errors.map((e, i) => (
-            <li key={i}>{e}</li>
-          ))}
-        </ul>
-      )}
     </form>
   );
 }

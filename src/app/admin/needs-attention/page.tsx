@@ -46,6 +46,13 @@ export default async function NeedsAttentionPage() {
           <BulkForm
             action={bulkResolveTasksAction}
             submitLabel="Resolve selected"
+            extra={
+              <label className="flex min-h-11 items-center gap-2 text-[11px] text-ink">
+                <input type="checkbox" name="force" value="1" className="h-5 w-5" />
+                override — I have checked these are handled (e.g. failed emails to
+                fake test addresses). Needs a reason.
+              </label>
+            }
             items={tasks.map((t) => ({
               id: t.id,
               node: (

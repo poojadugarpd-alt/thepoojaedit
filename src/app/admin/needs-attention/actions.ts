@@ -40,13 +40,18 @@ export async function bulkResolveTasksAction(
   const admin = await requireAdmin();
   const ids = form.getAll("taskIds").map(String).filter(Boolean);
   const reason = str(form.get("reason"));
+  // "override": the admin has checked these are handled (e.g. emails to fake
+  // test addresses that can never be delivered), so clear them regardless of
+  // the automatic check. A reason is still required and goes in the audit log.
+  const force = str(form.get("force")) === "1";
   if (ids.length === 0) return { ok: false, message: "Select at least one task." };
   if (!reason)
     return { ok: false, message: "A reason is required for a bulk resolve." };
 
   const result = await runBulk(ids, async (id) => {
-    // bulk resolve only clears tasks whose condition is verifiably gone
-    await resolveTaskChecked(prisma, { taskId: id, adminUserId: admin.id, reason });
+    // Without override, bulk resolve only clears tasks whose condition is
+    // verifiably gone.
+    await resolveTaskChecked(prisma, { taskId: id, adminUserId: admin.id, reason, force });
   });
   revalidatePath("/admin/needs-attention");
   revalidatePath("/admin");
@@ -54,7 +59,10 @@ export async function bulkResolveTasksAction(
   const failed = result.results.filter((r) => !r.ok);
   return {
     ok: result.failed === 0,
-    message: `${result.succeeded} resolved, ${result.failed} left (condition still active or needs a manual decision).`,
+    message:
+      result.failed === 0
+        ? `${result.succeeded} resolved.`
+        : `${result.succeeded} resolved, ${result.failed} left (condition still active or needs a manual decision — tick "override" if you have checked they are handled).`,
     errors: failed.slice(0, 8).map((r) => `${r.id.slice(0, 8)}: ${r.error}`),
   };
 }
