@@ -4,6 +4,7 @@ import type { CatalogType, PrismaClient } from "@/generated/prisma";
 import { Prisma } from "@/generated/prisma";
 import { getLiveSale } from "@/server/sale";
 
+import { sweepExpiredHolds } from "@/server/inventory/lazy-sweep";
 import {
   toPublicCard,
   toPublicDetail,
@@ -106,6 +107,7 @@ export async function listPublishedProducts(
     filters?: ProductFilters;
   },
 ): Promise<ProductPage> {
+  await sweepExpiredHolds(db);
   const limit = Math.min(Math.max(opts.limit ?? PAGE_SIZE_DEFAULT, 1), PAGE_SIZE_MAX);
   const sort = opts.sort ?? "newest";
   const f = opts.filters;
@@ -227,6 +229,7 @@ export async function getPublishedProduct(
   catalog: CatalogType,
   slug: string,
 ): Promise<PublicProductDetail | null> {
+  await sweepExpiredHolds(db);
   // Side by side, not one after the other: each read is a database round trip.
   const [p, sale] = await Promise.all([
     db.product.findUnique({
@@ -262,6 +265,7 @@ export async function searchPublishedProducts(
 ): Promise<PublicProductCard[]> {
   const q = opts.q.trim();
   if (q.length < 2) return [];
+  await sweepExpiredHolds(db);
   const limit = Math.min(Math.max(opts.limit ?? PAGE_SIZE_DEFAULT, 1), PAGE_SIZE_MAX);
   const rows = await db.product.findMany({
     where: {
@@ -352,6 +356,7 @@ export async function getHomeRailProducts(
   db: PrismaClient,
   catalog: CatalogType,
 ): Promise<PublicProductCard[]> {
+  await sweepExpiredHolds(db);
   const slug = HOME_RAIL_SLUG[catalog];
   const col = await db.collection.findUnique({
     where: { catalog_slug: { catalog, slug } },

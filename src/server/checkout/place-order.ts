@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import type { Order, PrismaClient } from "@/generated/prisma";
 import { allocateCodStock } from "@/server/inventory/cod";
 import { reserveAll } from "@/server/inventory/reservations";
+import { sweepExpiredHolds } from "@/server/inventory/lazy-sweep";
 import { issueOrderAccessToken } from "@/server/orders/access-tokens";
 import { generateOrderNumber } from "@/server/orders/order-number";
 import { SERVICEABILITY_UNCONFIRMED } from "@/server/orders/lifecycle";
@@ -105,6 +106,11 @@ export async function placeOrder(
   if (!input.contact.phone || input.contact.phone.trim().length < 6) {
     throw new CheckoutError("A phone number is required.");
   }
+
+  // Free any hold that has already run out before we try to reserve, so an
+  // abandoned checkout can never block this buyer (not throttled: placing an
+  // order is rare and must see the true stock).
+  await sweepExpiredHolds(db, { force: true });
 
   const quoteInput: QuoteInput = {
     lines: input.lines,

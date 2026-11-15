@@ -142,8 +142,8 @@ const newCode = (over: Partial<Parameters<typeof createDiscountCode>[2]> = {}) =
 describe("discount codes in the quote", () => {
   it("takes 10% off only the Label line of a mixed cart, GST on the discounted price", async () => {
     await newCode({ appliesTo: "LABEL" });
-    const label = await makeVariant({ pricePaise: 200_000 });
-    const closet = await makeVariant({ pricePaise: 100_000, closet: true });
+    const label = await makeVariant({ pricePaise: 150_000 });
+    const closet = await makeVariant({ pricePaise: 50_000, closet: true });
     const lines = [
       { variantId: label, quantity: 1 },
       { variantId: closet, quantity: 1 },
@@ -152,16 +152,29 @@ describe("discount codes in the quote", () => {
     const q = await quote(lines, " save10 ");
 
     expect(q.discountCode).toBe("SAVE10");
-    expect(q.discountGrossPaise).toBe(20_000);
-    // The shopper pays ₹200 less, shipping (Closet ₹100) untouched.
-    expect(q.totalPaise).toBe(plain.totalPaise - 20_000);
+    expect(q.discountGrossPaise).toBe(15_000);
+    // The shopper pays ₹150 less; the cart is under ₹3,000 either way, so
+    // shipping (₹100) is untouched.
+    expect(q.totalPaise).toBe(plain.totalPaise - 15_000);
+    expect(q.shippingPaise).toBe(10_000);
     expect(q.shippingPaise).toBe(plain.shippingPaise);
     expect(q.lines[0].discountPaise).toBeGreaterThan(0);
     expect(q.lines[1].discountPaise).toBe(0);
-    expect(q.lines[0].lineTotalPaise).toBe(180_000);
+    expect(q.lines[0].lineTotalPaise).toBe(135_000);
     expect(q.hash).not.toBe(plain.hash);
   });
 
+
+  it("brings ₹100 shipping back when a code drops a ₹3,000 cart below ₹3,000", async () => {
+    await newCode({ appliesTo: "ALL" });
+    const v = await makeVariant({ pricePaise: 300_000 });
+    const lines = [{ variantId: v, quantity: 1 }];
+    const plain = await quote(lines);
+    expect(plain.shippingPaise).toBe(0); // exactly ₹3,000: free
+    const q = await quote(lines, "SAVE10");
+    expect(q.discountGrossPaise).toBe(30_000);
+    expect(q.shippingPaise).toBe(10_000); // ₹2,700 of items: shipping applies
+  });
   it("works on a sale item too (owner, 2026-10-07)", async () => {
     await newCode({ kind: "FIXED", amountPaise: 15_000, percent: null });
     const v = await makeVariant({ pricePaise: 99_900 });

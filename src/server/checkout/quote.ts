@@ -18,6 +18,7 @@ import {
 import { effectivePricePaise, getLiveSale } from "@/server/sale";
 import { computeOrderTax, type PricingMode } from "@/server/tax/calculator";
 import { getQuoteProvider, type ShippingPort } from "@/server/shipping";
+import { sweepExpiredHolds } from "@/server/inventory/lazy-sweep";
 
 /**
  * Authoritative checkout quote (master §6, §7.1). Server prices only — any price
@@ -155,6 +156,7 @@ export async function computeQuote(
   input: QuoteInput,
 ): Promise<Quote> {
   if (input.lines.length === 0) throw new QuoteError("Cart is empty.");
+  await sweepExpiredHolds(db);
   for (const l of input.lines) {
     if (!Number.isInteger(l.quantity) || l.quantity <= 0) {
       throw new QuoteError(`Invalid quantity for ${l.variantId}.`);
