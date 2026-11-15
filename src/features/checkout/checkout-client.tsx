@@ -198,6 +198,10 @@ export function CheckoutClient({
         prefill: { name: addr.name, email, contact: addr.phone },
         onDismiss: () => {
           setBusy(false);
+          // The order already exists and holds this stock. Leaving the lines in
+          // the cart made the next checkout fail with "only 0 available" (the
+          // buyer's own hold). They resume payment from the order page instead.
+          clearCart();
           setError(
             "Payment was not completed. Your order is saved — you can pay from the order page.",
           );
