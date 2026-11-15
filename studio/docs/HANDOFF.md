@@ -59,7 +59,7 @@ Shop my Looks and the Styling Service are built in the store's code but serve 40
 Shared pieces and the rules for them:
 - **Domain**: the `thepoojaedit.in` zone sits in Pooja's Cloudflare account. The store's records (apex, `www`, `img`, mail)
   point to Vercel. `studio.` is the only record that belongs to this site, through the forwarder Worker. Never edit the store's DNS records from studio work.
-- **Brand**: the favicon "P" monogram is copied from the store's `src/app/` icons. WhatsApp +91 99715 72036 and IG @poojadugar_ are the same on both sites.
+- **Brand**: the favicon is studio-specific since 2026-11-15 (deep-rose `#8a5361` rounded square, blush play button; `app/icon.svg`, `app/favicon.ico` 16/32/48, `app/apple-icon.png` 180). It used to be the store's "P" monogram (e832c4c). WhatsApp +91 99715 72036 and IG @poojadugar_ are the same on both sites.
 - **Two Macs**: the store is also worked on from the `poojadugar` Mac. Both projects share one repo now, so a single `git pull` in `~/Documents/PoojaEdit` covers both.
 - **Cross-linking**: a store footer link to the studio, and one back, are not wanted yet (owner, 2026-10-19). Ask before adding them.
 - **Risk**: the store is in production with real orders. Treat any change there as production work and follow its decision log (D-numbers).
