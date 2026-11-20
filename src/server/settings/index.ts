@@ -50,8 +50,10 @@ export interface ShippingRules {
    * ₹100, and free once the cart's item value (after any discount code) reaches
    * ₹3,000. Applies to every cart, Label and Closet alike. Replaces the
    * 2026-10-07 rule (Label free, any Closet item ₹100).
+   * Owner, 2026-11-20: a cart made only of Closet pieces is free from ₹1,000
+   * (`closetFreeAtPaise`); any Label item in the cart keeps the ₹3,000 rule.
    */
-  fees: { flatPaise: number; freeAtPaise: number };
+  fees: { flatPaise: number; freeAtPaise: number; closetFreeAtPaise: number };
 }
 
 /** Clearly-labelled dev fixture; the owner confirms the real pickup before live. */
@@ -67,7 +69,7 @@ const DEFAULT_SHIPPING_RULES: ShippingRules = {
     country: "IN",
   },
   defaultWeightGrams: 400,
-  fees: { flatPaise: 10_000, freeAtPaise: 300_000 },
+  fees: { flatPaise: 10_000, freeAtPaise: 300_000, closetFreeAtPaise: 100_000 },
 };
 
 async function readSetting<T>(db: PrismaClient, key: string): Promise<T | null> {
@@ -95,6 +97,8 @@ export async function getShippingRules(db: PrismaClient): Promise<ShippingRules>
     fees: {
       flatPaise: v?.fees?.flatPaise ?? DEFAULT_SHIPPING_RULES.fees.flatPaise,
       freeAtPaise: v?.fees?.freeAtPaise ?? DEFAULT_SHIPPING_RULES.fees.freeAtPaise,
+      closetFreeAtPaise:
+        v?.fees?.closetFreeAtPaise ?? DEFAULT_SHIPPING_RULES.fees.closetFreeAtPaise,
     },
   };
 }

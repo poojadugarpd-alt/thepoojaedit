@@ -1,11 +1,11 @@
 /**
  * Moving banner at the top of the Closet page (owner, 2026-11-15):
- * "Shipping free above ₹3000". Pure CSS marquee: the message repeats and the
+ * "Shipping free above ₹3000", changed to ₹1000 on 2026-11-20. Pure CSS marquee: the message repeats and the
  * track slides left forever. It stops moving for anyone who prefers reduced
  * motion, and screen readers get the message once, not once per repeat.
- * Keep the amount in step with `fees.freeAtPaise` (src/server/settings).
+ * Keep the amount in step with `fees.closetFreeAtPaise` (src/server/settings).
  */
-const MESSAGE = "Shipping free above ₹3000";
+const MESSAGE = "Shipping free above ₹1000";
 
 export function ShippingBanner() {
   return (

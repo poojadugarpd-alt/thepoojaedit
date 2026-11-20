@@ -325,10 +325,15 @@ export async function computeQuote(
   }
 
   // Shipping (owner, 2026-11-15): flat ₹100 per order, free once the items are
-  // worth ₹3,000 or more after any discount code. Same rule for Label and Closet.
+  // worth ₹3,000 or more after any discount code. Owner, 2026-11-20: a cart of
+  // Closet pieces only is free from ₹1,000; any Label item keeps the ₹3,000 rule.
   const itemValueAfterDiscountPaise = orderValueEstimate - discountGrossPaise;
+  const closetOnly = base.length > 0 && base.every((l) => l.catalog === "THRIFT");
+  const freeAtPaise = closetOnly
+    ? shippingRules.fees.closetFreeAtPaise
+    : shippingRules.fees.freeAtPaise;
   const shippingPaise =
-    itemValueAfterDiscountPaise >= shippingRules.fees.freeAtPaise
+    itemValueAfterDiscountPaise >= freeAtPaise
       ? 0
       : shippingRules.fees.flatPaise;
 

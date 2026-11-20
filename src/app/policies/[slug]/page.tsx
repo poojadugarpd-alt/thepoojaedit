@@ -35,7 +35,7 @@ const SHIPPING_FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How much is shipping?",
-    a: "Shipping is a flat ₹100 per order, and free when your cart is ₹3,000 or more (after any discount code).",
+    a: "Shipping is a flat ₹100 per order. It is free when your cart is ₹3,000 or more, or ₹1,000 or more if it holds only Closet pieces (after any discount code).",
   },
   {
     q: "What payment methods do you accept?",

@@ -214,7 +214,7 @@ describe("server-authoritative pricing (AC-06/11)", () => {
   });
 });
 
-describe("shipping fee: flat ₹100, free from ₹3,000 (owner, 2026-11-15)", () => {
+describe("shipping fee: flat ₹100, free from ₹3,000; Closet-only carts free from ₹1,000 (owner, 2026-11-15 / 2026-11-20)", () => {
   const quoteFor = (lines: { variantId: string; quantity: number }[]) =>
     computeQuote(db, {
       lines,
@@ -222,15 +222,19 @@ describe("shipping fee: flat ₹100, free from ₹3,000 (owner, 2026-11-15)", ()
       destination: { stateCode: "08", postcode: "302001" },
     });
 
-  it("charges ₹100 once on any cart under ₹3,000 — Label, Closet or mixed", async () => {
+  it("charges ₹100 once on a Label or mixed cart under ₹3,000, and on a Closet-only cart under ₹1,000", async () => {
     const label = await makeVariant({ onHand: 5 });
     const closet = await makeVariant({ onHand: 1, oneOfOne: true });
+    const cheapCloset = await makeVariant({ onHand: 1, oneOfOne: true, pricePaise: 99_900 });
     expect((await quoteFor([{ variantId: label, quantity: 1 }])).shippingPaise).toBe(
       10_000,
     );
-    expect((await quoteFor([{ variantId: closet, quantity: 1 }])).shippingPaise).toBe(
+    expect((await quoteFor([{ variantId: cheapCloset, quantity: 1 }])).shippingPaise).toBe(
       10_000,
-    );
+    ); // ₹999 Closet piece: just under ₹1,000
+    expect((await quoteFor([{ variantId: closet, quantity: 1 }])).shippingPaise).toBe(
+      0,
+    ); // default test price is at or above ₹1,000
     const mixed = await quoteFor([
       { variantId: closet, quantity: 1 },
       { variantId: label, quantity: 1 },
@@ -243,6 +247,18 @@ describe("shipping fee: flat ₹100, free from ₹3,000 (owner, 2026-11-15)", ()
     expect((await quoteFor([{ variantId: exact, quantity: 2 }])).shippingPaise).toBe(0); // ₹3,000
     const label = await makeVariant({ onHand: 5 });
     expect((await quoteFor([{ variantId: label, quantity: 3 }])).shippingPaise).toBe(0); // ₹4,497
+  });
+
+  it("makes a Closet-only cart free from ₹1,000, but a Label item keeps the ₹3,000 rule", async () => {
+    const c1 = await makeVariant({ onHand: 1, oneOfOne: true, pricePaise: 50_000 });
+    const c2 = await makeVariant({ onHand: 1, oneOfOne: true, pricePaise: 50_000 });
+    const label = await makeVariant({ onHand: 5, pricePaise: 50_000 });
+    expect(
+      (await quoteFor([{ variantId: c1, quantity: 1 }, { variantId: c2, quantity: 1 }])).shippingPaise,
+    ).toBe(0); // ₹1,000 of Closet: free
+    expect(
+      (await quoteFor([{ variantId: c1, quantity: 1 }, { variantId: label, quantity: 1 }])).shippingPaise,
+    ).toBe(10_000); // ₹1,000 but a Label item is in the cart
   });
 
   it("still charges just under ₹3,000", async () => {
