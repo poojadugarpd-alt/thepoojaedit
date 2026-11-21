@@ -618,3 +618,11 @@ Read D-184 and D-185 in `docs/decisions.md` and `docs/operations-runbook.md` §3
 - **Favicons:** store icon (maroon square, beige P) is used on every page, including /styling (c7bb0e2). The studio has its own rose icon (aafcb59, deployed). Chrome's choice between `favicon.ico` and `icon.svg` was not confirmed on a 1x display.
 - **Open:** Google Business Profile "Get verified" (owner); styling page mobile polish, trust/testimonials, Search Console check; confirm Mattitude tube mapping and the Tint It / Whip / Ultra HD shade guesses; the 60% OFF hero post is unposted.
 - **Known:** `tests/integration/settings.itest.ts` "respects a saved order and hidden sections" fails and is unrelated. Locally use `next build --webpack` and system Chrome for Playwright.
+
+## 17. Update 2026-11-21 (Closet drop 4, Oyela jackets, free shipping)
+
+- **Shipping (D-186):** Closet-only carts ship free from ₹1,000; Label/mixed carts keep ₹3,000. Banner and FAQ updated. Live (06ae22f).
+- **17 Nov Closet pieces:** 3 Bonkers pieces (cargo joggers royal blue, wide-leg sweatpants sand beige and peach pink; XS, ₹500) live as Active. Waist is the required measurement for bottoms (admin script takes a measurement name).
+- **Oyela jackets (wrap-up, shacket, biker; XS, ₹700):** saved as Closet DRAFTS with Notify me off; owner said a pg_cron job publishes them 00:00 IST 25 Nov (not verified from here). Check they are live on 25 Nov; if not, publish in Admin.
+- **Known gap:** a Closet one-of-one with Notify me on derives as SOLD (`deriveAvailability`) so its page redirects to /closet and it is hidden. Notify me only works for Label pieces until that is changed.
+- **Pre-existing failing test:** `tests/integration/settings.itest.ts` "respects a saved order and hidden sections" fails on main without these changes.
