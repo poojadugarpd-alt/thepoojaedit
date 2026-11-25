@@ -33,16 +33,18 @@
     "verify": "npm run check && npm run test:integration && npm run test:e2e && npm audit --audit-level=high",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.18",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "@supabase/ssr": "0.12.6",
     "@supabase/supabase-js": "2.115.0",
     "aws4fetch": "1.0.20",
     "inngest": "3.54.2",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "pdf-lib": "1.17.1",
     "pg": "8.23.0",
     "pino": "^9.6.0",
@@ -52,8 +54,7 @@
     "sharp": "0.35.5",
     "web-push": "^3.6.7",
     "zod": "^4.1.11",
-    "zustand": "5.0.15",
-    "@opennextjs/cloudflare": "^1.20.18"
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
@@ -69,7 +70,7 @@
     "dotenv": "17.2.3",
     "embedded-postgres": "17.10.0-beta.17",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "jsdom": "^31.0.1",
     "pino-pretty": "^13.0.0",
     "prettier": "^3.6.2",

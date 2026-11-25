@@ -9,6 +9,9 @@ const eslintConfig = [
     // New in eslint-config-next 16 (react-hooks v7). They flag 7 existing,
     // working components (add-to-cart, sale countdown, admin settings);
     // warnings until those are reworked, so the upgrade changes no behaviour.
+    // eslint-config-next 16.4.6 scopes its react-hooks plugin to these files;
+    // the override must match the same files or ESLint can't find the plugin.
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     rules: {
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/immutability": "warn",
@@ -18,6 +21,8 @@ const eslintConfig = [
     ignores: [
       "node_modules/**",
       ".next/**",
+      ".open-next/**",
+      ".wrangler/**",
       "out/**",
       "build/**",
       "coverage/**",
