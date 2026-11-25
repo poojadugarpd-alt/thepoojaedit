@@ -9,6 +9,7 @@ import "server-only";
  * connect/disconnect per request. In production `DATABASE_URL` is the Supabase
  * Supavisor transaction pooler (port 6543); locally it is embedded PostgreSQL.
  */
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "@/generated/prisma";
@@ -73,7 +74,25 @@ const globalForPrisma = globalThis as unknown as {
  * tolerate a cold database (e.g. the homepage rails, the sitemap) catch the
  * failure at the query instead of at import.
  */
+// On Cloudflare Workers a socket opened while serving one request cannot be
+// used by another ("Cannot perform I/O on behalf of a different request"), so
+// the process-wide pool above would break after the first request. There we
+// keep one client per request instead, keyed on the request's ExecutionContext
+// (also covers `after()` work, which runs under the same context).
+const onWorkers =
+  typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+const perRequest = new WeakMap<object, PrismaClient>();
+
 function getPrisma(): PrismaClient {
+  if (onWorkers) {
+    const { ctx } = getCloudflareContext();
+    let client = perRequest.get(ctx);
+    if (!client) {
+      client = createPrismaClient();
+      perRequest.set(ctx, client);
+    }
+    return client;
+  }
   if (!globalForPrisma.prisma) {
     globalForPrisma.prisma = createPrismaClient();
   }

@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
   // untouched).
   experimental: {
     staleTimes: { dynamic: 30 },
+    // Cloudflare (25 Nov 2026): the domain reaches the store Worker through a
+    // forwarder Worker, so the Worker sees the workers.dev host. Allow Server
+    // Actions posted from the real domain.
+    serverActions: {
+      allowedOrigins: ["thepoojaedit.in", "www.thepoojaedit.in"],
+    },
   },
 
   // Bounded image hosts (master §9). The Supabase Storage host is added when a
