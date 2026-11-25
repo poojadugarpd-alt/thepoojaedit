@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The store (thepoojaedit.in). Moved off Vercel 25 Nov 2026 after Vercel
+  // disabled the project (402 DEPLOYMENT_DISABLED). Lives in the vinayakch17
+  // account; the domain is served by a forwarder Worker in Pooja's account
+  // (same pattern as studio/, see studio/docs/HANDOFF.md).
+  "name": "thepoojaedit-store",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Database is Supabase in Tokyo: let Cloudflare run the Worker near it.
+  "placement": { "mode": "smart" },
+  "observability": { "enabled": true },
+  "limits": { "cpu_ms": 30000 },
+  "kv_namespaces": [
+    // ISR / unstable_cache data (home page, sitemap, sale + styling flags)
+    { "binding": "NEXT_INC_CACHE_KV", "id": "dbbabd0d26a1419da892c2dd9d32aa41" }
+  ],
+  "d1_databases": [
+    // revalidateTag / revalidatePath bookkeeping
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "thepoojaedit-store-tags",
+      "database_id": "a12e7bf9-a409-434d-b4d8-8ed313d67ea4"
+    }
+  ],
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "thepoojaedit-store" }
+  ]
+}

@@ -67,3 +67,8 @@ design/research/raw/
 
 # Scratch exports from Claude's own logo-design work — not build output
 /Claude outputs/
+
+# Cloudflare / OpenNext
+.open-next/
+.wrangler/
+.dev.vars

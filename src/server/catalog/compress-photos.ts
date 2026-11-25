@@ -1,7 +1,5 @@
 import "server-only";
 
-import sharp from "sharp";
-
 import type { PrismaClient } from "@/generated/prisma";
 import { productImageUrl, R2_BUCKET } from "@/lib/storage-url";
 import { auditLog } from "@/server/admin/audit";
@@ -64,6 +62,11 @@ export async function compressProductPhoto(
     return { outcome: "skipped", reason: "already small" };
   }
 
+  // Loaded lazily: sharp is a native Node module that cannot run on
+  // Cloudflare Workers, and a top-level import would break every route that
+  // imports this file (admin settings, /api/inngest). Compression only works
+  // where sharp can load (local scripts / Node).
+  const { default: sharp } = await import("sharp");
   const { data, info } = await sharp(original)
     .rotate() // honour EXIF orientation before it is stripped
     .resize({
