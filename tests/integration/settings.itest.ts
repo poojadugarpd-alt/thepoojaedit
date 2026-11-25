@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { PrismaClient } from "../../src/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import {
   DEFAULT_HOME_CONTENT,
   DEFAULT_HOME_MEDIA,

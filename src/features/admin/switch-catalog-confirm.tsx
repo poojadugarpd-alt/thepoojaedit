@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 
 /**
  * Moves an already-created product to the other catalogue (owner feedback,

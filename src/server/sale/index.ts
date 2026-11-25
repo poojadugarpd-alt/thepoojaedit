@@ -1,4 +1,4 @@
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
 
 /**
  * Store-wide timed sale (e.g. "30% off the Closet until midnight"). One sale

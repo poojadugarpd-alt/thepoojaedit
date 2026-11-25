@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { AdminUser } from "@/generated/prisma";
+import type { AdminUser } from "@poojaedit/db";
 import { AuthorizationError } from "@/server/auth/errors";
 import type { StoragePort } from "@/lib/storage";
 

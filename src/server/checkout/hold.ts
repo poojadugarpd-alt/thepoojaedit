@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { InsufficientStockError } from "@/server/inventory/errors";
 import { renewHold } from "@/server/inventory/reservations";
 import { cancelOrder } from "@/server/orders/lifecycle";

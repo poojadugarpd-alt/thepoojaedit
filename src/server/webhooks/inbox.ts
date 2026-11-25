@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import type { PrismaClient, WebhookEvent } from "@/generated/prisma";
+import type { PrismaClient, WebhookEvent } from "@poojaedit/db";
 
 /**
  * Durable webhook inbox (master §8). A provider callback is verified with the

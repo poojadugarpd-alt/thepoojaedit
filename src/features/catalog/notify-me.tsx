@@ -2,7 +2,7 @@
 
 import { useActionState, useId } from "react";
 
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 
 import { notifyMeAction, type NotifyState } from "./notify-actions";
 

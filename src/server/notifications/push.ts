@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import webpush from "web-push";
 
-import type { AdminNotificationPreference, PrismaClient } from "@/generated/prisma";
+import type { AdminNotificationPreference, PrismaClient } from "@poojaedit/db";
 import { env } from "@/lib/env";
 import { publicEnv } from "@/lib/public-env";
 import { runOnce } from "@/server/events/side-effects";

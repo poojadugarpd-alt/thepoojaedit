@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { AdminUser, PrismaClient } from "../../src/generated/prisma";
+import type { AdminUser, PrismaClient } from "@poojaedit/db";
 import type { StoragePort } from "../../src/lib/storage";
 import {
   listPhotosNotOnR2,

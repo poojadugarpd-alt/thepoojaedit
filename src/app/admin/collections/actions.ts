@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 import type { ActionState } from "@/app/admin/products/actions";
 import { prisma } from "@/lib/db";
 import {

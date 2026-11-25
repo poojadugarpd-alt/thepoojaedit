@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { expireReservations } from "@/server/inventory/reservations";
 import type { ReconcilePort } from "@/server/webhooks/inbox";
 

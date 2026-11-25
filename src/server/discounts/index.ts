@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AdminUser, DiscountCode, Prisma, PrismaClient } from "@/generated/prisma";
+import type { AdminUser, DiscountCode, Prisma, PrismaClient } from "@poojaedit/db";
 import { auditLog } from "@/server/admin/audit";
 import { ValidationError } from "@/server/catalog/admin";
 

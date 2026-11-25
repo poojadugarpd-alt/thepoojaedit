@@ -15,7 +15,11 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  // Generated as a package in node_modules (imported as "@poojaedit/db") so
+  // Next.js leaves it external and the Cloudflare build resolves Prisma's
+  // workerd entry (edge.js + precompiled wasm). Inside src/ it was bundled
+  // with the Node entry, which compiles wasm at runtime: blocked on Workers.
+  output   = "../node_modules/@poojaedit/db"
 }
 
 datasource db {

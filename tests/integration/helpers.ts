@@ -1,6 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../../src/generated/prisma";
+import { PrismaClient } from "@poojaedit/db";
 
 /**
  * Target database for the integration suite. Defaults to the local embedded

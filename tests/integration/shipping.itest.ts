@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { PrismaClient } from "../../src/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { placeOrder, type AddressInput } from "../../src/server/checkout/place-order";
 import { computeQuote, QuoteError } from "../../src/server/checkout/quote";
 import { cancelOrder, confirmCodOrder } from "../../src/server/orders/lifecycle";

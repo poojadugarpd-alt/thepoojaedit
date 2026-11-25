@@ -5,7 +5,7 @@ import type {
   ProductImage,
   ProductVariant,
   ThriftDetails,
-} from "@/generated/prisma";
+} from "@poojaedit/db";
 import { productImageUrl } from "@/lib/storage-url";
 import { saleAppliesTo, salePricePaise, type LiveSale } from "@/server/sale";
 

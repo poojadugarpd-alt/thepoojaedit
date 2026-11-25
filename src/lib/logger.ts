@@ -67,13 +67,28 @@ const pretty =
       }
     : undefined;
 
-export const logger: Logger = pino({
+// Cloudflare Workers have no writable stdout file descriptor: pino's default
+// destination (sonic-boom -> fs.write) throws "[unenv] fs.write is not
+// implemented", which crashed every request. There, send each JSON line to
+// console.log, which Workers Logs captures. Redaction still applies.
+const onWorkers =
+  typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+const consoleDestination = {
+  write(line: string) {
+    console.log(line.endsWith("\n") ? line.slice(0, -1) : line);
+  },
+};
+
+const options = {
   level: env.LOG_LEVEL,
   base: { env: APP_ENV, service: "poojaedit" },
   redact: { paths: REDACT_PATHS, censor: "[redacted]" },
   timestamp: pino.stdTimeFunctions.isoTime,
-  ...(pretty ? { transport: pretty } : {}),
-});
+};
+
+export const logger: Logger = onWorkers
+  ? pino(options, consoleDestination)
+  : pino({ ...options, ...(pretty ? { transport: pretty } : {}) });
 
 /** Child logger bound to a request/operation scope. */
 export function scopedLogger(bindings: Record<string, unknown>): Logger {

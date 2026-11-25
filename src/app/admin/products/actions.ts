@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 
-import type { CatalogType, ConditionGrade, ImageType } from "@/generated/prisma";
+import type { CatalogType, ConditionGrade, ImageType } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 import { rupeesToPaise } from "@/lib/money";
 import { publicEnv } from "@/lib/public-env";

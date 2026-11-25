@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AdminUser, PrismaClient } from "@/generated/prisma";
+import type { AdminUser, PrismaClient } from "@poojaedit/db";
 import { AuthorizationError } from "@/server/auth/errors";
 
 /**

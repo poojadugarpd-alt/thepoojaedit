@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { env } from "@/lib/env";
 import { publicEnv } from "@/lib/public-env";
 import { isSupabaseConfigured } from "@/lib/supabase/config";

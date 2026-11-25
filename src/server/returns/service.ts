@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient, ReturnRequest } from "@/generated/prisma";
+import type { PrismaClient, ReturnRequest } from "@poojaedit/db";
 import { restockUnits } from "@/server/inventory/restock";
 import {
   assertTransition,

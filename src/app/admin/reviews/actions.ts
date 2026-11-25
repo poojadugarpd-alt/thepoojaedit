@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import type { ActionState } from "@/app/admin/products/actions";
-import type { ReviewSite, ReviewStatus } from "@/generated/prisma";
+import type { ReviewSite, ReviewStatus } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/require-admin";
 import {

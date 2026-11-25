@@ -6,7 +6,7 @@ import type {
   Prisma,
   PrismaClient,
   Refund,
-} from "@/generated/prisma";
+} from "@poojaedit/db";
 import { openOperationalTask } from "@/server/events/operational-tasks";
 import { runOnce } from "@/server/events/side-effects";
 import { settleCapturedPayment } from "@/server/orders/lifecycle";

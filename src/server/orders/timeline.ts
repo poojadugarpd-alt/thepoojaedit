@@ -2,7 +2,7 @@ import "server-only";
 
 import { after } from "next/server";
 
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@poojaedit/db";
 import { emitDomainEvent } from "@/server/events/emit";
 
 type Tx = Prisma.TransactionClient;

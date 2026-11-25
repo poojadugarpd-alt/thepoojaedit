@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 
 import { dbInAppTransport } from "./transports";
 import type {

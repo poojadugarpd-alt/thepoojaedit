@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@poojaedit/db";
 
 /**
  * Indian financial year (1 Apr – 31 Mar) as `"YYYY-YY"`, e.g. a date in

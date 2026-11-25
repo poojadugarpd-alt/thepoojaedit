@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Customer } from "@/generated/prisma";
+import type { Customer } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 import { lazyUpsertCustomer } from "@/server/customers/lazy-upsert";
 

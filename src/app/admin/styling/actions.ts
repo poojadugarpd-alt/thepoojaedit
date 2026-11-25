@@ -1,7 +1,7 @@
 "use server";
 
 import type { ActionState } from "@/app/admin/products/actions";
-import type { StylingEnquiryStatus } from "@/generated/prisma";
+import type { StylingEnquiryStatus } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 import { createStoragePort, photosOnR2 } from "@/lib/storage";
 import { photoLocation, storagePublicUrl } from "@/lib/storage-url";

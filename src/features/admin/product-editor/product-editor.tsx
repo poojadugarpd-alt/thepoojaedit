@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import type { CatalogType, ConditionGrade } from "@/generated/prisma";
+import type { CatalogType, ConditionGrade } from "@poojaedit/db";
 import type { getAdminProduct } from "@/server/catalog/admin";
 
 import { ActionForm } from "@/features/admin/action-form";

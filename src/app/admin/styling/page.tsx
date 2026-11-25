@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import type { StylingEnquiryStatus } from "@/generated/prisma";
+import type { StylingEnquiryStatus } from "@poojaedit/db";
 import { Pill, ts } from "@/features/admin/format";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/require-admin";

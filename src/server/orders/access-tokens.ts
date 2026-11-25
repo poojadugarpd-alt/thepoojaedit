@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
 
-import type { AccessTokenScope, Prisma, PrismaClient } from "@/generated/prisma";
+import type { AccessTokenScope, Prisma, PrismaClient } from "@poojaedit/db";
 import { ResourceNotFoundError } from "@/server/auth/errors";
 
 type Db = PrismaClient | Prisma.TransactionClient;

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 
 /**
  * Closet (THRIFT) SKU generation (owner feedback, 2026-09-13 — a one-of-one

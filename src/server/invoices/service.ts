@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CreditNote, Invoice, PrismaClient } from "@/generated/prisma";
+import type { CreditNote, Invoice, PrismaClient } from "@poojaedit/db";
 import { DOCUMENTS_BUCKET, type DocumentStore } from "@/lib/documents";
 import {
   openOperationalTask,

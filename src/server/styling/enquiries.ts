@@ -7,7 +7,7 @@ import type {
   PrismaClient,
   StylingEnquiry,
   StylingEnquiryStatus,
-} from "@/generated/prisma";
+} from "@poojaedit/db";
 import type { Utm } from "@/lib/attribution";
 import { logger } from "@/lib/logger";
 import { auditLog } from "@/server/admin/audit";

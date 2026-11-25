@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 
 /**
  * Sold Closet pieces leave the shop (D-143). Since 2026-10-20 the owner wants

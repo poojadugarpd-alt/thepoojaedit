@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { CatalogType, PrismaClient } from "../../src/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
 import {
   getActiveCollection,
   getProductFacets,

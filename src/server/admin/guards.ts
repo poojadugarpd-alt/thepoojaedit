@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AdminRole, AdminUser, PrismaClient } from "@/generated/prisma";
+import type { AdminRole, AdminUser, PrismaClient } from "@poojaedit/db";
 import { AuthorizationError, ResourceNotFoundError } from "@/server/auth/errors";
 
 /**

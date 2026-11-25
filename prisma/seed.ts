@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config as loadEnv } from "dotenv";
 
-import { PrismaClient } from "../src/generated/prisma";
+import { PrismaClient } from "@poojaedit/db";
 
 /**
  * Safe, idempotent development seed (master spec §5, playbook Phase 2).

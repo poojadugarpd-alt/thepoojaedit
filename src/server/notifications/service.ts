@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { NotificationDelivery, PrismaClient } from "@/generated/prisma";
+import type { NotificationDelivery, PrismaClient } from "@poojaedit/db";
 import { logger } from "@/lib/logger";
 import { openOperationalTask } from "@/server/events/operational-tasks";
 

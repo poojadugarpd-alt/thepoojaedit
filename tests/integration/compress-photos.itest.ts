@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { PrismaClient } from "../../src/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import {
   compressProductPhoto,
   listUncompressedPhotoIds,

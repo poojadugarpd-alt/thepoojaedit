@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CatalogType, Prisma, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, Prisma, PrismaClient } from "@poojaedit/db";
 
 /**
  * analytics domain service (master §10). Financial summaries derive ONLY from

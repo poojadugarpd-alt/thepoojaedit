@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AdminUser } from "@/generated/prisma";
+import type { AdminUser } from "@poojaedit/db";
 import { isDevelopment } from "@/lib/app-env";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";

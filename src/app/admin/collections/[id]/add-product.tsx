@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 import { ActionForm } from "@/features/admin/action-form";
 
 import {

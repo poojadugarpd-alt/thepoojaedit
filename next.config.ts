@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
 
   // `pino` / `pino-pretty` are Node libraries — don't try to bundle them.
-  serverExternalPackages: ["pino", "pino-pretty"],
+  serverExternalPackages: ["pino", "pino-pretty", "@poojaedit/db"],
 
   // Speed audit (2026-09-13): every admin route is `force-dynamic`, which
   // defaults the client Router Cache's `dynamic` staleTime to 0 — tapping

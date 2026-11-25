@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@poojaedit/db";
 
 import { InsufficientStockError, ReservationNotActiveError } from "./errors";
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { APP_ENV } from "@/lib/app-env";
 import { productPath } from "@/lib/catalog-routes";
 import { logger } from "@/lib/logger";

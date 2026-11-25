@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Customer, PrismaClient } from "@/generated/prisma";
+import type { Customer, PrismaClient } from "@poojaedit/db";
 
 import { normalizeEmail } from "./normalize";
 

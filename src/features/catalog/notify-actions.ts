@@ -2,7 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 import { parseUtmCookie, UTM_COOKIE } from "@/lib/attribution";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";

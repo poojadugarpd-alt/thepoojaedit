@@ -7,8 +7,8 @@ import type {
   PrismaClient,
   Product,
   ProductVariant,
-} from "@/generated/prisma";
-import { Prisma } from "@/generated/prisma";
+} from "@poojaedit/db";
+import { Prisma } from "@poojaedit/db";
 import type { StoragePort } from "@/lib/storage";
 import { auditLog } from "@/server/admin/audit";
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 
 /**
  * Durable consumer deduplication (master §8). A side effect is keyed by a stable

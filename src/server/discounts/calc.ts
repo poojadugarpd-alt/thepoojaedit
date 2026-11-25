@@ -1,4 +1,4 @@
-import type { CatalogType, DiscountCode } from "@/generated/prisma";
+import type { CatalogType, DiscountCode } from "@poojaedit/db";
 
 /**
  * Discount codes (D-140) — the pure part: validation of a code against a cart

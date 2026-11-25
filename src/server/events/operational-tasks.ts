@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { OperationalTaskType, Prisma, PrismaClient } from "@/generated/prisma";
+import type { OperationalTaskType, Prisma, PrismaClient } from "@poojaedit/db";
 import { sendAdminPush, type PushPreferenceField } from "@/server/notifications/push";
 
 type Db = PrismaClient | Prisma.TransactionClient;

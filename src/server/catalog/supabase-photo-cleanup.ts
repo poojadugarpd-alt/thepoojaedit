@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { R2_BUCKET } from "@/lib/storage-url";
 import { auditLog } from "@/server/admin/audit";
 import { getHomeContent } from "@/server/settings";

@@ -5,7 +5,7 @@ import "server-only";
  * machines in `./state`, guest access in `./access-tokens`. This module binds
  * the shared Prisma client and exposes a read for the order-view page.
  */
-import type { PrismaClient } from "@/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 import { assertOwnsOrder } from "@/server/admin/guards";
 import { ResourceNotFoundError } from "@/server/auth/errors";

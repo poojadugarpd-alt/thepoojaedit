@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import type { AdminUser } from "@/generated/prisma";
+import type { AdminUser } from "@poojaedit/db";
 import type { StoragePort } from "@/lib/storage";
 import { photoLocation } from "@/lib/storage-url";
 import { assertActiveAdmin } from "@/server/admin/guards";

@@ -8,7 +8,7 @@ import type {
   ImageType,
   PrismaClient,
   ProductImage,
-} from "@/generated/prisma";
+} from "@poojaedit/db";
 import type { StoragePort } from "@/lib/storage";
 import { photoLocation } from "@/lib/storage-url";
 import { assertActiveAdmin } from "@/server/admin/guards";

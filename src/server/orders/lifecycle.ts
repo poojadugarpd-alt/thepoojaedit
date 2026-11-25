@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Order, PrismaClient } from "@/generated/prisma";
+import type { Order, PrismaClient } from "@poojaedit/db";
 import {
   openOperationalTask,
   resolveOperationalTask,

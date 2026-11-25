@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
-import { Prisma } from "@/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
+import { Prisma } from "@poojaedit/db";
 import { getLiveSale } from "@/server/sale";
 
 import { sweepExpiredHolds } from "@/server/inventory/lazy-sweep";

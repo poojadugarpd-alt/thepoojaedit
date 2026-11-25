@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
 
 /**
  * Slug generation (owner feedback, 2026-09-13 — "what is a slug?"). A slug is

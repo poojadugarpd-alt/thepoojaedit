@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient, Refund } from "@/generated/prisma";
+import type { PrismaClient, Refund } from "@poojaedit/db";
 import { openOperationalTask } from "@/server/events/operational-tasks";
 import { createInvoiceForOrder, issueCreditNote } from "@/server/invoices/service";
 import { cancelOrder } from "@/server/orders/lifecycle";

@@ -1,4 +1,4 @@
-import type { DiscountCode } from "@/generated/prisma";
+import type { DiscountCode } from "@poojaedit/db";
 import { Field } from "@/features/admin/action-form";
 
 const SELECT =

@@ -12,7 +12,7 @@ import "server-only";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient } from "@poojaedit/db";
 
 import { requireEnv } from "./env";
 

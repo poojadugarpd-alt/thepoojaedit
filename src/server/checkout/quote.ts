@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
 import {
   getBusinessProfile,
   getCheckoutRules,

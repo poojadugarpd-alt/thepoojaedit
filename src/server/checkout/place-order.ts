@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
-import type { Order, PrismaClient } from "@/generated/prisma";
+import type { Order, PrismaClient } from "@poojaedit/db";
 import { allocateCodStock } from "@/server/inventory/cod";
 import { reserveAll } from "@/server/inventory/reservations";
 import { sweepExpiredHolds } from "@/server/inventory/lazy-sweep";

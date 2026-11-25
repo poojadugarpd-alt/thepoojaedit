@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { PrismaClient } from "../../src/generated/prisma";
+import type { PrismaClient } from "@poojaedit/db";
 import { openOperationalTask } from "../../src/server/events/operational-tasks";
 import { resolveTaskChecked, TaskStillActiveError } from "../../src/server/admin";
 import {

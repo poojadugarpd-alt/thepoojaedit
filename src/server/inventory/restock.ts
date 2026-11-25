@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@poojaedit/db";
 
 type Tx = Prisma.TransactionClient;
 

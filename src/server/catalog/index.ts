@@ -5,7 +5,7 @@ import "server-only";
  * `./product-images` (Phase 3); this module binds the shared Prisma client.
  * Admin write operations are added later in Phase 4.
  */
-import type { CatalogType } from "@/generated/prisma";
+import type { CatalogType } from "@poojaedit/db";
 import { prisma } from "@/lib/db";
 
 import {

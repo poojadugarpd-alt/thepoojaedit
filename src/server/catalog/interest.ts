@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import type { CatalogType, PrismaClient } from "@/generated/prisma";
+import type { CatalogType, PrismaClient } from "@poojaedit/db";
 import type { Utm } from "@/lib/attribution";
 
 /**

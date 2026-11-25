@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Order, OrderAddress, OrderItem } from "@/generated/prisma";
+import type { Order, OrderAddress, OrderItem } from "@poojaedit/db";
 import type { BusinessProfile } from "@/server/settings";
 
 /**

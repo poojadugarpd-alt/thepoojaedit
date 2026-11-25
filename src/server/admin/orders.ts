@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma, PrismaClient } from "@/generated/prisma";
+import type { Prisma, PrismaClient } from "@poojaedit/db";
 import { productImageUrl } from "@/lib/storage-url";
 
 /**
