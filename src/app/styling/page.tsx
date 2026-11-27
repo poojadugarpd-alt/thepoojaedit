@@ -311,10 +311,14 @@ export default async function StylingPage() {
       <section className="u-section u-rule" aria-labelledby="questions">
         <div className="u-page">
           <p className="max-w-[62ch] text-ink">{WHERE_I_WORK}</p>
-          <ul className="mt-6 flex flex-wrap gap-3">
+          <h2 className="u-label mt-10">Guides</h2>
+          <ul className="mt-4 grid max-w-3xl gap-x-10 gap-y-2 sm:grid-cols-2">
             {STYLING_LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="u-pill u-pill--ghost inline-flex">
+                <Link
+                  href={l.href}
+                  className="text-ink underline decoration-line underline-offset-4 hover:text-ink-strong hover:decoration-current"
+                >
                   {l.label}
                 </Link>
               </li>

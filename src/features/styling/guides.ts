@@ -857,7 +857,7 @@ export const STYLING_LINKS: GuideLink[] = [
 export const stylingFaqs: Faq[] = [
   {
     q: "How much does a personal stylist cost in Delhi NCR?",
-    a: "Stylists in Delhi NCR charge from about ₹1,000 for a short online session to ₹10,000 or more for shopping in person. My fees are listed above, and we agree yours before anything starts.",
+    a: "Stylists in Delhi NCR charge from about ₹1,000 for a short online session to ₹10,000 or more for shopping in person. My fees are listed above; some are quoted after a short call, and we always agree yours before anything starts.",
     link: COST_GUIDE,
   },
   {
@@ -871,21 +871,8 @@ export const stylingFaqs: Faq[] = [
     link: USA_GUIDE,
   },
   {
-    q: "How do you handle time zone differences for US (EST/PST) and UK (GMT) clients?",
-    a: "My consultation calendar includes early evening IST slots that match US mornings (EST/CST) and UK afternoons/evenings (GMT/BST), plus weekend options.",
-    link: UK_GUIDE,
-  },
-  {
-    q: "Can I book virtual styling and purchase clothes from The Pooja Edit together?",
-    a: "Yes. Many international clients combine virtual consultations with pieces from The Label or pre-loved Closet, packing everything into a single international shipment.",
-  },
-  {
     q: "What does a personal stylist do?",
     a: "A personal stylist works out what suits you and puts outfits together. With me we start with what you own, agree what is missing, then shop for it.",
-  },
-  {
-    q: "What happens in a styling session?",
-    a: "We start with what you own, agree what's missing, then shop for it.",
   },
   {
     q: "What's the difference between a stylist, a personal shopper and an image consultant?",
