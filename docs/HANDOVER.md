@@ -8,6 +8,11 @@ specific detail.
 
 ## 0. Start here (switching computers)
 
+> **25 Nov 2026: the store now runs on Cloudflare Workers, not Vercel (D-187).**
+> Deploy with `npm run cf:deploy` from the poojadugar Mac. Production keys are in
+> the gitignored `.secrets/` folder there (never in git); every key was replaced
+> during the move, so old Vercel/`.env` copies are dead.
+
 1. `git pull` on `main`. Everything from 2026-10-07 is on GitHub, including
    the UTM attribution work (D-136, merged the same evening).
 2. Read §5–§8 below, then the bottom of `docs/decisions.md` (D-135 → D-171).

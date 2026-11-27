@@ -24,7 +24,7 @@ Environment identity is shown visibly in the admin UI (master §3). Preview must
 **CI** — `integration` job runs a `postgres:17` service; `INTEGRATION_DATABASE_URL` points the suite at it; `tests/integration/global-setup.ts` drops/creates a fresh DB and runs `prisma migrate deploy` before the suite.
 
 **Production (from Phase 13)**
-- Build/deploy: Vercel, Node 22 runtime, frozen-lockfile install (`npm ci` → `prepare` runs `prisma generate`).
+- Build/deploy (since 2026-11-25, D-187): **Cloudflare Workers**, not Vercel. From the poojadugar Mac run `npm run cf:deploy` (`scripts/cf-deploy.sh`; wrangler must be logged in to the vinayakch17 account). It builds with the production keys from the gitignored `.secrets/cloudflare-store.env` and deploys Worker `thepoojaedit-store`. After changing any key, update both files in `.secrets/` and run `scripts/cf-deploy.sh --secrets`. The domain forwarder Worker (Pooja's account) is `cloudflare/forwarder-worker.js`; it rarely needs redeploying. Old Vercel line, kept for history: Vercel, Node 22 runtime, `npm ci` → `prepare` runs `prisma generate`.
 - Migrations: `prisma migrate deploy` through the release workflow only. **Never** `migrate reset` / `db push` / edit an applied migration against a shared or prod database.
 - Migration policy for production changes: expand → backfill → validate → switch → later contract. Additive only over the approved Phase 2 schema (`init` + `manual_constraints`).
 - The `manual_constraints` migration holds CHECKs, partial unique indexes and the thrift one-of-one trigger — later migrations extend these, never drop-and-recreate.
