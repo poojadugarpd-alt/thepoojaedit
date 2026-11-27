@@ -31,9 +31,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "verify": "npm run check && npm run test:integration && npm run test:e2e && npm audit --audit-level=high",
-    "cf:build": "scripts/cf-deploy.sh --build",
+    "cf:build": "bash scripts/cf-deploy.sh --build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:deploy": "scripts/cf-deploy.sh",
+    "cf:deploy": "bash scripts/cf-deploy.sh",
     "postinstall": "prisma generate"
   },
   "dependencies": {
