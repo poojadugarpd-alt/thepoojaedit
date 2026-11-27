@@ -80,6 +80,8 @@ export const MAX_TESTIMONIALS = 20;
 export const MAX_TESTIMONIAL_PHOTOS = 4;
 /** The service option shown after the offers in the enquiry form. */
 export const NOT_SURE_SERVICE = "Not sure yet";
+/** Fixed option for the International Personal Shopping section on /styling. */
+export const INTERNATIONAL_SERVICE = "International personal shopping";
 
 export const DEFAULT_STYLING_CONTENT: StylingContent = {
   published: false,
@@ -251,5 +253,5 @@ export function publishProblems(c: StylingContent): string[] {
 
 /** Service options in the enquiry form: each offer, then "Not sure yet". */
 export function serviceOptions(c: StylingContent): string[] {
-  return [...c.offers.map((o) => o.title), NOT_SURE_SERVICE];
+  return [...c.offers.map((o) => o.title), INTERNATIONAL_SERVICE, NOT_SURE_SERVICE];
 }

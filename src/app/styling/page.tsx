@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { EnquiryForm } from "@/features/styling/enquiry-form";
 import { FaqList } from "@/features/styling/faq-list";
+import { InternationalShopping } from "@/features/styling/international-section";
 import { STYLING_LINKS, stylingFaqs, WHERE_I_WORK } from "@/features/styling/guides";
 import { stylingWhatsAppUrl } from "@/features/styling/whatsapp";
 import { Rail } from "@/features/styling/rail";
@@ -217,6 +218,10 @@ export default async function StylingPage() {
           </a>
         </div>
       </section>
+
+      {/* International Personal Shopping (owner brief 2026-11-27); copy, images
+          and trip dates in src/features/styling/international.ts. */}
+      <InternationalShopping />
 
       {c.steps.length > 0 && (
         <section className="u-section u-rule" aria-labelledby="how">

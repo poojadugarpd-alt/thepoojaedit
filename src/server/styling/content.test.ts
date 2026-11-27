@@ -5,6 +5,7 @@ import {
   MAX_GALLERY,
   MAX_OFFERS,
   MAX_TESTIMONIAL_PHOTOS,
+  INTERNATIONAL_SERVICE,
   NOT_SURE_SERVICE,
   publishProblems,
   resolveStylingContent,
@@ -67,7 +68,7 @@ describe("serviceOptions", () => {
         { title: "B", includes: "", fee: "" },
       ],
     });
-    expect(serviceOptions(c)).toEqual(["A", "B", NOT_SURE_SERVICE]);
+    expect(serviceOptions(c)).toEqual(["A", "B", INTERNATIONAL_SERVICE, NOT_SURE_SERVICE]);
   });
 });
 
