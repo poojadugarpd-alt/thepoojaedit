@@ -721,10 +721,10 @@ export const guides: Guide[] = [
         heading: "How virtual styling works across US time zones",
         items: [
           "Send an enquiry with your styling goals, wardrobe challenges, your sizes and a few reference pictures.",
-          "We connect on a video call scheduled comfortably in your timezone (EST, CST or PST), including weekend slots.",
+          "We connect on a video call scheduled comfortably in your timezone (EST, CST or PST).",
           "We audit your closet, evaluate what fits your lifestyle and curate fresh outfit combinations from what you own.",
           "I build a targeted shopping list for missing essentials or source authentic Indian designer pieces directly in Delhi.",
-          "Custom alterations and measurements are handled in India, followed by express door-to-door courier delivery.",
+          "Custom alterations and measurements are handled in India, followed by tracked courier delivery to your door.",
         ],
       },
       {
@@ -753,16 +753,12 @@ export const guides: Guide[] = [
       },
       {
         q: "How do you handle time zone differences for wardrobe edits?",
-        a: "Appointments are scheduled during evening IST hours that match US mornings (EST/CST), or on weekends to comfortably fit West Coast (PST) clients.",
+        a: "Calls are in the IST evening, which is morning in the Eastern and Central US. For West Coast (PST) clients we find a time that suits us both.",
       },
       {
         q: "Can a virtual styling consultation include sourcing Indian clothes and shipping to the US?",
-        a: "Yes. I shop the Delhi designer stores for you, oversee custom alterations to your measurements, and send everything via tracked courier (DHL/FedEx).",
+        a: "Yes. I shop the Delhi designer stores for you, oversee custom alterations to your measurements, and send everything by tracked courier.",
         link: WEDDING_GUIDE,
-      },
-      {
-        q: "Can I buy pieces from The Pooja Edit during a styling session?",
-        a: "Yes. Many US clients combine virtual consultations with pieces from The Label or pre-loved Closet, consolidating everything into a single international shipment.",
       },
     ],
   },
@@ -822,7 +818,7 @@ export const guides: Guide[] = [
       },
       {
         q: "Can you help shop for Indian weddings from London or elsewhere in the UK?",
-        a: "Yes. I act as your personal shopper on the ground in Delhi, managing measurements and fittings, and sending your outfits via express courier.",
+        a: "Yes. I act as your personal shopper on the ground in Delhi, managing measurements and fittings, and sending your outfits by tracked courier.",
         link: WEDDING_GUIDE,
       },
       {
