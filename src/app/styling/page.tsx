@@ -9,8 +9,8 @@ import { InternationalShopping } from "@/features/styling/international-section"
 import { STYLING_LINKS, stylingFaqs, WHERE_I_WORK } from "@/features/styling/guides";
 import { stylingWhatsAppUrl } from "@/features/styling/whatsapp";
 import { Rail } from "@/features/styling/rail";
-import { photoBands, reviewMoments } from "@/features/styling/spread";
-import { PhotoBand, ReviewBand } from "@/features/styling/spread-ui";
+import { photoBands } from "@/features/styling/spread";
+import { PhotoBand, ReviewBlock } from "@/features/styling/spread-ui";
 import { prisma } from "@/lib/db";
 import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
@@ -53,19 +53,12 @@ export default async function StylingPage() {
     ...(await approvedStylingTestimonials(prisma)),
   ];
 
-  // Photos and reviews are spread down the page (owner, 2026-11-28): five
-  // photo strips between sections, and up to four review spots. Anything
-  // beyond that stays in the carousels near the end.
-  const { moments, rest: moreReviews } = reviewMoments(testimonials, 4);
-  const { bands, rest: morePhotos } = photoBands(c.gallery, 5, 4);
-  const review = (i: number) =>
-    moments[i] ? (
-      <ReviewBand
-        moment={moments[i]}
-        heading={i === 0 ? c.testimonialsHeading : undefined}
-        flip={i % 2 === 1}
-      />
-    ) : null;
+  // Photos are spread down the page in four strips (owner, 2026-11-28).
+  // Reviews: one section, each review's photos in a row with the full review
+  // below. Two side by side; any more go in the carousel near the end.
+  const featured = testimonials.slice(0, 2);
+  const moreReviews = testimonials.slice(2);
+  const { bands, rest: morePhotos } = photoBands(c.gallery, 4, 4);
   const band = (i: number) => (bands[i] ? <PhotoBand photos={bands[i]} /> : null);
 
   const base = publicEnv.NEXT_PUBLIC_SITE_URL;
@@ -197,7 +190,7 @@ export default async function StylingPage() {
         </section>
       )}
 
-      {review(0)}
+      {band(1)}
 
       {/* Custom-made clothes: the section the custom-tailoring searches land on (SEO plan X1). */}
       <section
@@ -240,13 +233,13 @@ export default async function StylingPage() {
         </div>
       </section>
 
-      {band(1)}
+      {band(2)}
 
       {/* International Personal Shopping (owner brief 2026-11-27); copy, images
           and trip dates in src/features/styling/international.ts. */}
       <InternationalShopping />
 
-      {review(1)}
+      {band(3)}
 
       {c.steps.length > 0 && (
         <section className="u-section u-rule" aria-labelledby="how">
@@ -271,10 +264,10 @@ export default async function StylingPage() {
         </section>
       )}
 
-      {band(2)}
-      {review(2)}
-      {band(3)}
-      {review(3)}
+      {featured.length > 0 && (
+        <ReviewBlock reviews={featured} heading={c.testimonialsHeading} />
+      )}
+
       {band(4)}
 
       {moreReviews.length > 0 && (

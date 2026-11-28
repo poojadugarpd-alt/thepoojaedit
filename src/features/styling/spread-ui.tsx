@@ -1,8 +1,6 @@
 import Image from "next/image";
 
-import type { StylingPhoto } from "@/server/styling";
-
-import type { ReviewMoment } from "./spread";
+import type { StylingPhoto, StylingTestimonial } from "@/server/styling";
 
 /** A strip of gallery photos between sections. */
 export function PhotoBand({ photos }: { photos: StylingPhoto[] }) {
@@ -31,57 +29,64 @@ export function PhotoBand({ photos }: { photos: StylingPhoto[] }) {
   );
 }
 
-/** One review spot: a few of the client's own words beside one of her photos. */
-export function ReviewBand({
-  moment: m,
+/**
+ * Reviews (owner, 2026-11-28): each review's photos in one row with the
+ * whole review underneath; two reviews sit side by side on wide screens.
+ */
+export function ReviewBlock({
+  reviews,
   heading,
-  flip,
 }: {
-  moment: ReviewMoment;
-  heading?: string;
-  flip: boolean;
+  reviews: StylingTestimonial[];
+  heading: string;
 }) {
   return (
-    <section
-      aria-label={heading ? undefined : `Review from ${m.name}`}
-      aria-labelledby={heading ? "testimonials" : undefined}
-      className="u-section u-rule"
-    >
-      <figure
-        className={`u-page grid items-center gap-8 sm:gap-12 ${m.photo ? (flip ? "sm:grid-cols-[1fr_minmax(0,20rem)]" : "sm:grid-cols-[minmax(0,20rem)_1fr]") : ""}`}
-      >
-        {m.photo?.url && (
-          <div
-            className={`u-media relative aspect-[4/5] w-full max-w-[20rem] overflow-hidden ${flip ? "sm:order-2" : ""}`}
-          >
-            <Image
-              src={m.photo.url}
-              alt={m.photo.alt || `${m.name}, styled by Pooja`}
-              fill
-              sizes="(min-width: 640px) 20rem, 100vw"
-              className="object-cover"
-            />
-          </div>
-        )}
-        <div>
-          {heading && (
-            <h2 id="testimonials" className="u-eyebrow">
-              {heading}
-            </h2>
-          )}
-          <blockquote
-            className={`max-w-[34ch] text-2xl leading-snug text-ink-strong sm:text-3xl ${heading ? "mt-6" : ""}`}
-          >
-            &ldquo;{m.quote}&rdquo;
-          </blockquote>
-          <figcaption className="mt-6">
-            <span className="u-label block">{m.name}</span>
-            {m.detail && (
-              <span className="mt-1 block text-sm text-ink-soft">{m.detail}</span>
-            )}
-          </figcaption>
+    <section className="u-section u-section--fill" aria-labelledby="testimonials">
+      <div className="u-page">
+        <h2 id="testimonials" className="u-h2">
+          {heading}
+        </h2>
+        <div
+          className={`mt-10 grid gap-x-10 gap-y-16 ${reviews.length > 1 ? "lg:grid-cols-2" : ""}`}
+        >
+          {reviews.map((t) => {
+            const photos = t.photos.filter((p) => p.url);
+            return (
+              <figure key={t.id}>
+                {photos.length > 0 && (
+                  <div className="flex gap-2">
+                    {photos.map((p) => (
+                      <div
+                        key={p.id}
+                        className={`u-media relative h-44 overflow-hidden sm:h-64 ${photos.length > 1 ? "flex-1" : "w-40 sm:w-52"}`}
+                      >
+                        <Image
+                          src={p.url!}
+                          alt={p.alt || `${t.name}, styled by Pooja`}
+                          fill
+                          sizes="(min-width: 1024px) 13vw, (min-width: 640px) 25vw, 33vw"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {t.quote && (
+                  <blockquote className="mt-6 max-w-[62ch] whitespace-pre-line text-lg leading-relaxed text-ink-strong">
+                    &ldquo;{t.quote}&rdquo;
+                  </blockquote>
+                )}
+                <figcaption className="mt-5">
+                  <span className="u-label block">{t.name}</span>
+                  {t.detail && (
+                    <span className="mt-1 block text-sm text-ink-soft">{t.detail}</span>
+                  )}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
-      </figure>
+      </div>
     </section>
   );
 }
