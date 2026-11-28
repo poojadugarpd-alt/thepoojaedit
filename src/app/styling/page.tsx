@@ -9,6 +9,8 @@ import { InternationalShopping } from "@/features/styling/international-section"
 import { STYLING_LINKS, stylingFaqs, WHERE_I_WORK } from "@/features/styling/guides";
 import { stylingWhatsAppUrl } from "@/features/styling/whatsapp";
 import { Rail } from "@/features/styling/rail";
+import { photoBands, reviewMoments } from "@/features/styling/spread";
+import { PhotoBand, ReviewBand } from "@/features/styling/spread-ui";
 import { prisma } from "@/lib/db";
 import { personId } from "@/lib/organization-jsonld";
 import { publicEnv } from "@/lib/public-env";
@@ -50,6 +52,21 @@ export default async function StylingPage() {
     ...visibleTestimonials(c),
     ...(await approvedStylingTestimonials(prisma)),
   ];
+
+  // Photos and reviews are spread down the page (owner, 2026-11-28): five
+  // photo strips between sections, and up to four review spots. Anything
+  // beyond that stays in the carousels near the end.
+  const { moments, rest: moreReviews } = reviewMoments(testimonials, 4);
+  const { bands, rest: morePhotos } = photoBands(c.gallery, 5, 4);
+  const review = (i: number) =>
+    moments[i] ? (
+      <ReviewBand
+        moment={moments[i]}
+        heading={i === 0 ? c.testimonialsHeading : undefined}
+        flip={i % 2 === 1}
+      />
+    ) : null;
+  const band = (i: number) => (bands[i] ? <PhotoBand photos={bands[i]} /> : null);
 
   const base = publicEnv.NEXT_PUBLIC_SITE_URL;
 
@@ -120,6 +137,8 @@ export default async function StylingPage() {
         )}
       </section>
 
+      {band(0)}
+
       {c.designs.length > 0 && (
         <section className="u-section u-rule" aria-labelledby="designs">
           <div className="u-page">
@@ -178,6 +197,8 @@ export default async function StylingPage() {
         </section>
       )}
 
+      {review(0)}
+
       {/* Custom-made clothes: the section the custom-tailoring searches land on (SEO plan X1). */}
       <section
         id="custom"
@@ -219,9 +240,13 @@ export default async function StylingPage() {
         </div>
       </section>
 
+      {band(1)}
+
       {/* International Personal Shopping (owner brief 2026-11-27); copy, images
           and trip dates in src/features/styling/international.ts. */}
       <InternationalShopping />
+
+      {review(1)}
 
       {c.steps.length > 0 && (
         <section className="u-section u-rule" aria-labelledby="how">
@@ -246,15 +271,21 @@ export default async function StylingPage() {
         </section>
       )}
 
-      {testimonials.length > 0 && (
+      {band(2)}
+      {review(2)}
+      {band(3)}
+      {review(3)}
+      {band(4)}
+
+      {moreReviews.length > 0 && (
         <section className="u-section u-section--fill" aria-labelledby="testimonials">
           <div className="u-page">
             <h2 id="testimonials" className="u-h2">
-              {c.testimonialsHeading}
+              More kind words
             </h2>
             <div className="mt-10">
-              <Rail count={testimonials.length} label="testimonials">
-                {testimonials.map((t) => (
+              <Rail count={moreReviews.length} label="testimonials">
+                {moreReviews.map((t) => (
                   <figure
                     key={t.id}
                     className="flex flex-col border-t border-line pt-6"
@@ -300,11 +331,11 @@ export default async function StylingPage() {
         </section>
       )}
 
-      {c.gallery.length > 0 && (
+      {morePhotos.length > 0 && (
         <section className="u-section u-rule" aria-label="Gallery">
           <div className="u-page">
-            <Rail count={c.gallery.length} label="photos" compact>
-              {c.gallery.map((p) => (
+            <Rail count={morePhotos.length} label="photos" compact>
+              {morePhotos.map((p) => (
                 <RailPhoto key={p.id} photo={p} fallbackAlt="Styled by Pooja Dugar" />
               ))}
             </Rail>
